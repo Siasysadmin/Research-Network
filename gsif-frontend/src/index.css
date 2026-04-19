@@ -7,9 +7,13 @@
 
 @layer base {
   body {
-    @apply bg-black text-white font-sans overflow-x-hidden;
-    font-family: Inter , sans-serif;
-    
+    @apply bg-slate-50 text-slate-900 transition-colors duration-300 font-sans overflow-x-hidden;
+    font-family: Inter, sans-serif;
+  }
+
+  /* When dark class is on html, override body */
+  .dark body {
+    @apply bg-black text-white;
   }
 }
 

@@ -53,8 +53,10 @@ import Settings from "./settings/setting";
 import TermsConditions from "./Legals/TermsConditions";
 import PrivacyPolicy from "./Legals/PrivacyPolicy";
 import AdminSavedPosts from "./Admin/save/AdminSavedPosts";
+import { useTheme } from "./context/ThemeContext";
 
 const App = () => {
+  const { theme } = useTheme();
   return (
     <>
       <Routes>
@@ -165,7 +167,7 @@ const App = () => {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="dark" // Aapke dark theme UI ke liye perfect hai
+        theme={theme} // AAPKE THEME KE HISAB SE AUTOMATIC ADJUST HOGA
         limit={3} // Mobile par screen na bhar jaye isliye limit set karein
       />
     </>
