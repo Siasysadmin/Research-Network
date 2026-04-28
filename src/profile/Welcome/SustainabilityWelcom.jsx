@@ -1,7 +1,57 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+
 const SustainabilityWelcome = () => {
-   const navigate = useNavigate();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Push a new state into history to trap the user
+    window.history.pushState(null, "", window.location.href);
+    
+    // Handle back button press
+    const handlePopState = (event) => {
+      // Push again to prevent going back
+      window.history.pushState(null, "", window.location.href);
+      
+      // Optional: Show a warning or alert
+      // alert("You cannot go back from this page");
+    };
+    
+    // Add event listener for popstate (back button)
+    window.addEventListener("popstate", handlePopState);
+    
+    // Disable right-click (optional)
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+    };
+    
+    // Disable keyboard shortcuts for back navigation
+    const handleKeyDown = (e) => {
+      // Disable Alt + Left Arrow (back)
+      if (e.altKey && e.key === 'ArrowLeft') {
+        e.preventDefault();
+      }
+      // Disable Backspace (in some browsers)
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+      }
+      // Disable Alt + Right Arrow (forward)
+      if (e.altKey && e.key === 'ArrowRight') {
+        e.preventDefault();
+      }
+    };
+    
+    document.addEventListener("contextmenu", handleContextMenu);
+    document.addEventListener("keydown", handleKeyDown);
+    
+    // Cleanup event listeners on component unmount
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      document.removeEventListener("contextmenu", handleContextMenu);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   return (
     <div className="dark">
       <style jsx global>{`
@@ -18,7 +68,7 @@ const SustainabilityWelcome = () => {
         /* 1. Base Layer: Dark Leaf Image (img.jpeg) */
         .hero-bg-exact {
           position: relative;
-          min-h-screen: 100vh;
+          min-height: 100vh;
           background-image: linear-gradient(
               to bottom,
               rgba(1, 8, 5, 0.75),
@@ -92,8 +142,8 @@ const SustainabilityWelcome = () => {
           {/* Buttons Area */}
           <div className="flex flex-col sm:flex-row gap-4 w-full justify-center items-center">
             <button  
-             onClick={() => navigate("/dashboard")}
-             className="w-full sm:w-auto min-w-[240px] h-14 bg-[#00ff88] text-black rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all hover:scale-105 primary-glow active:scale-95 group">
+              onClick={() => navigate("/dashboard")}
+              className="w-full sm:w-auto min-w-[240px] h-14 bg-[#00ff88] text-black rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all hover:scale-105 primary-glow active:scale-95 group">
               Go to Dashboard
               <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">
                 arrow_forward

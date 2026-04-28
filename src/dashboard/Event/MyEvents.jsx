@@ -97,8 +97,39 @@ const getStatusStyles = (status) => {
 };
 
 // Dropdown Menu Component
-const DropdownMenu = ({ event, onViewDetails, onPublish, onDelete, onClose, position }) => {
+const DropdownMenu = ({ event, onViewDetails, onDelete, onClose, anchorElement }) => {
   const dropdownRef = React.useRef(null);
+  const [position, setPosition] = React.useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (anchorElement) {
+      const rect = anchorElement.getBoundingClientRect();
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const scrollLeft = window.scrollX || document.documentElement.scrollLeft;
+      
+      const dropdownWidth = 176;
+      const dropdownHeight = 160;
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      
+      let top = rect.bottom + scrollTop + 4;
+      let left = rect.right + scrollLeft - dropdownWidth;
+      
+      if (top + dropdownHeight > scrollTop + viewportHeight) {
+        top = rect.top + scrollTop - dropdownHeight - 4;
+      }
+      
+      if (left + dropdownWidth > scrollLeft + viewportWidth) {
+        left = rect.left + scrollLeft - dropdownWidth + 40;
+      }
+      
+      if (left < 10) {
+        left = 10;
+      }
+      
+      setPosition({ top, left });
+    }
+  }, [anchorElement]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -106,43 +137,45 @@ const DropdownMenu = ({ event, onViewDetails, onPublish, onDelete, onClose, posi
         onClose();
       }
     };
+    const handleScroll = () => onClose();
+    const handleResize = () => onClose();
+    
     document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
+    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("resize", handleResize);
+    
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleResize);
+    };
   }, [onClose]);
 
   return (
     <div
       ref={dropdownRef}
       style={{
-        position: "fixed",
-        top: position?.top || "50%",
-        left: position?.left || "50%",
-        zIndex: 9999
+        position: "absolute",
+        top: `${position.top}px`,
+        left: `${position.left}px`,
+        zIndex: 999999
       }}
-      className="w-40 sm:w-44 bg-[#1a2a1f] border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-fadeInScale"
+      className="w-44 bg-[#1a2a1f] border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-fadeInScale"
       onClick={(e) => e.stopPropagation()}
     >
       <button
-        onClick={onViewDetails}
-        className="w-full px-3 py-2 sm:px-4 sm:py-2.5 text-left text-xs sm:text-sm text-slate-300 hover:bg-white/10 flex items-center gap-2 border-b border-white/5 transition-colors"
+        onClick={() => { onViewDetails(); onClose(); }}
+        className="w-full px-4 py-3 text-left text-sm text-slate-300 hover:bg-white/10 flex items-center gap-2 border-b border-white/5 transition-colors active:bg-white/20"
       >
-        <MaterialIcon name="visibility" className="!text-xs sm:!text-sm" />
+        <MaterialIcon name="visibility" className="!text-base" />
         View Details
       </button>
-      {event.status === "APPROVED" && (
-        <button
-          onClick={() => onPublish(event.id)}
-          className="w-full px-3 py-2 sm:px-4 sm:py-2.5 text-left text-xs sm:text-sm text-blue-400 hover:bg-blue-400/10 flex items-center gap-2 border-b border-white/5 transition-colors"
-        >
-          <MaterialIcon name="public" className="!text-xs sm:!text-sm" />
-          Publish Event
-        </button>
-      )}
+      
       <button
-        onClick={() => onDelete(event.id)}
-        className="w-full px-3 py-2 sm:px-4 sm:py-2.5 text-left text-xs sm:text-sm text-red-400 hover:bg-red-400/10 flex items-center gap-2 transition-colors"
+        onClick={() => { onDelete(event.id); onClose(); }}
+        className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-red-400/10 flex items-center gap-2 transition-colors active:bg-red-400/20"
       >
-        <MaterialIcon name="delete" className="!text-xs sm:!text-sm" />
+        <MaterialIcon name="delete" className="!text-base" />
         Delete Event
       </button>
     </div>
@@ -164,7 +197,7 @@ const MyEvents = () => {
   const [deleteError, setDeleteError] = useState(null);
   const [processingEvents, setProcessingEvents] = useState(new Set());
   const [openDropdownId, setOpenDropdownId] = useState(null);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const [anchorElement, setAnchorElement] = useState(null);
 
   const dropdownBtnRefs = React.useRef({});
 
@@ -187,26 +220,26 @@ const MyEvents = () => {
 
   const toggleDropdown = (e, eventId) => {
     e.stopPropagation();
+    e.preventDefault();
+    
     if (openDropdownId === eventId) {
       setOpenDropdownId(null);
+      setAnchorElement(null);
       return;
     }
     
     const btn = dropdownBtnRefs.current[eventId];
     if (btn) {
-      const rect = btn.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.right + window.scrollX - 176,
-      });
+      setAnchorElement(btn);
+      setOpenDropdownId(eventId);
     }
-    setOpenDropdownId(eventId);
   };
 
   const handleViewDetails = (event) => {
     setSelectedEvent(event.fullEvent);
     setShowDetailsModal(true);
     setOpenDropdownId(null);
+    setAnchorElement(null);
   };
 
   const openPublishModal = (eventId) => {
@@ -214,6 +247,7 @@ const MyEvents = () => {
     setPublishError(null);
     setShowPublishModal(true);
     setOpenDropdownId(null);
+    setAnchorElement(null);
   };
 
   const openDeleteModal = (eventId) => {
@@ -221,6 +255,7 @@ const MyEvents = () => {
     setDeleteError(null);
     setShowDeleteModal(true);
     setOpenDropdownId(null);
+    setAnchorElement(null);
   };
 
   const closeModal = () => {
@@ -297,7 +332,7 @@ const MyEvents = () => {
     <DashboardLayout>
       <div className="w-full mx-auto overflow-x-hidden">
         <div className="px-3 sm:px-4 md:px-6 lg:px-8">
-          {/* HEADER - Responsive */}
+          {/* HEADER */}
           <div className="mb-6 sm:mb-8 md:mb-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="min-w-0">
               <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-1 truncate">
@@ -316,7 +351,7 @@ const MyEvents = () => {
             </button>
           </div>
 
-          {/* STATES - Loading, Error, Empty */}
+          {/* STATES */}
           {loading && (
             <div className="flex justify-center items-center py-16 sm:py-20 md:py-24 text-slate-400 text-xs sm:text-sm gap-2">
               <MaterialIcon name="hourglass_empty" className="animate-spin" />
@@ -338,7 +373,7 @@ const MyEvents = () => {
             </div>
           )}
 
-          {/* EVENTS LIST - Responsive Cards */}
+          {/* EVENTS LIST - SAME AS YOUR ORIGINAL LAYOUT */}
           {!loading && !error && eventList.length > 0 && (
             <div className="flex flex-col gap-3 sm:gap-4 md:gap-5 pb-24 sm:pb-10">
               {eventList.map((event) => {
@@ -350,71 +385,7 @@ const MyEvents = () => {
                     key={event.id}
                     className="bg-[#0d1a12] border border-white/5 hover:border-white/10 transition-all rounded-xl sm:rounded-2xl overflow-hidden"
                   >
-                    {/* MOBILE LAYOUT */}
-                    <div className="block sm:hidden">
-                      <div className="flex">
-                        {/* Image */}
-                        <div className="w-28 shrink-0 overflow-hidden">
-                          <img
-                            src={event.image}
-                            alt={event.title}
-                            onError={(e) => { e.currentTarget.src = FALLBACK_IMAGE; }}
-                            className="w-full h-full object-cover"
-                            style={{ minHeight: "120px" }}
-                          />
-                        </div>
-                        
-                        {/* Content */}
-                        <div className="flex-1 p-3 flex flex-col gap-2 min-w-0">
-                          <div className="flex items-start justify-between gap-1">
-                            <h3 className="text-sm font-bold text-white leading-snug line-clamp-2 flex-1">
-                              {event.title}
-                            </h3>
-                            
-                            {/* Three Dots Button */}
-                            <div className="relative shrink-0">
-                              <button
-                                ref={(el) => { dropdownBtnRefs.current[`m-${event.id}`] = el; }}
-                                onClick={(e) => toggleDropdown(e, `m-${event.id}`)}
-                                className="text-slate-500 hover:text-white p-1 transition-colors active:bg-white/10 rounded-lg"
-                              >
-                                <MaterialIcon name="more_vert" className="text-lg" />
-                              </button>
-                            </div>
-                          </div>
-                          
-                          {/* Status Badge */}
-                          <span className={`self-start px-2 py-0.5 rounded-full border ${styles.border} ${styles.bg} ${styles.text} text-[9px] font-bold tracking-wider`}>
-                            {event.status}
-                          </span>
-                          
-                          {/* Time */}
-                          <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                            <MaterialIcon name="schedule" className="!text-sm shrink-0" />
-                            <span className="truncate">{event.time}</span>
-                          </div>
-                          
-                          {/* Location */}
-                          <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                            <MaterialIcon name="location_on" className="!text-sm shrink-0" />
-                            <span className="truncate">{event.location}</span>
-                          </div>
-                          
-                          {/* Publish Button for Mobile */}
-                          {event.status === "APPROVED" && (
-                            <button
-                              onClick={() => openPublishModal(event.id)}
-                              disabled={isProcessing}
-                              className="mt-1 w-full py-1.5 rounded-lg border border-blue-400/40 text-blue-400 hover:bg-blue-400/10 transition-colors text-[10px] font-bold disabled:opacity-50"
-                            >
-                              Publish Event
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* DESKTOP/TABLET LAYOUT */}
+                    {/* DESKTOP/TABLET LAYOUT - Hidden on mobile */}
                     <div className="hidden sm:flex items-center gap-3 md:gap-4 lg:gap-5 p-3 md:p-4 lg:p-5">
                       {/* Date Badge */}
                       <div className="flex flex-col items-center justify-center w-12 md:w-14 shrink-0">
@@ -483,6 +454,70 @@ const MyEvents = () => {
                         </button>
                       </div>
                     </div>
+
+                    {/* MOBILE LAYOUT - Visible only on mobile */}
+                    <div className="block sm:hidden">
+                      <div className="flex">
+                        {/* Image */}
+                        <div className="w-28 shrink-0 overflow-hidden">
+                          <img
+                            src={event.image}
+                            alt={event.title}
+                            onError={(e) => { e.currentTarget.src = FALLBACK_IMAGE; }}
+                            className="w-full h-full object-cover"
+                            style={{ minHeight: "120px" }}
+                          />
+                        </div>
+                        
+                        {/* Content */}
+                        <div className="flex-1 p-3 flex flex-col gap-2 min-w-0">
+                          <div className="flex items-start justify-between gap-1">
+                            <h3 className="text-sm font-bold text-white leading-snug line-clamp-2 flex-1">
+                              {event.title}
+                            </h3>
+                            
+                            {/* Three Dots Button */}
+                            <div className="relative shrink-0">
+                              <button
+                                ref={(el) => { dropdownBtnRefs.current[event.id] = el; }}
+                                onClick={(e) => toggleDropdown(e, event.id)}
+                                className="text-slate-500 hover:text-white p-1 transition-colors active:bg-white/10 rounded-lg"
+                              >
+                                <MaterialIcon name="more_vert" className="text-lg" />
+                              </button>
+                            </div>
+                          </div>
+                          
+                          {/* Status Badge */}
+                          <span className={`self-start px-2 py-0.5 rounded-full border ${styles.border} ${styles.bg} ${styles.text} text-[9px] font-bold tracking-wider`}>
+                            {event.status}
+                          </span>
+                          
+                          {/* Time */}
+                          <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                            <MaterialIcon name="schedule" className="!text-sm shrink-0" />
+                            <span className="truncate">{event.time}</span>
+                          </div>
+                          
+                          {/* Location */}
+                          <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                            <MaterialIcon name="location_on" className="!text-sm shrink-0" />
+                            <span className="truncate">{event.location}</span>
+                          </div>
+                          
+                          {/* Publish Button for Mobile */}
+                          {event.status === "APPROVED" && (
+                            <button
+                              onClick={() => openPublishModal(event.id)}
+                              disabled={isProcessing}
+                              className="mt-1 w-full py-1.5 rounded-lg border border-blue-400/40 text-blue-400 hover:bg-blue-400/10 transition-colors text-[10px] font-bold disabled:opacity-50"
+                            >
+                              Publish Event
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 );
               })}
@@ -491,19 +526,21 @@ const MyEvents = () => {
         </div>
       </div>
 
-      {/* Dropdown Menu Portal */}
-      {openDropdownId && (
+      {/* Universal Dropdown Menu */}
+      {openDropdownId && anchorElement && (
         <DropdownMenu
-          event={eventList.find(e => e.id === (openDropdownId.toString().startsWith('m-') ? openDropdownId.toString().replace('m-', '') : openDropdownId))}
-          onViewDetails={() => handleViewDetails(eventList.find(e => e.id === (openDropdownId.toString().startsWith('m-') ? openDropdownId.toString().replace('m-', '') : openDropdownId)))}
-          onPublish={openPublishModal}
+          event={eventList.find(e => e.id === openDropdownId)}
+          onViewDetails={() => handleViewDetails(eventList.find(e => e.id === openDropdownId))}
           onDelete={openDeleteModal}
-          onClose={() => setOpenDropdownId(null)}
-          position={dropdownPosition}
+          onClose={() => {
+            setOpenDropdownId(null);
+            setAnchorElement(null);
+          }}
+          anchorElement={anchorElement}
         />
       )}
 
-      {/* VIEW DETAILS MODAL - Responsive */}
+      {/* REST OF THE MODALS - Same as before */}
       {showDetailsModal && selectedEvent && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md px-3 sm:px-4 overflow-y-auto py-4 sm:py-8">
           <div className="bg-gradient-to-br from-[#0d1f16] to-[#0a1610] border border-white/10 rounded-xl sm:rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl animate-fadeInScale">
@@ -661,7 +698,7 @@ const MyEvents = () => {
         </div>
       )}
 
-      {/* PUBLISH MODAL - Responsive */}
+      {/* PUBLISH MODAL */}
       {showPublishModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm px-3 sm:px-4">
           <div className="bg-[#0d1f16] border border-blue-500/30 rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 w-full max-w-[350px] sm:max-w-[400px] shadow-2xl text-center animate-fadeInScale">
@@ -701,7 +738,7 @@ const MyEvents = () => {
         </div>
       )}
 
-      {/* DELETE MODAL - Responsive */}
+      {/* DELETE MODAL */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm px-3 sm:px-4">
           <div className="bg-[#1a0d0d] border border-red-500/30 rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 w-full max-w-[350px] sm:max-w-[400px] shadow-2xl text-center animate-fadeInScale">
