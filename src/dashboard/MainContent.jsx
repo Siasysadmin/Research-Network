@@ -37,19 +37,19 @@ const MainContent = () => {
   const [expandedPosts, setExpandedPosts] = useState({});
   const [selectedProfileUser, setSelectedProfileUser] = useState(null);
   const [connectedUsers, setConnectedUsers] = useState({});
-const [reportStep, setReportStep] = useState(1); // 1: Reasons, 2: Thanks
-const [isReportingLoading, setIsReportingLoading] = useState(false);
-const reportReasons = [
-  "I just don't like it",
-  "Bullying or unwanted contact",
-  "Suicide, self-injury or eating disorders",
-  "Violence, hate or exploitation",
-  "Selling or promoting restricted items",
-  "Nudity or sexual activity",
-  "Scam, fraud or spam",
-  "False information",
-  "Intellectual property"
-];
+  const [reportStep, setReportStep] = useState(1); // 1: Reasons, 2: Thanks
+  const [isReportingLoading, setIsReportingLoading] = useState(false);
+  const reportReasons = [
+    "I just don't like it",
+    "Bullying or unwanted contact",
+    "Suicide, self-injury or eating disorders",
+    "Violence, hate or exploitation",
+    "Selling or promoting restricted items",
+    "Nudity or sexual activity",
+    "Scam, fraud or spam",
+    "False information",
+    "Intellectual property",
+  ];
   // States for Chat Widget
   const [isChatListOpen, setIsChatListOpen] = useState(false);
   const [activeChatId, setActiveChatId] = useState(null);
@@ -1065,7 +1065,7 @@ const reportReasons = [
     fetchChatUsers();
     fetchConnectedUsersList();
   }, []);
-  
+
   useEffect(() => {
     localStorage.setItem("videoMuteStates", JSON.stringify(videoMutedState));
   }, [videoMutedState]);
@@ -1787,44 +1787,44 @@ const reportReasons = [
     }
   };
 
-const handleReportPost = async (reason) => {
-  if (!selectedPost?.postId) return;
+  const handleReportPost = async (reason) => {
+    if (!selectedPost?.postId) return;
 
-  setIsReportingLoading(true);
-  try {
-    const token = getAuthToken();
-    const response = await fetch(
-      `${API_CONFIG.BASE_URL}/post/report-post`,  // ✅ base url + no ID in path
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+    setIsReportingLoading(true);
+    try {
+      const token = getAuthToken();
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}/post/report-post`, // ✅ base url + no ID in path
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            post_id: selectedPost.postId, // ✅ post_id (snake_case)
+            reason: reason,
+          }),
         },
-        body: JSON.stringify({
-          post_id: selectedPost.postId,  // ✅ post_id (snake_case)
-          reason: reason,
-        }),
-      }
-    );
-
-    const result = await response.json();
-
-    if (result.status) {
-      setFeedData((prev) =>
-        prev.filter((p) => (p.id || p.researche_id) !== selectedPost.postId)
       );
-      setReportStep(2);
-    } else {
-      toast.error(result.message || "Failed to report post");
+
+      const result = await response.json();
+
+      if (result.status) {
+        setFeedData((prev) =>
+          prev.filter((p) => (p.id || p.researche_id) !== selectedPost.postId),
+        );
+        setReportStep(2);
+      } else {
+        toast.error(result.message || "Failed to report post");
+      }
+    } catch (error) {
+      console.error("Error reporting post:", error);
+      toast.error("Error reporting post. Please try again.");
+    } finally {
+      setIsReportingLoading(false);
     }
-  } catch (error) {
-    console.error("Error reporting post:", error);
-    toast.error("Error reporting post. Please try again.");
-  } finally {
-    setIsReportingLoading(false);
-  }
-};
+  };
 
   const handleBlockUser = async () => {
     try {
@@ -1839,7 +1839,7 @@ const handleReportPost = async (reason) => {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ user_id: String(selectedPost?.postUserId) }),
-        }
+        },
       );
 
       const result = await response.json();
@@ -1850,8 +1850,8 @@ const handleReportPost = async (reason) => {
           prev.filter(
             (p) =>
               String(p.user_id ?? p.poll?.user_id ?? "") !==
-              String(selectedPost?.postUserId)
-          )
+              String(selectedPost?.postUserId),
+          ),
         );
       } else {
         toast.error(result.message || "Failed to block user");
@@ -1883,12 +1883,12 @@ const handleReportPost = async (reason) => {
     setSelectedPost(null);
   };
 
-const closeReportPopup = () => {
-  setShowReportPopup(false);
-  setReportReason("");
-  setSelectedPost(null);
-  setReportStep(1); // Reset to first screen
-};
+  const closeReportPopup = () => {
+    setShowReportPopup(false);
+    setReportReason("");
+    setSelectedPost(null);
+    setReportStep(1); // Reset to first screen
+  };
 
   const closeBlockPopup = () => {
     setShowBlockPopup(false);
@@ -1963,52 +1963,52 @@ const closeReportPopup = () => {
 
   return (
     <DashboardLayout>
-      <div className="p-3 sm:p-4 md:p-6 lg:p-8 xl:p-10 max-w-[1600px] mx-auto w-full relative">
-        <div className="mb-4 sm:mb-6 lg:mb-8 flex justify-center">
-          <div className="relative w-full max-w-5xl rounded-2xl border border-[#1f2a25] bg-gradient-to-r from-[#020b08] via-[#03130e] to-[#020b08] px-4 py-5 sm:px-6 sm:py-7 md:px-8 md:py-8 lg:px-10 lg:py-10 flex flex-col sm:flex-row items-start sm:items-center justify-between overflow-hidden gap-4 sm:gap-6">
-            <div className="flex items-center gap-4 sm:gap-6 z-10 w-full sm:w-auto">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#031a11] border border-[#00ff88]/20 flex items-center justify-center shadow-[0_0_40px_rgba(0,255,136,0.15)] shrink-0">
-                <span className="material-symbols-outlined text-[#00ff88] text-3xl sm:text-4xl">
+      <div className="w-full min-h-screen overflow-x-hidden px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 md:py-6 lg:py-8 max-w-full">
+        <div className="mb-3 sm:mb-4 md:mb-6 lg:mb-8 flex justify-center w-full">
+          <div className="relative w-full max-w-5xl rounded-xl sm:rounded-2xl border border-[#1f2a25] bg-gradient-to-r from-[#020b08] via-[#03130e] to-[#020b08] px-3 sm:px-4 md:px-6 lg:px-8 xl:px-10 py-4 sm:py-5 md:py-6 lg:py-8 flex flex-col sm:flex-row items-start sm:items-center justify-between overflow-hidden gap-3 sm:gap-4 md:gap-6">
+            <div className="flex items-start sm:items-center gap-3 sm:gap-4 md:gap-6 z-10 w-full">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-lg sm:rounded-2xl bg-[#031a11] border border-[#00ff88]/20 flex items-center justify-center shadow-[0_0_40px_rgba(0,255,136,0.15)] shrink-0">
+                <span className="material-symbols-outlined text-[#00ff88] text-2xl sm:text-3xl md:text-4xl">
                   verified_user
                 </span>
               </div>
-              <div className="flex-1">
-                <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold text-white tracking-tight">
-                  Welcome back, <br className="sm:hidden" />
-                  {userName}!
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-semibold text-white tracking-tight leading-tight">
+                  Welcome back, <br className="hidden" />
+                  <span className="break-words">{userName}!</span>
                 </h1>
-                <p className="text-slate-400 mt-2 sm:mt-3 text-sm sm:text-base max-w-2xl leading-relaxed">
+                <p className="text-slate-400 mt-1.5 sm:mt-2 md:mt-3 text-xs sm:text-sm md:text-base max-w-2xl leading-relaxed">
                   <span className="block">
                     Your research network is active. Reviewing today's
                   </span>
-                  <span>
-                    {" "}
+                  <span className="block sm:inline">
                     network data throughput and peer-reviewed updates.
                   </span>
                 </p>
               </div>
             </div>
-            <div className="absolute right-0 top-0 w-[200px] h-[200px] sm:w-[300px] sm:h-[300px] bg-[#00ff88]/10 blur-[100px] sm:blur-[140px]"></div>
+            <div className="hidden sm:block absolute right-0 top-0 w-[200px] h-[200px] sm:w-[250px] sm:h-[250px] lg:w-[300px] lg:h-[300px] bg-[#00ff88]/10 blur-[80px] sm:blur-[100px] lg:blur-[140px]"></div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-          <div className="lg:col-span-2 space-y-6 sm:space-y-10">
-            <section>
-              <div className="flex items-center justify-between mb-4 sm:mb-6">
-                <h3 className="text-lg sm:text-xl font-bold flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#00ff88]">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 lg:gap-8 auto-rows-max lg:auto-rows-auto">
+          <div className="lg:col-span-2 w-full space-y-4 sm:space-y-5 md:space-y-6 lg:space-y-8">
+            <section className="w-full">
+              <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-5 lg:mb-6 gap-2 flex-wrap">
+                <h3 className="text-base sm:text-lg md:text-xl font-bold flex items-center gap-2 whitespace-nowrap">
+                  <span className="material-symbols-outlined text-[#00ff88] text-lg sm:text-xl">
                     rss_feed
                   </span>
-                  Network Feed
+                  <span className="hidden sm:inline">Network Feed</span>
+                  <span className="sm:hidden">Feed</span>
                 </h3>
               </div>
 
-              <div className="space-y-4 sm:space-y-6">
+              <div className="space-y-3 sm:space-y-4 md:space-y-5 lg:space-y-6 w-full">
                 {loadingFeed ? (
-                  <div className="bg-[2 15 10] rounded-xl border border-white/5 p-8 flex justify-center items-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00ff88]"></div>
-                    <span className="ml-3 text-slate-400">
+                  <div className="bg-[2 15 10] rounded-lg sm:rounded-xl border border-white/5 p-6 sm:p-8 flex flex-col sm:flex-row justify-center items-center gap-3 w-full">
+                    <div className="animate-spin rounded-full h-6 sm:h-8 w-6 sm:w-8 border-b-2 border-[#00ff88]"></div>
+                    <span className="text-xs sm:text-sm text-slate-400 text-center sm:text-left">
                       Loading network feed...
                     </span>
                   </div>
@@ -2039,14 +2039,14 @@ const closeReportPopup = () => {
                       return (
                         <article
                           key={`poll-${pollId}-${index}`}
-                          className="bg-[#020f0a] rounded-2xl border border-white/5 shadow-sm overflow-hidden relative"
+                          className="bg-[#020f0a] rounded-lg sm:rounded-xl border border-white/5 shadow-sm overflow-hidden relative w-full"
                         >
-                          <div className="p-4 sm:p-5">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex items-center gap-3 min-w-0">
+                          <div className="p-3 sm:p-4 md:p-5">
+                            <div className="flex items-start justify-between gap-2 sm:gap-3">
+                              <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                                 <button
                                   type="button"
-                                  className="w-11 h-11 rounded-2xl bg-[#031a11] border border-[#00ff88]/20 flex items-center justify-center shadow-[0_0_30px_rgba(0,255,136,0.12)] shrink-0 hover:opacity-90 transition-opacity"
+                                  className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-2xl bg-[#031a11] border border-[#00ff88]/20 flex items-center justify-center shadow-[0_0_30px_rgba(0,255,136,0.12)] shrink-0 hover:opacity-90 transition-opacity"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleOpenUserProfile(
@@ -2064,7 +2064,7 @@ const closeReportPopup = () => {
                                     <img
                                       alt={pollName}
                                       src={getPostProfileSrc(poll)}
-                                      className="w-full h-full rounded-2xl object-cover"
+                                      className="w-full h-full rounded-lg sm:rounded-2xl object-cover"
                                       onError={(e) => {
                                         e.target.src = avatar;
                                       }}
@@ -2073,36 +2073,35 @@ const closeReportPopup = () => {
                                     <img
                                       alt={pollName}
                                       src={avatar}
-                                      className="w-full h-full rounded-2xl object-cover"
+                                      className="w-full h-full rounded-lg sm:rounded-2xl object-cover"
                                     />
                                   )}
                                 </button>
 
-                                <div className="min-w-0">
-                                  <div className="flex items-center gap-2 min-w-0">
-                                    <h4 className="text-white font-bold truncate">
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-wrap">
+                                    <h4 className="text-white font-bold truncate text-xs sm:text-sm">
                                       {pollName}
                                     </h4>
-                                    <span className="text-slate-500 text-xs shrink-0">
+                                  </div>
+                                  <p className="text-[9px] sm:text-xs text-slate-500 capitalize mt-0.5 truncate flex items-center gap-0.5 flex-wrap">
+                                    {(poll.user_type || "user")
+                                      .toLowerCase()
+                                      .replace(/^./, (c) => c.toUpperCase())}
+                                    <span className="text-slate-500 text-[9px] sm:text-xs shrink-0">
                                       • {pollTime}
                                     </span>
-                                  </div>
-                                  <p className="text-[10px] text-slate-500 uppercase tracking-[0.18em] truncate mt-0.5">
-                                    {(poll.user_type || "user").toUpperCase()}
-                                    {poll.registration_id
-                                      ? ` • ${poll.registration_id}`
-                                      : ""}
                                   </p>
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-2 shrink-0">
+                              <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                                 {!isCurrentUserPoll && (
                                   <button
                                     onClick={(e) =>
                                       toggleConnect(pollUserId, e)
                                     }
-                                    className={`px-3 py-1 sm:px-4 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-bold transition-all tracking-wider ${
+                                    className={`px-2 sm:px-3 py-0.5 sm:py-1 sm:px-4 sm:py-1.5 rounded-md text-[8px] sm:text-xs font-bold transition-all tracking-wider whitespace-nowrap ${
                                       connectedUsers[pollUserId]
                                         ? "bg-transparent text-slate-400 border border-slate-600 hover:bg-white/10 hover:text-white"
                                         : "bg-transparent text-[#00ff88] hover:bg-[#00ff88] hover:text-black border border-transparent"
@@ -2130,7 +2129,7 @@ const closeReportPopup = () => {
                                 >
                                   <MaterialIcon
                                     name="more_horiz"
-                                    className="text-lg sm:text-xl"
+                                    className="text-base sm:text-lg"
                                   />
                                 </button>
 
@@ -2219,11 +2218,11 @@ const closeReportPopup = () => {
                               </div>
                             </div>
 
-                            <h3 className="mt-5 text-[18px] sm:text-[22px] md:text-2xl font-extrabold text-white leading-snug">
+                            <h3 className="mt-3 sm:mt-4 md:mt-5 text-base sm:text-lg md:text-xl lg:text-2xl font-extrabold text-white leading-snug break-words">
                               {poll.question}
                             </h3>
 
-                            <div className="mt-5 space-y-3">
+                            <div className="mt-3 sm:mt-4 md:mt-5 space-y-2 sm:space-y-3">
                               {poll.options.map((opt) => {
                                 const percent = Math.max(
                                   0,
@@ -2241,7 +2240,7 @@ const closeReportPopup = () => {
                                     onClick={(e) =>
                                       handlePollOptionClick(e, poll, opt.id)
                                     }
-                                    className={`relative w-full rounded-xl border bg-[#000302] overflow-hidden transition-all text-left ${
+                                    className={`relative w-full rounded-lg sm:rounded-xl border bg-[#000302] overflow-hidden transition-all text-left min-h-[40px] sm:min-h-[48px] ${
                                       isSelected
                                         ? "border-[#00ff88]/35"
                                         : "border-white/10 hover:border-white/15 hover:bg-white/5"
@@ -2255,9 +2254,9 @@ const closeReportPopup = () => {
                                       }`}
                                       style={{ width: `${percent}%` }}
                                     />
-                                    <div className="relative z-10 flex items-center justify-between gap-3 px-4 py-3.5 sm:px-5 sm:py-4">
+                                    <div className="relative z-10 flex items-center justify-between gap-2 sm:gap-3 px-3 sm:px-4 md:px-5 py-2.5 sm:py-3 md:py-3.5">
                                       <span
-                                        className={`text-sm sm:text-[15px] font-bold pr-2 ${
+                                        className={`text-xs sm:text-sm font-bold pr-1 sm:pr-2 break-words flex-1 ${
                                           isSelected
                                             ? "text-white"
                                             : "text-slate-200"
@@ -2265,15 +2264,17 @@ const closeReportPopup = () => {
                                       >
                                         {opt.option_text}
                                       </span>
-                                      <span className="flex items-center gap-2 shrink-0">
+                                      <span className="flex items-center gap-1 sm:gap-2 shrink-0">
                                         {isSelected && (
                                           <MaterialIcon
                                             name="check_circle"
-                                            className="text-[#00ff88] text-[18px]"
+                                            className={`text-[#00ff88] text-base sm:text-lg ${
+                                              isSelected ? "scale-110" : ""
+                                            }`}
                                           />
                                         )}
                                         <span
-                                          className={`text-sm font-black tabular-nums ${
+                                          className={`text-xs sm:text-sm font-black tabular-nums ${
                                             isSelected
                                               ? "text-[#00ff88]"
                                               : "text-slate-500"
@@ -2288,19 +2289,21 @@ const closeReportPopup = () => {
                               })}
                             </div>
 
-                            <div className="mt-4 flex items-center justify-between text-[11px] uppercase tracking-[0.2em] text-slate-500">
-                              <span>{totalVotes.toLocaleString()} votes</span>
+                            <div className="mt-3 sm:mt-4 flex items-center justify-between text-[9px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-slate-500 gap-2">
+                              <span className="truncate">
+                                {totalVotes.toLocaleString()} votes
+                              </span>
                               {myVote ? (
                                 <button
                                   type="button"
                                   disabled={isBusy}
                                   onClick={(e) => handlePollUndo(e, poll)}
-                                  className="text-[#00ff88] hover:text-[#00ff88]/80 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                                  className="text-[#00ff88] hover:text-[#00ff88]/80 transition-colors disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
                                 >
                                   Undo vote
                                 </button>
                               ) : (
-                                <span className="text-slate-600">
+                                <span className="text-slate-600 whitespace-nowrap">
                                   Tap to vote
                                 </span>
                               )}
@@ -2367,13 +2370,13 @@ const closeReportPopup = () => {
                       return (
                         <article
                           key={`res-${postId}-${index}`}
-                          className="bg-[#020f0a] rounded-2xl border border-white/5 shadow-sm overflow-visible relative mb-6 sm:mb-8"
+                          className="bg-[#020f0a] rounded-lg sm:rounded-xl border border-white/5 shadow-sm overflow-visible relative w-full"
                         >
-                          <div className="p-4 sm:p-5">
-                            <div className="flex items-start gap-3 sm:gap-5 mt-2 sm:mt-4 mb-4 sm:mb-6">
+                          <div className="p-3 sm:p-4 md:p-5">
+                            <div className="flex items-start gap-2 sm:gap-3 md:gap-4 mt-1 sm:mt-2 md:mt-4 mb-3 sm:mb-4 md:mb-5">
                               <img
                                 alt={postName}
-                                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-[#00ff88]/20 object-cover shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                                className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full border-2 border-[#00ff88]/20 object-cover shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
                                 src={getPostProfileSrc(post)}
                                 onError={(e) => {
                                   e.target.src = avatar;
@@ -2384,10 +2387,10 @@ const closeReportPopup = () => {
                                 }}
                               />
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between">
-                                  <div>
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="min-w-0">
                                     <h4
-                                      className="font-bold text-white hover:text-[#00ff88] cursor-pointer transition-colors capitalize truncate text-sm sm:text-base"
+                                      className="font-bold text-white hover:text-[#00ff88] cursor-pointer transition-colors capitalize truncate text-xs sm:text-sm"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         handleOpenUserProfile(post, isMockPost);
@@ -2395,19 +2398,19 @@ const closeReportPopup = () => {
                                     >
                                       {postName}
                                     </h4>
-                                    <p className="text-[10px] sm:text-xs text-slate-500 capitalize mt-0.5 truncate flex items-center gap-1">
+                                    <p className="text-[9px] sm:text-xs text-slate-500 capitalize mt-0.5 truncate flex items-center gap-0.5 flex-wrap">
                                       {postType}{" "}
-                                      <span className="w-1 h-1 rounded-full bg-slate-500 inline-block"></span>{" "}
+                                      <span className="w-0.5 h-0.5 rounded-full bg-slate-500 inline-block"></span>{" "}
                                       {postTime}
                                     </p>
                                   </div>
-                                  <div className="flex items-center gap-2 sm:gap-3">
+                                  <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                                     {!isCurrentUserPost && (
                                       <button
                                         onClick={(e) =>
                                           toggleConnect(postUserId, e)
                                         }
-                                        className={`px-3 py-1 sm:px-4 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-bold transition-all tracking-wider ${
+                                        className={`px-2 sm:px-3 py-0.5 sm:py-1 sm:px-4 sm:py-1.5 rounded-md text-[8px] sm:text-xs font-bold transition-all tracking-wider whitespace-nowrap ${
                                           connectedUsers[postUserId]
                                             ? "bg-transparent text-slate-400 border border-slate-600 hover:bg-white/10 hover:text-white"
                                             : "bg-transparent text-[#00ff88] hover:bg-[#00ff88] hover:text-black border border-transparent"
@@ -2527,32 +2530,32 @@ const closeReportPopup = () => {
                               </div>
                             </div>
 
-                            <div className="sm:ml-16 mb-3 sm:mb-4">
-                              <h3 className="text-lg sm:text-2xl font-bold text-white leading-tight">
+                            <div className="mb-2 sm:mb-3 md:mb-4">
+                              <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-white leading-snug break-words">
                                 {post.research_title || "Published Research"}
                               </h3>
                             </div>
 
-                            <div className="sm:ml-16 mb-4 sm:mb-6">
-                              <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
+                            <div className="mb-3 sm:mb-4 md:mb-5">
+                              <p className="text-slate-300 text-xs sm:text-sm leading-relaxed break-words">
                                 {postContent}
                               </p>
                             </div>
 
                             {post.research_file && (
-                              <div className="sm:ml-16 mb-4 sm:mb-6">
-                                <div className="bg-[#0e0f10] border border-white/10 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between hover:border-white/20 transition-all gap-3 sm:gap-0">
-                                  <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
-                                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-[#0f172a] border border-[#00ff88]/20 flex items-center justify-center shrink-0">
-                                      <span className="material-symbols-outlined text-[#00ff88] text-xl sm:text-2xl">
+                              <div className="mb-3 sm:mb-4 md:mb-5">
+                                <div className="bg-[#0e0f10] border border-white/10 rounded-lg sm:rounded-xl p-2.5 sm:p-3 md:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between hover:border-white/20 transition-all gap-2 sm:gap-3">
+                                  <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                                    <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-lg bg-[#0f172a] border border-[#00ff88]/20 flex items-center justify-center shrink-0">
+                                      <span className="material-symbols-outlined text-[#00ff88] text-lg sm:text-xl md:text-2xl">
                                         description
                                       </span>
                                     </div>
-                                    <div className="min-w-0">
+                                    <div className="min-w-0 flex-1">
                                       <p className="text-xs sm:text-sm font-semibold text-white truncate">
                                         {fileInfo.name}
                                       </p>
-                                      <p className="text-[10px] sm:text-xs text-slate-400 mt-1">
+                                      <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5">
                                         {fileInfo.pages} • {fileInfo.size}
                                       </p>
                                     </div>
@@ -2561,26 +2564,26 @@ const closeReportPopup = () => {
                                     href={`${API_CONFIG.BASE_URL}/${post.research_file}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="w-full sm:w-auto px-4 py-2 bg-[#00ff88] text-black font-bold text-xs sm:text-sm rounded-lg hover:bg-[#00dd77] transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+                                    className="w-full sm:w-auto px-3 sm:px-4 py-1.5 sm:py-2 bg-[#00ff88] text-black font-bold text-xs sm:text-sm rounded-lg hover:bg-[#00dd77] transition-all flex items-center justify-center gap-1.5 whitespace-nowrap"
                                   >
-                                    <span className="material-symbols-outlined text-sm sm:text-base">
+                                    <span className="material-symbols-outlined text-xs sm:text-sm">
                                       open_in_new
                                     </span>
-                                    View on Library
+                                    <span>View on Library</span>
                                   </a>
                                 </div>
                               </div>
                             )}
                           </div>
 
-                          <div className="px-4 sm:px-5 pb-4 sm:pb-5">
-                            <div className="flex items-center gap-4 sm:gap-6 pt-3 sm:pt-4 border-t border-white/5 sm:pl-16 flex-wrap">
+                          <div className="px-3 sm:px-4 md:px-5 pb-3 sm:pb-4 md:pb-5">
+                            <div className="flex items-center gap-2 sm:gap-3 md:gap-4 lg:gap-6 pt-2 sm:pt-3 md:pt-4 border-t border-white/5 flex-wrap w-full">
                               <button
                                 onClick={() => toggleLike(postId)}
-                                className={`flex items-center gap-1 sm:gap-2 transition-colors ${isLiked ? "text-[#00ff88]" : "text-slate-500 hover:text-[#00ff88]"}`}
+                                className={`flex items-center gap-0.5 sm:gap-1 transition-colors text-xs sm:text-sm ${isLiked ? "text-[#00ff88]" : "text-slate-500 hover:text-[#00ff88]"}`}
                               >
                                 <span
-                                  className="material-symbols-outlined text-lg sm:text-xl"
+                                  className="material-symbols-outlined text-base sm:text-lg"
                                   style={{
                                     fontVariationSettings: isLiked
                                       ? "'FILL' 1"
@@ -2589,36 +2592,25 @@ const closeReportPopup = () => {
                                 >
                                   favorite
                                 </span>
-                                <span className="text-[10px] sm:text-xs font-bold">
+                                <span className="text-[9px] sm:text-xs font-bold hidden sm:inline">
                                   {parseInt(post.like_count || 0) > 0 ||
-                                  (isMockPost && isLiked) ? (
-                                    isMockPost ? (
-                                      isLiked ? (
-                                        1
-                                      ) : (
-                                        0
-                                      )
-                                    ) : (
-                                      post.like_count
-                                    )
-                                  ) : (
-                                    <span className="hidden sm:inline">
-                                      Like
-                                    </span>
-                                  )}
+                                  (isMockPost && isLiked)
+                                    ? isMockPost
+                                      ? isLiked
+                                        ? 1
+                                        : 0
+                                      : post.like_count
+                                    : "Like"}
                                 </span>
                               </button>
                               <button
                                 onClick={() => toggleComments(postId)}
-                                className={`flex items-center gap-1 sm:gap-2 transition-colors ${postComments.isOpen ? "text-[#00ff88]" : "text-slate-500 hover:text-[#00ff88]"}`}
+                                className={`flex items-center gap-0.5 sm:gap-1 transition-colors text-xs sm:text-sm ${postComments.isOpen ? "text-[#00ff88]" : "text-slate-500 hover:text-[#00ff88]"}`}
                               >
-                                <span className="material-symbols-outlined text-lg sm:text-xl">
+                                <span className="material-symbols-outlined text-base sm:text-lg">
                                   chat_bubble
                                 </span>
-                                <span className="text-[10px] sm:text-xs font-bold">
-                                  <span className="hidden sm:inline">
-                                    Comment{" "}
-                                  </span>
+                                <span className="text-[9px] sm:text-xs font-bold">
                                   {postComments.list.length > 0
                                     ? `(${postComments.list.length})`
                                     : post.comment_count &&
@@ -2631,9 +2623,9 @@ const closeReportPopup = () => {
                                 onClick={() =>
                                   handleShare(post.research_title, postContent)
                                 }
-                                className="flex items-center gap-1 sm:gap-2 text-slate-500 hover:text-[#00ff88] transition-colors"
+                                className="flex items-center gap-0.5 sm:gap-1 text-slate-500 hover:text-[#00ff88] transition-colors text-xs sm:text-sm"
                               >
-                                <span className="material-symbols-outlined text-lg sm:text-xl">
+                                <span className="material-symbols-outlined text-base sm:text-lg">
                                   share
                                 </span>
                                 <span className="hidden sm:inline text-xs font-bold">
@@ -2642,10 +2634,10 @@ const closeReportPopup = () => {
                               </button>
                               <button
                                 onClick={() => toggleSave(postId)}
-                                className={`ml-auto flex items-center gap-1 sm:gap-2 transition-colors ${isSaved ? "text-[#00ff88]" : "text-slate-500 hover:text-[#00ff88]"}`}
+                                className={`ml-auto flex items-center gap-0.5 sm:gap-1 transition-colors text-xs sm:text-sm ${isSaved ? "text-[#00ff88]" : "text-slate-500 hover:text-[#00ff88]"}`}
                               >
                                 <span
-                                  className="material-symbols-outlined text-lg sm:text-xl"
+                                  className="material-symbols-outlined text-base sm:text-lg"
                                   style={{
                                     fontVariationSettings: isSaved
                                       ? "'FILL' 1"
@@ -2809,13 +2801,13 @@ const closeReportPopup = () => {
                     return (
                       <article
                         key={`post-${postId}-${index}`}
-                        className="bg-[#020f0a] rounded-2xl border border-white/5 shadow-sm overflow-visible relative mb-6 sm:mb-8"
+                        className="bg-[#020f0a] rounded-lg sm:rounded-xl border border-white/5 shadow-sm overflow-visible relative w-full"
                       >
-                        <div className="p-4 sm:p-5">
-                          <div className="flex items-start gap-3 sm:gap-5 mt-2 sm:mt-4 mb-3 sm:mb-4">
+                        <div className="p-3 sm:p-4 md:p-5">
+                          <div className="flex items-start gap-2 sm:gap-3 md:gap-4 mt-1 sm:mt-2 md:mt-3 mb-2 sm:mb-3 md:mb-4">
                             <img
                               alt={postName}
-                              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-[#00ff88]/20 object-cover shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                              className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full border-2 border-[#00ff88]/20 object-cover shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
                               src={getPostProfileSrc(post)}
                               onError={(e) => {
                                 e.target.src = avatar;
@@ -2826,10 +2818,10 @@ const closeReportPopup = () => {
                               }}
                             />
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between">
-                                <div>
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="min-w-0">
                                   <h4
-                                    className="font-bold text-white hover:text-[#00ff88] cursor-pointer transition-colors capitalize truncate text-sm sm:text-base"
+                                    className="font-bold text-white hover:text-[#00ff88] cursor-pointer transition-colors capitalize truncate text-xs sm:text-sm"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleOpenUserProfile(post, isMockPost);
@@ -2837,19 +2829,19 @@ const closeReportPopup = () => {
                                   >
                                     {postName}
                                   </h4>
-                                  <p className="text-[10px] sm:text-xs text-slate-500 capitalize mt-0.5 truncate flex items-center gap-1">
+                                  <p className="text-[9px] sm:text-xs text-slate-500 capitalize mt-0.5 truncate flex items-center gap-0.5 flex-wrap">
                                     {postType}{" "}
-                                    <span className="w-1 h-1 rounded-full bg-slate-500 inline-block"></span>{" "}
+                                    <span className="w-0.5 h-0.5 rounded-full bg-slate-500 inline-block"></span>{" "}
                                     {postTime}
                                   </p>
                                 </div>
-                                <div className="flex items-center gap-2 sm:gap-3">
+                                <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                                   {!isCurrentUserPost && (
                                     <button
                                       onClick={(e) =>
                                         toggleConnect(postUserId, e)
                                       }
-                                      className={`px-3 py-1 sm:px-4 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-bold transition-all tracking-wider ${
+                                      className={`px-2 sm:px-3 py-0.5 sm:py-1 sm:px-4 sm:py-1.5 rounded-md text-[8px] sm:text-xs font-bold transition-all tracking-wider whitespace-nowrap ${
                                         connectedUsers[postUserId] === 2
                                           ? "bg-transparent text-slate-400 border border-slate-600 hover:bg-white/10 hover:text-white"
                                           : connectedUsers[postUserId] === 1
@@ -2969,19 +2961,15 @@ const closeReportPopup = () => {
                           </div>
 
                           {isTextOnly ? (
-                            <div className="sm:ml-16 mt-2 mb-3 sm:mb-4 max-w-full sm:max-w-[600px]">
+                            <div className="mt-1.5 sm:mt-2 md:mt-3 mb-2 sm:mb-3 md:mb-4 max-w-full">
                               <div
-                                className={`bg-[#000302] border border-white/10 rounded-2xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm text-slate-200 leading-relaxed shadow-sm`}
+                                className={`bg-[#000302] border border-white/10 rounded-lg sm:rounded-xl px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3 text-xs sm:text-sm text-slate-200 leading-relaxed shadow-sm break-words ${expandedPosts[postId] ? "" : "line-clamp-10"}`}
                               >
-                                <span
-                                  className={`${expandedPosts[postId] ? "" : "line-clamp-10"}`}
-                                >
-                                  {postContent}
-                                </span>
+                                {postContent}
                                 {postContent?.length > 300 && (
                                   <span
                                     onClick={() => toggleReadMorePost(postId)}
-                                    className="text-[#00ff88] cursor-pointer ml-1 text-[10px] sm:text-xs hover:underline"
+                                    className="text-[#00ff88] cursor-pointer ml-1 text-[9px] sm:text-xs hover:underline block"
                                   >
                                     {expandedPosts[postId]
                                       ? "Show less"
@@ -2991,18 +2979,18 @@ const closeReportPopup = () => {
                               </div>
                             </div>
                           ) : (
-                            <div className="text-xs sm:text-sm leading-relaxed text-slate-300 break-words whitespace-pre-wrap mb-3 sm:mb-4 sm:ml-16">
+                            <div className="text-xs sm:text-sm leading-relaxed text-slate-300 break-words whitespace-pre-wrap mb-2 sm:mb-3 md:mb-4">
                               {postContent}
                             </div>
                           )}
 
                           {isMockPost && post.media && (
-                            <div className="mt-3 sm:mt-4 rounded-xl overflow-hidden border border-white/10 bg-black flex justify-center max-h-[300px] sm:max-h-[500px] sm:ml-16 relative">
+                            <div className="mt-2 sm:mt-3 md:mt-4 rounded-lg sm:rounded-xl overflow-hidden border border-white/10 bg-black flex justify-center max-h-[200px] sm:max-h-[350px] md:max-h-[500px] relative w-full">
                               {post.mediaType === "image" ? (
                                 <img
                                   src={post.media}
                                   alt="Post media"
-                                  className="object-contain max-h-[300px] sm:max-h-[500px] w-auto"
+                                  className="object-contain max-h-[200px] sm:max-h-[350px] md:max-h-[500px] w-auto"
                                 />
                               ) : post.mediaType === "video" ? (
                                 <div className="relative w-full">
@@ -3020,7 +3008,7 @@ const closeReportPopup = () => {
                                     src={post.media}
                                     muted={isVideoMuted}
                                     playsInline
-                                    className="max-h-[300px] sm:max-h-[500px] w-full bg-black cursor-pointer"
+                                    className="max-h-[200px] sm:max-h-[350px] md:max-h-[500px] w-full bg-black cursor-pointer"
                                     loop={false}
                                     onClick={(e) =>
                                       toggleVideoPlayPause(postId, e)
@@ -3028,9 +3016,9 @@ const closeReportPopup = () => {
                                   />
                                   <button
                                     onClick={(e) => toggleVideoSound(postId, e)}
-                                    className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 bg-black/70 hover:bg-black/90 text-white rounded-full p-1.5 sm:p-2 transition-all z-10"
+                                    className="absolute bottom-2 sm:bottom-3 md:bottom-4 right-2 sm:right-3 md:right-4 bg-black/70 hover:bg-black/90 text-white rounded-full p-1 sm:p-1.5 md:p-2 transition-all z-10"
                                   >
-                                    <span className="material-symbols-outlined text-lg sm:text-xl">
+                                    <span className="material-symbols-outlined text-base sm:text-lg">
                                       {isVideoMuted
                                         ? "volume_off"
                                         : "volume_up"}
@@ -3042,12 +3030,12 @@ const closeReportPopup = () => {
                           )}
 
                           {!isMockPost && (hasImage || hasVideo) && (
-                            <div className="mt-3 sm:mt-4 rounded-xl overflow-hidden border border-white/10 bg-black flex justify-center max-h-[300px] sm:max-h-[500px] sm:ml-16 relative">
+                            <div className="mt-2 sm:mt-3 md:mt-4 rounded-lg sm:rounded-xl overflow-hidden border border-white/10 bg-black flex justify-center max-h-[200px] sm:max-h-[350px] md:max-h-[500px] relative w-full">
                               {hasImage && (
                                 <img
                                   src={`${API_CONFIG.BASE_URL}/${post.image}`}
                                   alt="Post media"
-                                  className="object-contain max-h-[300px] sm:max-h-[500px] w-auto"
+                                  className="object-contain max-h-[200px] sm:max-h-[350px] md:max-h-[500px] w-auto"
                                   onError={(e) => {
                                     e.target.src = post.image;
                                   }}
@@ -3074,7 +3062,7 @@ const closeReportPopup = () => {
                                     src={videoUrl}
                                     muted={isVideoMuted}
                                     playsInline
-                                    className="max-h-[300px] sm:max-h-[500px] w-full bg-black"
+                                    className="max-h-[200px] sm:max-h-[350px] md:max-h-[500px] w-full bg-black"
                                     loop={false}
                                     onClick={(e) =>
                                       toggleVideoPlayPause(postId, e)
@@ -3101,8 +3089,8 @@ const closeReportPopup = () => {
                                   />
                                   {pausedVideos[postId] && (
                                     <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
-                                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#00ff88]/80 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(0,255,136,0.3)] animate-fadeInScale">
-                                        <span className="material-symbols-outlined text-black text-3xl sm:text-4xl fill-current">
+                                      <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 bg-[#00ff88]/80 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(0,255,136,0.3)] animate-fadeInScale">
+                                        <span className="material-symbols-outlined text-black text-2xl sm:text-3xl md:text-4xl fill-current">
                                           play_arrow
                                         </span>
                                       </div>
@@ -3110,9 +3098,9 @@ const closeReportPopup = () => {
                                   )}
                                   <button
                                     onClick={(e) => toggleVideoSound(postId, e)}
-                                    className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 bg-black/70 hover:bg-black/90 text-white rounded-full p-1.5 sm:p-2 transition-all z-10"
+                                    className="absolute bottom-2 sm:bottom-3 md:bottom-4 right-2 sm:right-3 md:right-4 bg-black/70 hover:bg-black/90 text-white rounded-full p-1 sm:p-1.5 md:p-2 transition-all z-10"
                                   >
-                                    <span className="material-symbols-outlined text-lg sm:text-xl">
+                                    <span className="material-symbols-outlined text-base sm:text-lg">
                                       {isVideoMuted
                                         ? "volume_off"
                                         : "volume_up"}
@@ -3124,14 +3112,14 @@ const closeReportPopup = () => {
                           )}
                         </div>
 
-                        <div className="px-4 sm:px-5 pb-4 sm:pb-5">
-                          <div className="flex items-center gap-4 sm:gap-6 pt-3 sm:pt-4 border-t border-white/5 sm:pl-16 flex-wrap">
+                        <div className="px-3 sm:px-4 md:px-5 pb-3 sm:pb-4 md:pb-5">
+                          <div className="flex items-center gap-2 sm:gap-3 md:gap-4 lg:gap-6 pt-2 sm:pt-3 md:pt-4 border-t border-white/5 flex-wrap w-full">
                             <button
                               onClick={() => toggleLike(postId)}
-                              className={`flex items-center gap-1 sm:gap-2 transition-colors ${isLiked ? "text-[#00ff88]" : "text-slate-500 hover:text-[#00ff88]"}`}
+                              className={`flex items-center gap-0.5 sm:gap-1 transition-colors text-xs sm:text-sm ${isLiked ? "text-[#00ff88]" : "text-slate-500 hover:text-[#00ff88]"}`}
                             >
                               <span
-                                className="material-symbols-outlined text-lg sm:text-xl"
+                                className="material-symbols-outlined text-base sm:text-lg"
                                 style={{
                                   fontVariationSettings: isLiked
                                     ? "'FILL' 1"
@@ -3140,34 +3128,25 @@ const closeReportPopup = () => {
                               >
                                 favorite
                               </span>
-                              <span className="text-[10px] sm:text-xs font-bold">
+                              <span className="text-[9px] sm:text-xs font-bold hidden sm:inline">
                                 {parseInt(post.like_count || 0) > 0 ||
-                                (isMockPost && isLiked) ? (
-                                  isMockPost ? (
-                                    isLiked ? (
-                                      1
-                                    ) : (
-                                      0
-                                    )
-                                  ) : (
-                                    post.like_count
-                                  )
-                                ) : (
-                                  <span className="hidden sm:inline">Like</span>
-                                )}
+                                (isMockPost && isLiked)
+                                  ? isMockPost
+                                    ? isLiked
+                                      ? 1
+                                      : 0
+                                    : post.like_count
+                                  : "Like"}
                               </span>
                             </button>
                             <button
                               onClick={() => toggleComments(postId)}
-                              className={`flex items-center gap-1 sm:gap-2 transition-colors ${postComments.isOpen ? "text-[#00ff88]" : "text-slate-500 hover:text-[#00ff88]"}`}
+                              className={`flex items-center gap-0.5 sm:gap-1 transition-colors text-xs sm:text-sm ${postComments.isOpen ? "text-[#00ff88]" : "text-slate-500 hover:text-[#00ff88]"}`}
                             >
-                              <span className="material-symbols-outlined text-lg sm:text-xl">
+                              <span className="material-symbols-outlined text-base sm:text-lg">
                                 chat_bubble
                               </span>
-                              <span className="text-[10px] sm:text-xs font-bold">
-                                <span className="hidden sm:inline">
-                                  Comment{" "}
-                                </span>
+                              <span className="text-[9px] sm:text-xs font-bold">
                                 {postComments.list.length > 0
                                   ? `(${postComments.list.length})`
                                   : post.comment_count &&
@@ -3178,9 +3157,9 @@ const closeReportPopup = () => {
                             </button>
                             <button
                               onClick={() => handleShare(postName, postContent)}
-                              className="flex items-center gap-1 sm:gap-2 text-slate-500 hover:text-[#00ff88] transition-colors"
+                              className="flex items-center gap-0.5 sm:gap-1 text-slate-500 hover:text-[#00ff88] transition-colors text-xs sm:text-sm"
                             >
-                              <span className="material-symbols-outlined text-lg sm:text-xl">
+                              <span className="material-symbols-outlined text-base sm:text-lg">
                                 share
                               </span>
                               <span className="hidden sm:inline text-xs font-bold">
@@ -3189,10 +3168,10 @@ const closeReportPopup = () => {
                             </button>
                             <button
                               onClick={() => toggleSave(postId)}
-                              className={`ml-auto flex items-center gap-1 sm:gap-2 transition-colors ${isSaved ? "text-[#00ff88]" : "text-slate-500 hover:text-[#00ff88]"}`}
+                              className={`ml-auto flex items-center gap-0.5 sm:gap-1 transition-colors text-xs sm:text-sm ${isSaved ? "text-[#00ff88]" : "text-slate-500 hover:text-[#00ff88]"}`}
                             >
                               <span
-                                className="material-symbols-outlined text-lg sm:text-xl"
+                                className="material-symbols-outlined text-base sm:text-lg"
                                 style={{
                                   fontVariationSettings: isSaved
                                     ? "'FILL' 1"
@@ -3350,8 +3329,8 @@ const closeReportPopup = () => {
                     );
                   })
                 ) : (
-                  <div className="bg-[#141414] rounded-2xl border border-white/5 p-8 text-center">
-                    <p className="text-slate-400">
+                  <div className="bg-[#141414] rounded-lg sm:rounded-xl border border-white/5 p-6 sm:p-8 text-center w-full">
+                    <p className="text-xs sm:text-sm text-slate-400">
                       No posts found in the network yet.
                     </p>
                   </div>
@@ -3361,7 +3340,7 @@ const closeReportPopup = () => {
           </div>
 
           {/* Right Sidebar */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 w-full">
             <div className="lg:sticky lg:top-24">
               <RightSection />
             </div>
@@ -3372,31 +3351,31 @@ const closeReportPopup = () => {
       {/* Popups */}
       {showDeletePopup && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-2 sm:px-4"
           onClick={closeDeletePopup}
         >
           <div
-            className="bg-[#1e293b] rounded-2xl p-5 sm:p-6 w-full max-w-[350px] border border-white/10 shadow-xl animate-fadeInScale"
+            className="bg-[#1e293b] rounded-lg sm:rounded-2xl p-4 sm:p-5 md:p-6 w-full max-w-[350px] border border-white/10 shadow-xl animate-fadeInScale"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-base sm:text-lg font-bold text-white mb-3">
+            <h2 className="text-sm sm:text-base md:text-lg font-bold text-white mb-2 sm:mb-3">
               {selectedPost?.isPollPost ? "Delete Poll" : "Delete Post"}
             </h2>
-            <p className="text-sm text-slate-400 mb-5 sm:mb-6">
+            <p className="text-xs sm:text-sm text-slate-400 mb-4 sm:mb-5 md:mb-6 break-words">
               {selectedPost?.isPollPost
                 ? "Are you sure you want to delete this poll?"
                 : "Are you sure you want to delete this post?"}
             </p>
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-end gap-2 sm:gap-3">
               <button
                 onClick={closeDeletePopup}
-                className="px-4 py-2 rounded-lg text-sm bg-white/5 text-slate-300 hover:bg-white/10"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm bg-white/5 text-slate-300 hover:bg-white/10 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2 rounded-lg text-sm bg-red-500 text-white hover:bg-red-600"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm bg-red-500 text-white hover:bg-red-600 transition-colors"
               >
                 Delete
               </button>
@@ -3405,107 +3384,122 @@ const closeReportPopup = () => {
         </div>
       )}
 
-{showReportPopup && (
-  <div
-    className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-md px-4"
-    onClick={closeReportPopup}
-  >
-    <div
-      className="bg-[#0d0f0e] rounded-t-[25px] sm:rounded-2xl w-full max-w-[450px] overflow-hidden animate-fadeInScale border border-[#00ff88]/20 shadow-[0_0_50px_rgba(0,255,136,0.1)]"
-      onClick={(e) => e.stopPropagation()}
-    >
-      {/* Mobile Handle Bar */}
-      <div className="w-12 h-1.5 bg-[#00ff88]/20 rounded-full mx-auto mt-3 mb-2 sm:hidden"></div>
-
-      {reportStep === 1 ? (
-        <div className="p-5 sm:p-6">
-          <div className="flex items-center justify-between mb-6">
-             <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#00ff88]">flag</span>
-                Report Content
-             </h2>
-             <button onClick={closeReportPopup} className="text-slate-400 hover:text-white">
-                <span className="material-symbols-outlined">close</span>
-             </button>
-          </div>
-          
-          <div className="mb-6">
-            <h3 className="text-sm font-semibold text-[#00ff88] mb-2">Why are you reporting this?</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Your report is anonymous. We use this feedback to improve your network experience.
-            </p>
-          </div>
-
-          <div className="space-y-1 max-h-[350px] overflow-y-auto pr-1 scrollbar-hidden">
-            {reportReasons.map((reason, index) => (
-              <button
-                key={index}
-                onClick={() => handleReportPost(reason)}
-                disabled={isReportingLoading}
-                className="w-full flex items-center justify-between px-3 py-4 hover:bg-[#00ff88]/5 border-b border-white/5 last:border-0 group transition-all rounded-lg"
-              >
-                <span className="text-sm text-slate-300 group-hover:text-white">{reason}</span>
-                <span className="material-symbols-outlined text-[#00ff88]/40 group-hover:text-[#00ff88] group-hover:translate-x-1 transition-all">
-                  chevron_right
-                </span>
-              </button>
-            ))}
-          </div>
-          
-          {isReportingLoading && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm">
-               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00ff88]"></div>
-            </div>
-          )}
-        </div>
-      ) : (
-        /* Step 2: Success Screen */
-        <div className="p-8 text-center flex flex-col items-center">
-          <div className="w-20 h-20 rounded-full bg-[#031a11] border border-[#00ff88]/20 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(0,255,136,0.2)]">
-            <span className="material-symbols-outlined text-[#00ff88] text-4xl">check_circle</span>
-          </div>
-          <h2 className="text-xl font-bold text-white mb-3">Feedback Received</h2>
-          <p className="text-sm text-slate-400 mb-8 leading-relaxed max-w-[280px]">
-            Thank you for helping us keep the network safe. We'll review this post shortly.
-          </p>
-          <button
-            onClick={closeReportPopup}
-            className="w-full py-3 bg-[#00ff88] text-[#003919] font-black rounded-xl hover:brightness-110 transition-all shadow-[0_0_20px_rgba(0,255,136,0.2)] uppercase tracking-widest text-xs"
+      {showReportPopup && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-md px-4"
+          onClick={closeReportPopup}
+        >
+          <div
+            className="bg-[#0d0f0e] rounded-t-[25px] sm:rounded-2xl w-full max-w-[450px] overflow-hidden animate-fadeInScale border border-[#00ff88]/20 shadow-[0_0_50px_rgba(0,255,136,0.1)]"
+            onClick={(e) => e.stopPropagation()}
           >
-            Done
-          </button>
+            {/* Mobile Handle Bar */}
+            <div className="w-12 h-1.5 bg-[#00ff88]/20 rounded-full mx-auto mt-3 mb-2 sm:hidden"></div>
+
+            {reportStep === 1 ? (
+              <div className="p-5 sm:p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#00ff88]">
+                      flag
+                    </span>
+                    Report Content
+                  </h2>
+                  <button
+                    onClick={closeReportPopup}
+                    className="text-slate-400 hover:text-white"
+                  >
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-[#00ff88] mb-2">
+                    Why are you reporting this?
+                  </h3>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Your report is anonymous. We use this feedback to improve
+                    your network experience.
+                  </p>
+                </div>
+
+                <div className="space-y-1 max-h-[350px] overflow-y-auto pr-1 scrollbar-hidden">
+                  {reportReasons.map((reason, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleReportPost(reason)}
+                      disabled={isReportingLoading}
+                      className="w-full flex items-center justify-between px-3 py-4 hover:bg-[#00ff88]/5 border-b border-white/5 last:border-0 group transition-all rounded-lg"
+                    >
+                      <span className="text-sm text-slate-300 group-hover:text-white">
+                        {reason}
+                      </span>
+                      <span className="material-symbols-outlined text-[#00ff88]/40 group-hover:text-[#00ff88] group-hover:translate-x-1 transition-all">
+                        chevron_right
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                {isReportingLoading && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00ff88]"></div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Step 2: Success Screen */
+              <div className="p-8 text-center flex flex-col items-center">
+                <div className="w-20 h-20 rounded-full bg-[#031a11] border border-[#00ff88]/20 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(0,255,136,0.2)]">
+                  <span className="material-symbols-outlined text-[#00ff88] text-4xl">
+                    check_circle
+                  </span>
+                </div>
+                <h2 className="text-xl font-bold text-white mb-3">
+                  Feedback Received
+                </h2>
+                <p className="text-sm text-slate-400 mb-8 leading-relaxed max-w-[280px]">
+                  Thank you for helping us keep the network safe. We'll review
+                  this post shortly.
+                </p>
+                <button
+                  onClick={closeReportPopup}
+                  className="w-full py-3 bg-[#00ff88] text-[#003919] font-black rounded-xl hover:brightness-110 transition-all shadow-[0_0_20px_rgba(0,255,136,0.2)] uppercase tracking-widest text-xs"
+                >
+                  Done
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
-    </div>
-  </div>
-)}
 
       {showBlockPopup && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-2 sm:px-4"
           onClick={closeBlockPopup}
         >
           <div
-            className="bg-[#1e293b] rounded-2xl p-5 sm:p-6 w-full max-w-[350px] border border-white/10 shadow-xl animate-fadeInScale"
+            className="bg-[#1e293b] rounded-lg sm:rounded-2xl p-4 sm:p-5 md:p-6 w-full max-w-[350px] border border-white/10 shadow-xl animate-fadeInScale"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-base sm:text-lg font-bold text-white mb-3">
+            <h2 className="text-sm sm:text-base md:text-lg font-bold text-white mb-2 sm:mb-3">
               Block User
             </h2>
-            <p className="text-sm text-slate-400 mb-5 sm:mb-6">
+            <p className="text-xs sm:text-sm text-slate-400 mb-4 sm:mb-5 md:mb-6 break-words">
               Are you sure you want to block this user? You won't see their
               posts anymore.
             </p>
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-end gap-2 sm:gap-3">
               <button
                 onClick={closeBlockPopup}
-                className="px-4 py-2 rounded-lg text-sm bg-white/5 text-slate-300 hover:bg-white/10"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm bg-white/5 text-slate-300 hover:bg-white/10 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleBlockUser}
-                className="px-4 py-2 rounded-lg text-sm bg-orange-500 text-white hover:bg-orange-600"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm bg-orange-500 text-white hover:bg-orange-600 transition-colors"
               >
                 Block
               </button>
@@ -3528,7 +3522,9 @@ const closeReportPopup = () => {
             <UserProfile
               user={selectedProfileUser}
               onClose={() => setSelectedProfileUser(null)}
-              initialConnectionStatus={connectedUsers[selectedProfileUser?.id] ?? 3}
+              initialConnectionStatus={
+                connectedUsers[selectedProfileUser?.id] ?? 3
+              }
             />
           </div>
         </div>
@@ -3536,44 +3532,44 @@ const closeReportPopup = () => {
 
       {/* Chat Floating Widget */}
       <div
-        className="hidden sm:flex fixed bottom-4 right-4 sm:bottom-6 sm:right-6 items-end gap-4 pointer-events-none"
+        className="hidden sm:flex fixed bottom-2 right-2 sm:bottom-4 sm:right-4 md:bottom-6 md:right-6 items-end gap-3 sm:gap-4 pointer-events-none"
         style={{ zIndex: 60 }}
       >
         {/* Active Chat Window */}
         {activeChatId && isChatListOpen && (
-          <div className="pointer-events-auto bg-[#161817] border border-[#3b4b3d]/30 rounded-xl w-[calc(100vw-2rem)] sm:w-[320px] max-w-[350px] h-[65vh] sm:h-[450px] max-h-[500px] shadow-2xl flex flex-col mb-2 overflow-hidden animate-fadeInScale absolute bottom-full right-0 sm:relative sm:bottom-auto sm:right-auto">
+          <div className="pointer-events-auto bg-[#161817] border border-[#3b4b3d]/30 rounded-lg sm:rounded-xl w-[calc(100vw-1rem)] sm:w-[280px] md:w-[320px] max-w-[350px] h-[60vh] sm:h-[400px] md:h-[450px] max-h-[500px] shadow-2xl flex flex-col overflow-hidden animate-fadeInScale absolute bottom-full right-0 sm:relative sm:bottom-auto sm:right-auto mb-2">
             {/* Header */}
-            <div className="p-3 sm:p-4 border-b border-[#3b4b3d]/30 flex items-center justify-between bg-[#1a1c1b] shrink-0">
-              <div className="flex items-center gap-3">
+            <div className="p-2.5 sm:p-3 md:p-4 border-b border-[#3b4b3d]/30 flex items-center justify-between bg-[#1a1c1b] shrink-0">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                 <div className="flex items-center shrink-0 relative">
                   {activeChatData?.isGroup ? (
                     <>
                       <img
-                        className="w-8 h-8 rounded-full object-cover border border-[#1a1c1b] z-10"
+                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border border-[#1a1c1b] z-10"
                         src={activeChatData.avatars[0]}
                         alt="User 1"
                       />
                       <img
-                        className="w-8 h-8 rounded-full object-cover border border-[#1a1c1b] -ml-4 z-0"
+                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border border-[#1a1c1b] -ml-3 sm:-ml-4 z-0"
                         src={activeChatData.avatars[1]}
                         alt="User 2"
                       />
                     </>
                   ) : (
                     <img
-                      className="w-8 h-8 rounded-full object-cover"
+                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover"
                       src={activeChatData?.avatars[0]}
                       alt={activeChatData?.name}
                     />
                   )}
                 </div>
-                <div className="min-w-0">
-                  <h4 className="text-white font-bold text-xs sm:text-sm truncate max-w-[120px] sm:max-w-[150px]">
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-white font-bold text-xs sm:text-sm truncate max-w-[100px] sm:max-w-[150px]">
                     {activeChatData?.name}
                   </h4>
 
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="text-[8px] sm:text-[9px] text-slate-400 font-semibold capitalize tracking-wide">
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <span className="text-[7px] sm:text-[9px] text-slate-400 font-semibold capitalize tracking-wide">
                       {activeChatData?.type || "Individual"}
                     </span>
                   </div>
@@ -3581,16 +3577,16 @@ const closeReportPopup = () => {
               </div>
               <button
                 onClick={() => setActiveChatId(null)}
-                className="text-slate-400 hover:text-white transition-colors p-1"
+                className="text-slate-400 hover:text-white transition-colors p-0.5 shrink-0"
               >
-                <span className="material-symbols-outlined text-lg sm:text-xl">
+                <span className="material-symbols-outlined text-base sm:text-lg">
                   close
                 </span>
               </button>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 hide-scrollbar bg-[#121413]">
+            <div className="flex-1 overflow-y-auto p-2 sm:p-3 md:p-4 space-y-3 sm:space-y-4 hide-scrollbar bg-[#121413]">
               {(chatMessages[activeChatId] || []).length === 0 ? (
                 <p className="text-[10px] text-slate-500 text-center mt-4 italic">
                   No messages yet. Say hi! 👋
@@ -3689,9 +3685,9 @@ const closeReportPopup = () => {
             </div>
 
             {/* Input */}
-            <div className="p-2 sm:p-3 bg-[#121413] shrink-0">
-              <div className="relative flex items-center gap-2">
-                <div className="flex-1 flex items-center bg-[#0d0f0e] border border-[#3b4b3d]/50 rounded-full px-3 py-1.5 sm:py-2 focus-within:border-[#00ff85]/50 transition-colors min-w-0">
+            <div className="p-1.5 sm:p-2 md:p-3 bg-[#121413] shrink-0">
+              <div className="relative flex items-center gap-1 sm:gap-2">
+                <div className="flex-1 flex items-center bg-[#0d0f0e] border border-[#3b4b3d]/50 rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 focus-within:border-[#00ff85]/50 transition-colors min-w-0">
                   <input
                     type="text"
                     value={chatInput}
@@ -3705,10 +3701,10 @@ const closeReportPopup = () => {
                 </div>
                 <button
                   onClick={handleChatSend}
-                  className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-[#00ff85] text-[#003919] shrink-0 hover:brightness-110 transition-all"
+                  className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-[#00ff85] text-[#003919] shrink-0 hover:brightness-110 transition-all"
                 >
                   <span
-                    className="material-symbols-outlined text-base sm:text-lg"
+                    className="material-symbols-outlined text-sm sm:text-base"
                     style={{ fontVariationSettings: "'FILL' 1" }}
                   >
                     send
@@ -3723,27 +3719,27 @@ const closeReportPopup = () => {
         <div className="pointer-events-auto flex flex-col items-end gap-2 relative">
           {/* Chat List Popup */}
           {isChatListOpen && (
-            <div className="bg-[#161817] border border-[#3b4b3d]/30 rounded-xl w-[calc(100vw-2rem)] sm:w-[300px] max-w-[350px] shadow-2xl overflow-hidden animate-fadeInScale mb-2 absolute bottom-full right-0 sm:relative sm:bottom-auto sm:right-auto">
-              <div className="p-3 sm:p-4 border-b border-[#3b4b3d]/30 bg-[#1a1c1b] flex items-center justify-between">
+            <div className="bg-[#161817] border border-[#3b4b3d]/30 rounded-lg sm:rounded-xl w-[calc(100vw-1rem)] sm:w-[280px] md:w-[300px] max-w-[350px] shadow-2xl overflow-hidden animate-fadeInScale mb-2 absolute bottom-full right-0 sm:relative sm:bottom-auto sm:right-auto">
+              <div className="p-2.5 sm:p-3 md:p-4 border-b border-[#3b4b3d]/30 bg-[#1a1c1b] flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#fce4d6] flex items-center justify-center relative">
-                    <span className="material-symbols-outlined text-[#cf9c7b] text-xs sm:text-sm">
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[#fce4d6] flex items-center justify-center relative">
+                    <span className="material-symbols-outlined text-[#cf9c7b] text-xs">
                       phone_iphone
                     </span>
-                    <div className="absolute bottom-0 right-0 w-2 h-2 sm:w-2.5 sm:h-2.5 bg-[#00ff88] rounded-full border-2 border-[#161817]"></div>
+                    <div className="absolute bottom-0 right-0 w-1.5 h-1.5 bg-[#00ff88] rounded-full border border-[#161817]"></div>
                   </div>
-                  <h3 className="text-white font-bold text-sm">Messages</h3>
+                  <h3 className="text-white font-bold text-xs sm:text-sm">Messages</h3>
                 </div>
                 <button
                   onClick={() => setIsChatListOpen(false)}
-                  className="text-slate-400 hover:text-white transition-colors p-1"
+                  className="text-slate-400 hover:text-white transition-colors p-0.5"
                 >
-                  <span className="material-symbols-outlined text-lg sm:text-xl">
+                  <span className="material-symbols-outlined text-base sm:text-lg">
                     keyboard_arrow_down
                   </span>
                 </button>
               </div>
-              <div className="p-2 space-y-1 max-h-[40vh] sm:max-h-[350px] overflow-y-auto hide-scrollbar">
+              <div className="p-1.5 space-y-0.5 max-h-[50vh] sm:max-h-[350px] overflow-y-auto hide-scrollbar">
                 {chats.map((chat) => (
                   <div
                     key={chat.id}
@@ -3758,51 +3754,51 @@ const closeReportPopup = () => {
                         setIsChatListOpen(false);
                       }
                     }}
-                    className={`flex items-center justify-between p-2.5 sm:p-3 rounded-lg cursor-pointer transition-colors ${activeChatId === chat.id ? "bg-[#1e201f] border-l-2 border-[#00ff85]" : "hover:bg-[#1e201f]"}`}
+                    className={`flex items-center justify-between p-2 sm:p-2.5 rounded-lg cursor-pointer transition-colors gap-2 ${activeChatId === chat.id ? "bg-[#1e201f] border-l-2 border-[#00ff85]" : "hover:bg-[#1e201f]"}`}
                   >
-                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
                       <div className="relative flex items-center shrink-0">
                         {chat.isGroup ? (
                           <>
                             <img
-                              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border border-[#1a1c1b] z-10"
+                              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border border-[#1a1c1b] z-10"
                               src={chat.avatars[0]}
                               alt="User 1"
                             />
                             <img
-                              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border border-[#1a1c1b] -ml-4 sm:-ml-5 z-0"
+                              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border border-[#1a1c1b] -ml-3 z-0"
                               src={chat.avatars[1]}
                               alt="User 2"
                             />
                           </>
                         ) : (
                           <img
-                            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover"
                             src={chat.avatars[0]}
                             alt={chat.name}
                           />
                         )}
                       </div>
-                      <div className="min-w-0 pr-2">
-                        <h5 className="text-white font-bold text-xs sm:text-sm truncate w-28 sm:w-32 flex items-center gap-1">
+                      <div className="min-w-0 pr-1.5">
+                        <h5 className="text-white font-bold text-xs sm:text-sm truncate max-w-[90px] sm:max-w-[100px] flex items-center gap-1">
                           <span className="truncate">{chat.name}</span>
                           {chat.isYou && (
-                            <span className="shrink-0 text-[8px] font-mono px-1.5 py-0.5 rounded-full bg-[#00ff88]/10 text-[#00ff88] border border-[#00ff88]/30">
+                            <span className="shrink-0 text-[7px] font-mono px-1 py-0.5 rounded-full bg-[#00ff88]/10 text-[#00ff88] border border-[#00ff88]/30">
                               You
                             </span>
                           )}
                         </h5>
-                        <p className="text-slate-400 text-[10px] sm:text-xs truncate w-28 sm:w-32">
+                        <p className="text-slate-400 text-[9px] sm:text-xs truncate max-w-[90px] sm:max-w-[100px]">
                           {chat.lastMsg}
                         </p>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1 shrink-0">
-                      <span className="text-slate-500 text-[9px] sm:text-[10px]">
+                    <div className="flex flex-col items-end gap-0.5 shrink-0">
+                      <span className="text-slate-500 text-[8px] sm:text-[9px]">
                         {chat.time}
                       </span>
                       {chat.unreadCount > 0 && (
-                        <span className="bg-[#00ff88] text-black text-[8px] font-black rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1 leading-none">
+                        <span className="bg-[#00ff88] text-black text-[7px] font-black rounded-full w-4 h-4 flex items-center justify-center leading-none px-0.5">
                           {chat.unreadCount > 9 ? "9+" : chat.unreadCount}
                         </span>
                       )}
@@ -3810,8 +3806,8 @@ const closeReportPopup = () => {
                   </div>
                 ))}
               </div>
-              <div className="p-2 sm:p-3 border-t border-[#3b4b3d]/30 bg-[#1a1c1b]">
-                <button className="w-full bg-[#00ff88]/10 text-[#00ff88] font-bold text-[10px] sm:text-xs py-2 sm:py-3 rounded-lg hover:bg-[#00ff88]/20 transition-colors uppercase tracking-wider">
+              <div className="p-1.5 sm:p-2 md:p-3 border-t border-[#3b4b3d]/30 bg-[#1a1c1b]">
+                <button className="w-full bg-[#00ff88]/10 text-[#00ff88] font-bold text-[9px] sm:text-xs py-1.5 sm:py-2 rounded-lg hover:bg-[#00ff88]/20 transition-colors uppercase tracking-wider">
                   View All Messages
                 </button>
               </div>
@@ -3821,21 +3817,21 @@ const closeReportPopup = () => {
           {/* Minimized Toggle Button */}
           {!isChatListOpen && (
             <div
-              className="bg-[#161817] border border-[#3b4b3d]/30 rounded-xl px-4 py-3 flex items-center justify-between cursor-pointer w-[calc(100vw-2rem)] max-w-[250px] sm:max-w-[300px] shadow-lg hover:bg-[#1e201f] transition-all"
+              className="bg-[#161817] border border-[#3b4b3d]/30 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between cursor-pointer w-[calc(100vw-1rem)] max-w-[280px] sm:max-w-[300px] shadow-lg hover:bg-[#1e201f] transition-all gap-2"
               onClick={() => setIsChatListOpen(true)}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                 <div className="relative">
-                  <div className="w-8 h-8 rounded-full bg-[#fce4d6] flex items-center justify-center">
-                    <span className="material-symbols-outlined text-[#cf9c7b] text-sm">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#fce4d6] flex items-center justify-center">
+                    <span className="material-symbols-outlined text-[#cf9c7b] text-xs sm:text-sm">
                       phone_iphone
                     </span>
                   </div>
-                  <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#00ff88] rounded-full border-2 border-[#161817]"></div>
+                  <div className="absolute bottom-0 right-0 w-1.5 h-1.5 bg-[#00ff88] rounded-full border border-[#161817]"></div>
                 </div>
-                <span className="font-bold text-white text-sm">Messages</span>
+                <span className="font-bold text-white text-xs sm:text-sm">Messages</span>
               </div>
-              <span className="material-symbols-outlined text-slate-400 text-xl">
+              <span className="material-symbols-outlined text-slate-400 text-lg shrink-0">
                 expand_less
               </span>
             </div>
