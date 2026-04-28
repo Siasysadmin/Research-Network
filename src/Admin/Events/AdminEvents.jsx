@@ -114,6 +114,57 @@ const EventDetailModal = ({ event, onClose, formatEventDate, formatTime }) => {
   );
 };
 
+// ThreeDotMenu Component - Small and on right side of card
+const ThreeDotMenu = ({ onViewDetails, onDelete }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isOpen && !event.target.closest('.three-dot-menu')) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [isOpen]);
+
+  return (
+    <div className="three-dot-menu relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="p-1.5 hover:bg-[#00ff8815] rounded-lg transition-colors"
+      >
+        <MaterialIcon name="more_vert" className="text-slate-400 text-lg" />
+      </button>
+      
+      {isOpen && (
+        <div className="absolute right-0 mt-1 w-36 bg-[#13231a] border border-[#00ff8830] rounded-lg shadow-lg z-50">
+          <button
+            onClick={() => {
+              onViewDetails();
+              setIsOpen(false);
+            }}
+            className="w-full px-3 py-1.5 text-left text-xs text-slate-300 hover:bg-[#00ff8815] hover:text-[#00ff88] rounded-t-lg transition-colors flex items-center gap-2"
+          >
+            <MaterialIcon name="visibility" className="text-sm" />
+            View Details
+          </button>
+          <button
+            onClick={() => {
+              onDelete();
+              setIsOpen(false);
+            }}
+            className="w-full px-3 py-1.5 text-left text-xs text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-b-lg transition-colors flex items-center gap-2"
+          >
+            <MaterialIcon name="delete" className="text-sm" />
+            Delete
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const AdminEvents = () => {
   const [activeNav, setActiveNav] = useState("events");
   const [events, setEvents] = useState([]);
@@ -158,6 +209,33 @@ const AdminEvents = () => {
     };
     fetchEvents();
   }, []);
+
+  const handleDeleteEvent = async (eventId) => {
+    if (window.confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
+      try {
+        const token = getAuthToken();
+        const response = await fetch(`${API_CONFIG.BASE_URL}/event/delete-event/${eventId}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        
+        const result = await response.json();
+        
+        if (result.status) {
+          setEvents(events.filter(event => event.id !== eventId));
+          alert("Event deleted successfully!");
+        } else {
+          alert(result.message || "Failed to delete event");
+        }
+      } catch (error) {
+        console.error("Error deleting event:", error);
+        alert("An error occurred while deleting the event");
+      }
+    }
+  };
 
   return (
     <Layout activeNav={activeNav} setActiveNav={setActiveNav}>
@@ -232,14 +310,17 @@ const AdminEvents = () => {
                   )}
 
                   <div className="p-5">
-                    <div className="flex gap-4">
+                    {/* Main row with date, info and 3-dot menu */}
+                    <div className="flex gap-3">
+                      {/* Date Box */}
                       <div className="flex flex-col items-center justify-center w-12 h-14 bg-[#00ff8815] border border-[#00ff8830] rounded-xl shrink-0">
                         <span className="text-[10px] font-bold text-[#00ff8880] uppercase">{month}</span>
                         <span className="text-xl font-bold text-[#00ff88] leading-none">{day}</span>
                       </div>
 
+                      {/* Event Info - Takes remaining space */}
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-sm text-white truncate">{event.event_title?.trim()}</h4>
+                        <h4 className="font-bold text-sm text-white truncate pr-2">{event.event_title?.trim()}</h4>
                         <p className="text-xs text-slate-400 mt-1 flex items-center gap-1 truncate">
                           <MaterialIcon name="location_on" className="text-xs shrink-0" />
                           {location}
@@ -256,14 +337,15 @@ const AdminEvents = () => {
                           {event.event_mode}
                         </span>
                       </div>
-                    </div>
 
-                    <button
-                      onClick={() => setSelectedEvent(event)}
-                      className="mt-4 w-full bg-[#00ff8810] hover:bg-[#00ff88] border border-[#00ff8830] text-[#00ff88] hover:text-black font-bold py-2 rounded-lg text-xs transition-all"
-                    >
-                      View Details
-                    </button>
+                      {/* 3-dot menu - Right side */}
+                      <div className="shrink-0 self-start">
+                        <ThreeDotMenu 
+                          onViewDetails={() => setSelectedEvent(event)}
+                          onDelete={() => handleDeleteEvent(event.id)}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
@@ -272,19 +354,16 @@ const AdminEvents = () => {
         )}
       </div>
       <style jsx global>{`
-  /* Chrome, Safari aur Opera ke liye */
   ::-webkit-scrollbar {
     display: none;
     width: 0;
     height: 0;
   }
 
-  /* Firefox ke liye */
   * {
     scrollbar-width: none;
   }
 
-  /* IE aur Edge ke liye */
   * {
     -ms-overflow-style: none;
   }
