@@ -480,7 +480,7 @@ const Events = () => {
            
           </div>
           <p className="text-sm text-slate-500 ml-4">
-            Past events organized by GSIF
+          Explore events hosted across the GSIF ecosystem
           </p>
         </div>
 

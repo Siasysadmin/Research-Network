@@ -697,8 +697,7 @@ else if (path.includes("/dashboard/events") || path.includes("/dashboard/my-even
   />
   
   {isEventsMenuOpen && (
-    <div className="absolute bottom-[110%] left-1/2 -translate-x-1/2 bg-[#16291e] border border-[#5bf9aa37] rounded-xl py-2 min-w-[130px] shadow-[0_0_20px_rgba(0,0,0,0.5)] z-50">
-      <button
+<div className="absolute bottom-[110%] right-0 bg-[#16291e] border border-[#5bf9aa37] rounded-xl py-2 min-w-[150px] shadow-[0_0_20px_rgba(0,0,0,0.5)] z-50">      <button
         onClick={() => handleNavigation("/dashboard/events")}
         className={`w-full flex items-center gap-2 px-4 py-2 text-sm ${location.pathname === "/dashboard/events" ? "text-[#32ff99]" : "text-slate-300 hover:text-white hover:bg-white/5"}`}
       >

@@ -8,6 +8,11 @@ const MaterialIcon = ({ name, className = "" }) => (
   <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
+const getAuthToken = () =>
+  localStorage.getItem("auth_token") ||
+  localStorage.getItem("token") ||
+  sessionStorage.getItem("auth_token");
+  
 const Toast = ({ message, type, onClose }) => {
   useEffect(() => {
     const timer = setTimeout(onClose, 3000);
@@ -84,7 +89,7 @@ const isAlreadyBoardMember = (regId) => {
   useEffect(() => {
     const fetchBoardMembers = async () => {
       try {
-        const token = localStorage.getItem("authToken");
+const token = getAuthToken();
         const response = await fetch(
           `${API_CONFIG.BASE_URL}/research/get-board-member`,
           {
@@ -123,7 +128,7 @@ const isAlreadyBoardMember = (regId) => {
     }
     try {
       setSearchLoading(true);
-      const token = localStorage.getItem("authToken");
+const token = getAuthToken();
       const response = await fetch(
         `${API_CONFIG.BASE_URL}/user/get-user-registration/${registrationId}`,
         {
@@ -198,7 +203,7 @@ if (result.status) {
   }
   
     try {
-      const token = localStorage.getItem("authToken");
+      const token = getAuthToken();
       const response = await fetch(
         `${API_CONFIG.BASE_URL}/research/board-member-update`,
         {

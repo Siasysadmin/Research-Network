@@ -2542,6 +2542,15 @@ const MainContent = () => {
                               </p>
                             </div>
 
+{Array.isArray(post.hash_tag) && post.hash_tag.length > 0 && (
+  <div className="flex flex-wrap gap-1.5 mb-2 sm:mb-3">
+    {post.hash_tag.map((tag, i) => (
+      <span key={i} className="text-[10px] sm:text-xs font-semibold text-[#00ff88] bg-[#00ff88]/10 border border-[#00ff88]/20 px-2 py-0.5 rounded-full">
+        {tag}
+      </span>
+    ))}
+  </div>
+)}
                             {post.research_file && (
                               <div className="mb-3 sm:mb-4 md:mb-5">
                                 <div className="bg-[#0e0f10] border border-white/10 rounded-lg sm:rounded-xl p-2.5 sm:p-3 md:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between hover:border-white/20 transition-all gap-2 sm:gap-3">
@@ -2984,6 +2993,15 @@ const MainContent = () => {
                             </div>
                           )}
 
+{Array.isArray(post.hash_tag) && post.hash_tag.length > 0 && (
+  <div className="flex flex-wrap gap-1.5 mb-2 sm:mb-3">
+    {post.hash_tag.map((tag, i) => (
+      <span key={i} className="text-[10px] sm:text-xs font-semibold text-[#00ff88] bg-[#00ff88]/10 border border-[#00ff88]/20 px-2 py-0.5 rounded-full">
+        {tag}
+      </span>
+    ))}
+  </div>
+)}
                           {isMockPost && post.media && (
                             <div className="mt-2 sm:mt-3 md:mt-4 rounded-lg sm:rounded-xl overflow-hidden border border-white/10 bg-black flex justify-center max-h-[200px] sm:max-h-[350px] md:max-h-[500px] relative w-full">
                               {post.mediaType === "image" ? (

@@ -284,6 +284,11 @@ const CreatePost = () => {
       const postText = content.trim() || (poll.payload ? poll.payload.question : "");
       formData.append("post_text", postText);
 
+      // Tags/hashtags append karo
+tags.forEach((tag) => {
+  formData.append("hash_tag[]", `#${tag}`);
+});
+
       if (pollId) {
         formData.append("poll_id", String(pollId));
       }

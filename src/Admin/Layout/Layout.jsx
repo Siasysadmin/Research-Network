@@ -116,13 +116,13 @@ const HeaderNav = ({ user, toggleSidebar, isSidebarOpen }) => {
       </p>
     </div>
 
-    <button
+    {/* <button
       onClick={handleProfile}
       className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
     >
       <MaterialIcon name="person" className="text-lg" />
       <span>My Profile</span>
-    </button>
+    </button> */}
 
     <button
       onClick={handleLogout}

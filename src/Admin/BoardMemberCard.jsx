@@ -20,6 +20,7 @@ const Toast = ({ message, type, onClose }) => {
     </div>
   );
 };
+
 const BoardMembers = () => {
   const [activeNav, setActiveNav] = useState("board");
   const [search, setSearch] = useState("");
@@ -36,19 +37,31 @@ const BoardMembers = () => {
   const [searchedUser, setSearchedUser] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
 
-  // ✅ Store original IDs for stable keys
+  // Store original IDs for stable keys
   const stableIds = useRef(new Map());
 
   // Show toast helper
   const showToast = (message, type = "success") => {
     setToast({ message, type });
   };
-  // ✅ CORRECT PLACE - boardMembers state yahan accessible hai
-const isAlreadyBoardMember = (regId) => {
-  return boardMembers.some(
-    (member) => member.registration_id === regId
-  );
-};
+
+  const isAlreadyBoardMember = (regId) => {
+    return boardMembers.some((member) => member.registration_id === regId);
+  };
+
+  // Helper: BASE_URL ke end se slash hatao
+  const baseUrl = API_CONFIG.BASE_URL.replace(/\/$/, "");
+
+  // Helper: profile image URL banana
+  const getProfileImageUrl = (member) => {
+    const profileImage =
+      member.user_type === "individual"
+        ? member.individual_details?.profile_image
+        : member.institute_details?.profile_image;
+
+    if (!profileImage || profileImage.trim() === "") return null;
+    return `${baseUrl}/${profileImage}`;
+  };
 
   // =========================
   // FETCH BOARD MEMBERS
@@ -58,20 +71,22 @@ const isAlreadyBoardMember = (regId) => {
       try {
         const token = localStorage.getItem("authToken");
         const response = await fetch(
-          `${API_CONFIG.BASE_URL}/research/get-board-member`,
+          `${baseUrl}/research/get-board-member`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
             },
-          },
+          }
         );
         const result = await response.json();
         if (result.status) {
-          // ✅ Store stable IDs for each member
           result.data.forEach((member) => {
             if (!stableIds.current.has(member.registration_id)) {
-              stableIds.current.set(member.registration_id, `stable-${member.registration_id}-${Date.now()}-${Math.random()}`);
+              stableIds.current.set(
+                member.registration_id,
+                `stable-${member.registration_id}-${Date.now()}-${Math.random()}`
+              );
             }
           });
           setBoardMembers(result.data);
@@ -97,19 +112,15 @@ const isAlreadyBoardMember = (regId) => {
       setSearchLoading(true);
       const token = localStorage.getItem("authToken");
       const response = await fetch(
-        `${API_CONFIG.BASE_URL}/user/get-user-registration/${registrationId}`,
+        `${baseUrl}/user/get-user-registration/${registrationId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-        },
+        }
       );
       const result = await response.json();
-      console.log("API SE AYA DATA:", result); // ← BAS YE ADD KAR
-if (result.status) {
-  setSearchedUser(result.data);
-}
       if (result.status) {
         setSearchedUser(result.data);
       } else {
@@ -140,18 +151,15 @@ if (result.status) {
   // =========================
   // MAIN SEARCH FILTER
   // =========================
- const filteredMembers = boardMembers.filter((member) => {
-  const name =
-    member.user_type === "individual"
-      ? member.name
-      : member.institute_details?.institute_name ||
-        member.institute_name ||
-        member.name;
-
-  return (name || "")
-    .toLowerCase()
-    .includes(search.toLowerCase());
-});
+  const filteredMembers = boardMembers.filter((member) => {
+    const name =
+      member.user_type === "individual"
+        ? member.name
+        : member.institute_details?.institute_name ||
+          member.institute_name ||
+          member.name;
+    return (name || "").toLowerCase().includes(search.toLowerCase());
+  });
 
   // =========================
   // REPLACE BOARD MEMBER API
@@ -159,21 +167,20 @@ if (result.status) {
   const replaceBoardMember = async () => {
     if (!searchedUser || !replaceMemberId) return;
 
-      if (registrationId === replaceMemberId) {
-    showToast("You are selecting the same member!", "error");
-    return;
-  }
+    if (registrationId === replaceMemberId) {
+      showToast("You are selecting the same member!", "error");
+      return;
+    }
 
-  // ❌ ALREADY BOARD MEMBER CHECK ✅ Ab ye sahi kaam karega
-  if (isAlreadyBoardMember(registrationId)) {
-    showToast("This user is already a board member!", "error");
-    return;
-  }
-  
+    if (isAlreadyBoardMember(registrationId)) {
+      showToast("This user is already a board member!", "error");
+      return;
+    }
+
     try {
       const token = localStorage.getItem("authToken");
       const response = await fetch(
-        `${API_CONFIG.BASE_URL}/research/board-member-update`,
+        `${baseUrl}/research/board-member-update`,
         {
           method: "POST",
           headers: {
@@ -183,45 +190,40 @@ if (result.status) {
           body: JSON.stringify({
             board_member_id: replaceMemberId,
             new_board_member_id: registrationId,
-            new_member_email: searchedUser?.email || searchedUser?.email_id || "",
+            new_member_email:
+              searchedUser?.email || searchedUser?.email_id || "",
           }),
-        },
+        }
       );
-     const result = await response.json();
+      const result = await response.json();
 
       if (result.status) {
         showToast("Board member replaced successfully!");
 
-        // ✅ CRITICAL FIX: Properly update member data
         setBoardMembers((prevMembers) => {
           return prevMembers.map((member) => {
             if (member.registration_id === replaceMemberId) {
-              // Create updated member with ALL fields properly set
               const updatedMember = {
-                // First, keep ALL original fields
                 ...member,
-                // Then update with new data
                 email: searchedUser.email,
                 user_type: searchedUser.user_type,
-                //  IMPORTANT: registration_id ko SAME rakhna hai for key stability
-                registration_id: member.registration_id, // Ye line CRITICAL hai
+                registration_id: member.registration_id,
               };
 
-              // Handle based on user type
               if (searchedUser.user_type === "individual") {
-                // For individual users
                 updatedMember.name = searchedUser.name;
+                updatedMember.individual_details = searchedUser.individual_details || null;
                 updatedMember.institute_details = null;
-                // Remove institute-specific fields
                 delete updatedMember.institute_name;
               } else {
-                // For institute users
-                updatedMember.name = searchedUser.name; // Keep for fallback
-                updatedMember.institute_details = {
-                  institute_name: searchedUser.institute_name || searchedUser.name
+                updatedMember.name = searchedUser.name;
+                updatedMember.institute_details = searchedUser.institute_details || {
+                  institute_name: searchedUser.institute_name || searchedUser.name,
+                  profile_image: searchedUser.institute_details?.profile_image || "",
                 };
-                // Also set institute_name directly for easier access
-                updatedMember.institute_name = searchedUser.institute_name || searchedUser.name;
+                updatedMember.institute_name =
+                  searchedUser.institute_name || searchedUser.name;
+                updatedMember.individual_details = null;
               }
               return updatedMember;
             }
@@ -229,7 +231,6 @@ if (result.status) {
           });
         });
 
-        // Reset popup
         setShowReplacePopup(false);
         setReplaceMemberId("");
         setSearchedUser(null);
@@ -243,8 +244,31 @@ if (result.status) {
     }
   };
 
+  // =========================
+  // AVATAR COMPONENT
+  // =========================
+  const MemberAvatar = ({ member, displayName }) => {
+    const [imgError, setImgError] = useState(false);
+    const imageUrl = getProfileImageUrl(member);
+
+    if (imageUrl && !imgError) {
+      return (
+        <img
+          src={imageUrl}
+          alt={displayName}
+          className="w-full h-full object-cover rounded-full"
+          onError={() => setImgError(true)}
+        />
+      );
+    }
+
+    return (
+      <MaterialIcon name="account_circle" className="text-5xl text-slate-400" />
+    );
+  };
+
   return (
-    <Layout activeNav={activeNav} setActiveNav={setActiveNav} >
+    <Layout activeNav={activeNav} setActiveNav={setActiveNav}>
       {/* Toast Notification */}
       {toast && (
         <Toast
@@ -274,26 +298,29 @@ if (result.status) {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
             {filteredMembers.map((member) => {
-              // Display name based on user type
               let displayName = "";
               if (member.user_type === "individual") {
                 displayName = member.name;
               } else {
-                displayName = member.institute_details?.institute_name || member.institute_name || member.name;
+                displayName =
+                  member.institute_details?.institute_name ||
+                  member.institute_name ||
+                  member.name;
               }
 
               return (
                 <div
-                  // ✅ Use stable ID from ref, not registration_id
-                  key={stableIds.current.get(member.registration_id) || member.registration_id}
+                  key={
+                    stableIds.current.get(member.registration_id) ||
+                    member.registration_id
+                  }
                   className="bg-[#13231a] border border-[#1e3a2c] rounded-lg p-4 flex flex-col items-center text-center shadow-lg hover:-translate-y-1 transition-all duration-200"
                 >
-                  <div className="size-16 rounded-full bg-[#0a120e] border-2 border-[#1e3a2c] flex items-center justify-center mb-3">
-                    <MaterialIcon
-                      name="account_circle"
-                      className="text-5xl text-slate-400"
-                    />
+                  {/* AVATAR */}
+                  <div className="size-16 rounded-full bg-[#0a120e] border-2 border-[#1e3a2c] flex items-center justify-center mb-3 overflow-hidden">
+                    <MemberAvatar member={member} displayName={displayName} />
                   </div>
+
                   <h3 className="text-base font-bold text-white mb-1">
                     {displayName}
                   </h3>

@@ -45,7 +45,6 @@ const EventDetailModal = ({ event, onClose, formatEventDate, formatTime, API_BAS
               <span className="material-symbols-outlined text-[#32ff99] text-5xl opacity-40">event</span>
             </div>
           )}
-          {/* Gradient overlay on banner */}
           {bannerUrl && <div className="absolute inset-0 bg-gradient-to-t from-[#0a120e] via-transparent to-transparent" />}
           <button
             onClick={onClose}
@@ -82,22 +81,16 @@ const EventDetailModal = ({ event, onClose, formatEventDate, formatTime, API_BAS
 
           {/* Info Grid */}
           <div className="space-y-3 mb-5">
-            {/* Start Date */}
             <InfoRow icon="calendar_month" label="Start Date" value={`${startDay} ${startMonth}`} />
-
-            {/* End Date */}
             {event.end_date && (
               <InfoRow icon="event_available" label="End Date" value={`${endDay} ${endMonth}`} />
             )}
-
-            {/* Time */}
             <InfoRow
               icon="schedule"
               label="Time"
               value={`${formatTime(event.start_time)} – ${formatTime(event.end_time)}`}
             />
 
-            {/* Location */}
             {isOnline ? (
               <>
                 <InfoRow icon="location_on" label="Location" value="Online" />
@@ -135,7 +128,6 @@ const EventDetailModal = ({ event, onClose, formatEventDate, formatTime, API_BAS
               </>
             )}
 
-            {/* Organizer Email */}
             {event.organizer_email && (
               <InfoRow icon="mail" label="Contact Email" value={event.organizer_email} />
             )}
@@ -252,10 +244,9 @@ const RightSection = () => {
           Authorization: `Bearer ${token}`,
         };
 
-        // Dono APIs ko ek sath call kar rahe hain (Promise.all se fast load hoga)
         const fetchAdminEvents = fetch(`${API_CONFIG.BASE_URL}/event/get-events`, { headers })
           .then((res) => res.json())
-          .catch(() => ({ status: false, data: [] })); // Error aane par empty return karega
+          .catch(() => ({ status: false, data: [] }));
 
         const fetchUserEvents = fetch(`${API_CONFIG.BASE_URL}/user-event/get-publish-event`, { headers })
           .then((res) => res.json())
@@ -265,18 +256,38 @@ const RightSection = () => {
 
         let combinedEvents = [];
 
-        // Admin ke events merge karo
         if (adminResult?.status && Array.isArray(adminResult.data)) {
           combinedEvents = [...combinedEvents, ...adminResult.data];
         }
         
-        // User ke events merge karo
         if (userResult?.status && Array.isArray(userResult.data)) {
           combinedEvents = [...combinedEvents, ...userResult.data];
         }
 
-        // State update - apka niche ka logic in sabko upcoming filter kar lega automatically
-        setEvents(combinedEvents);
+        // Remove duplicates based on title
+        const seen = new Set();
+        const uniqueEvents = combinedEvents.filter((e) => {
+          const key = (e.event_title || "").trim().toLowerCase();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+
+        // ✅ EVENT DAY KE ACCORDING SORT - Nearest date first
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const sortedEvents = uniqueEvents
+          .filter((event) => new Date(event.start_date) >= today) // Only upcoming events
+          .sort((a, b) => {
+            // First sort by date
+            const dateCompare = new Date(a.start_date) - new Date(b.start_date);
+            if (dateCompare !== 0) return dateCompare;
+            // If same date, sort by time
+            return (a.start_time || "00:00").localeCompare(b.start_time || "00:00");
+          });
+
+        setEvents(sortedEvents);
 
       } catch (err) {
         console.error("Error fetching events:", err);
@@ -296,7 +307,7 @@ const RightSection = () => {
     );
     if (matched) setSelectedEvent(matched);
     navigate(location.pathname, { replace: true, state: {} });
-  }, [location.state?.openEventName, events, loading]);
+  }, [location.state?.openEventName, events, loading, navigate]);
 
   return (
     <div className="space-y-8">
@@ -311,14 +322,11 @@ const RightSection = () => {
         />
       )}
 
-      {/* Upcoming Events */}
+      {/* Upcoming Events Section */}
       {(() => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        // Ye logic dono merged events par automatically kaam karega aur purane ko hide kar dega
-        const upcomingEvents = loading ? [] : events.filter((event) => new Date(event.start_date) >= today);
-        if (!loading && upcomingEvents.length === 0) return null;
-        const visibleEvents = showAllEvents ? upcomingEvents : upcomingEvents.slice(0, 3);
+        if (!loading && events.length === 0) return null;
+        
+        const visibleEvents = showAllEvents ? events : events.slice(0, 3);
         
         return (
           <section>
@@ -338,13 +346,14 @@ const RightSection = () => {
                 <>
                   {visibleEvents.map((event, index) => {
                     const { month, day } = formatEventDate(event.start_date);
-                    const location =
-                      event.event_mode === "online"
-                        ? "Online"
-                        : [event.city, event.state, event.country]
-                            .filter(Boolean)
-                            .map((s) => s.trim())
-                            .join(", ") || "Venue TBD";
+                    const isToday = new Date(event.start_date).toDateString() === new Date().toDateString();
+                    
+                    const location = event.event_mode === "online"
+                      ? "Online"
+                      : [event.city, event.state, event.country]
+                          .filter(Boolean)
+                          .map((s) => s.trim())
+                          .join(", ") || "Venue TBD";
 
                     const bannerUrl = event.event_banner
                       ? `${API_CONFIG.BASE_URL}/${event.event_banner}`
@@ -352,9 +361,12 @@ const RightSection = () => {
 
                     return (
                       <div
-                        // Key mein `event.id` ke sath index add kiya hai in case id overlap kare admin/user mein
                         key={`${event.id}-${index}`}
-                        className="bg-[#141414] rounded-2xl border border-white/5 relative overflow-hidden group"
+                        className={`bg-[#141414] rounded-2xl border relative overflow-hidden group transition-all ${
+                          isToday 
+                            ? "border-[#00ff88]/40 shadow-[0_0_15px_rgba(0,255,136,0.1)]" 
+                            : "border-white/5"
+                        }`}
                       >
                         {bannerUrl && (
                           <div className="w-full h-28 overflow-hidden">
@@ -373,9 +385,16 @@ const RightSection = () => {
                               <span className="text-xl font-bold text-[#00ff88] leading-none">{day}</span>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-bold text-sm leading-tight text-white truncate">
-                                {event.event_title?.trim()}
-                              </h4>
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-bold text-sm leading-tight text-white truncate">
+                                  {event.event_title?.trim()}
+                                </h4>
+                                {isToday && (
+                                  <span className="px-1.5 py-0.5 rounded-full text-[8px] font-bold bg-[#00ff88] text-black whitespace-nowrap">
+                                    TODAY
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-xs text-slate-500 mt-1 flex items-center gap-1 truncate">
                                 <span className="material-symbols-outlined text-xs shrink-0">location_on</span>
                                 {location}
@@ -406,12 +425,12 @@ const RightSection = () => {
                       </div>
                     );
                   })}
-                  {upcomingEvents.length > 3 && (
+                  {events.length > 3 && (
                     <button
                       onClick={() => setShowAllEvents(!showAllEvents)}
                       className="w-full mt-1 py-2.5 rounded-xl text-xs font-semibold border border-[#32ff9920] text-[#32ff9970] hover:text-[#32ff99] hover:border-[#32ff9940] transition-all"
                     >
-                      {showAllEvents ? "Show less ↑" : `View all upcoming events (${upcomingEvents.length}) →`}
+                      {showAllEvents ? "Show less ↑" : `View all upcoming events (${events.length}) →`}
                     </button>
                   )}
                 </>
