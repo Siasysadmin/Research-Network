@@ -797,10 +797,10 @@ useEffect(() => {
 
   return (
     <DashboardLayout>
-      <div className="flex-1 h-[calc(100vh-176px)] md:h-[calc(100vh-128px)] overflow-hidden flex flex-col font-inter bg-[#0d0f0e] w-full">
+      <div className="flex-1 h-[calc(100vh-176px)] md:h-[calc(100vh-128px)] overflow-hidden flex flex-col font-inter bg-white dark:bg-[#0d0f0e] w-full">
         <div className="flex flex-1 p-3 lg:p-4 gap-4 lg:gap-6 h-full min-h-0 max-w-[1800px] mx-auto w-full">
           {/* LEFT SIDEBAR */}
-          <div className={`${activeChatId ? 'hidden md:flex' : 'flex'} w-full md:w-[340px] lg:w-[350px] flex-col bg-[#1a1c1b] rounded-2xl border border-[#3b4b3d]/30 md:shrink-0 shadow-lg min-h-0 h-full`}>
+          <div className={`${activeChatId ? 'hidden md:flex' : 'flex'} w-full md:w-[340px] lg:w-[350px] flex-col bg-[#f8fafc] dark:bg-[#1a1c1b]  rounded-2xl border border-slate-200 dark:border-[#3b4b3d]/30 md:shrink-0 shadow-lg min-h-0 h-full`}>
             <div className="p-4 lg:p-5 flex items-center justify-between border-b border-[#3b4b3d]/20 relative shrink-0">
               <h2 className="text-xl lg:text-2xl font-extrabold text-white tracking-tight">
                 Active Feeds
@@ -831,7 +831,9 @@ useEffect(() => {
             </div>
 
             <div className="px-3 pt-3 pb-2 shrink-0">
-              <div className="flex items-center bg-[#121413] border border-[#3b4b3d]/40 rounded-full px-4 py-2">
+              <div className="flex items-center bg-[#f1f5f9] bg-slate-100 dark:bg-[#121413]
+border border-slate-300 dark:border-[#3b4b3d]/40 
+text-slate-800 dark:text-white rounded-full px-4 py-2">
                 <MaterialIcon
                   name="search"
                   className="text-slate-500 text-[18px] mr-2 shrink-0"
@@ -873,7 +875,7 @@ useEffect(() => {
                     className={`group cursor-pointer p-3 lg:p-3.5 rounded-xl transition-all relative ${
                       String(activeChatId) === String(chat.id)
                         ? "bg-[#121413] border-l-4 border-l-[#00ff85] border-y border-r border-[#3b4b3d]/20 shadow-sm"
-                        : "border border-transparent hover:bg-[#121413]/50"
+                        : "border border-transparent hover:bg-slate-100 dark:hover:bg-[#121413]/50"
                     }`}
                   >
                     <div className="flex gap-3 lg:gap-4 items-center">
@@ -964,7 +966,8 @@ useEffect(() => {
               ) : (
                 <>
                   <div
-                    className="h-14 lg:h-16 border-b border-[#3b4b3d]/30 px-4 lg:px-6 flex items-center justify-between shrink-0 bg-[#0d0f0e] transition-all"
+                    className="h-14 lg:h-16 border border-slate-200 dark:border-[#3b4b3d]/30 px-4 lg:px-6 flex items-center justify-between shrink-0 bg-white bg-white dark:bg-[#0d0f0e]
+border-b border-slate-200 dark:border-[#3b4b3d]/30 transition-all"
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer" onClick={() => setShowProfile(true)}>
                       {/* Back button - mobile only */}
@@ -1068,7 +1071,7 @@ useEffect(() => {
                     />
                   ) : (
                     <>
-                      <div className="flex-1 overflow-y-auto p-4 lg:p-5 space-y-3 lg:space-y-4 hide-scrollbar bg-[#121413]/30 min-h-0">
+                      <div className="flex-1 overflow-y-auto p-4 lg:p-5 space-y-3 lg:space-y-4 hide-scrollbar bg-[#f9fafb] dark:bg-[#121413]/30akshitapatidar29072005@gmail.com min-h-0">
                         {activeChatData.messages?.length === 0 ? (
                           <div className="flex items-center justify-center h-full text-slate-500 font-mono text-sm uppercase italic opacity-40">
                             SAY HI TO START MESSAGING
@@ -1098,7 +1101,7 @@ useEffect(() => {
                                   <div
                                     className={`px-4 py-2.5 lg:py-3 rounded-2xl text-sm leading-relaxed inline-block max-w-full text-left ${
                                       msg.isMine
-                                        ? "bg-[#0d0f0e] text-white border border-[#00ff85]/30 rounded-tr-none"
+                                        ? "bg-white dark:bg-[#0d0f0e] text-white border border-[#00ff85]/30 rounded-tr-none"
                                         : "bg-[#1e201f] text-[#e2e3e0] border border-white/5 rounded-tl-none"
                                     }`}
                                   >
@@ -1155,7 +1158,7 @@ useEffect(() => {
                         )}
                       </div>
 
-                      <div className="px-4 lg:px-6 pb-4 pt-3 bg-[#0d0f0e] shrink-0">
+                      <div className="px-4 lg:px-6 pb-4 pt-3 bg-white dark:bg-[#0d0f0e] shrink-0">
                         {selectedFile && (
                           <div className="w-full flex mb-2 pl-4">
                             <div className="bg-[#1a1c1b] border border-[#3b4b3d] rounded-lg px-3 py-1.5 flex items-center gap-2 shadow-lg">
@@ -1177,7 +1180,7 @@ useEffect(() => {
                         )}
 
                         <div className="flex items-center gap-3 lg:gap-4">
-                          <div className="flex-1 flex items-center bg-[#0d0f0e] border border-[#3b4b3d]/50 rounded-[24px] px-4 py-2">
+                          <div className="flex-1 flex items-center bg-white dark:bg-[#0d0f0e] border border-[#3b4b3d]/50 rounded-[24px] px-4 py-2">
                             <div
                               className="relative self-end mb-1 flex items-center mr-2"
                               ref={attachMenuRef}

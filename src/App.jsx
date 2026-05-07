@@ -57,10 +57,13 @@ import Settings from "./settings/setting";
 import TermsConditions from "./Legals/TermsConditions";
 import PrivacyPolicy from "./Legals/PrivacyPolicy";
 import AdminSavedPosts from "./Admin/save/AdminSavedPosts";
+import { ThemeProvider } from "./context/ThemeContext";
 
-const App = () => {
+
+
+ const App = () => {
   return (
-    <>
+    <ThemeProvider>
       <Routes>
         {/* Home */}
         <Route path="/" element={<Home />} />
@@ -86,10 +89,10 @@ const App = () => {
           path="/organization-onboarding/:step"
           element={<OrgOnboardingFlow />}
         />
-        <Route
+        {/* <Route
           path="/organization-onboarding"
           element={<Navigate to="/organization-onboarding/1" />}
-        />
+        /> */}
 
         <Route path="/profileorg" element={<OrgProfile />} />
         <Route path="/welcome" element={<SustainbilityWelcome />} />
@@ -173,10 +176,10 @@ const App = () => {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="dark" // Aapke dark theme UI ke liye perfect hai
+        theme="dark"  
         limit={3} // Mobile par screen na bhar jaye isliye limit set karein
       />
-    </>
+    </ThemeProvider>
   );
 };
 

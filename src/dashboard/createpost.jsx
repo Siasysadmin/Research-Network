@@ -376,29 +376,29 @@ tags.forEach((tag) => {
   return (
     <DashboardLayout>
       <div className="w-full flex justify-center px-4 sm:px-6 py-6 md:py-10 font-sans">
-        <div className="w-full max-w-3xl bg-[#1a1c1b]/35 border border-[#3b4b3d]/20 rounded-xl p-6 sm:p-8 md:p-10 shadow-[0_0_25px_rgba(0,0,0,0.6)]">
+        <div className="w-full max-w-3xl bg-white border border-gray-200 rounded-xl p-6 sm:p-8 md:p-10 shadow-[0_0_25px_rgba(0,0,0,0.08)] dark:bg-[#1a1c1b]/35 dark:border-[#3b4b3d]/20 dark:shadow-[0_0_25px_rgba(0,0,0,0.6)]">
           <div className="flex flex-col gap-8">
             {/* Text */}
             <div className="flex flex-col gap-4">
-              <label className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#00ff88] animate-pulse" />
                 Research Abstract & Insights
               </label>
-              <textarea
-                className="w-full bg-[#1e201f] rounded-xl border border-[#3b4b3d]/25 focus:border-[#00ff88]/60 focus:ring-0 text-slate-200 p-6 min-h-[160px] resize-y placeholder:text-slate-500/50 text-lg leading-relaxed shadow-[inset_0_0_10px_rgba(0,0,0,0.2)] transition-all outline-none"
-                placeholder="What breakthroughs have you made today?"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                disabled={isPublishing}
-              />
+             <textarea
+  className="w-full bg-[#f8fafc] border border-gray-300 shadow-sm text-slate-900 placeholder:text-slate-500 focus:border-[#00ff88]/60 focus:ring-2 focus:ring-[#00ff88]/15 rounded-lg p-4 text-sm leading-relaxed transition-all outline-none dark:bg-[#1a1c1b] dark:border-[#3b4b3d]/25 dark:text-slate-200 dark:placeholder:text-slate-500/60"
+  placeholder="What breakthroughs have you made today?"
+  value={content}
+  onChange={(e) => setContent(e.target.value)}
+  disabled={isPublishing}
+/>
             </div>
 
             {/* Tags */}
             <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2 border-b border-[#3b4b3d]/25 pb-2 focus-within:border-[#00ff88]/50 transition-colors">
-                <MaterialIcon name="tag" className="text-slate-400/70 text-sm" />
+              <div className="flex items-center gap-2 border-b border-gray-300 pb-2 focus-within:border-[#00ff88]/50 transition-colors dark:border-[#3b4b3d]/25">
+                <MaterialIcon name="tag" className="text-slate-500/70 dark:text-slate-400/70 text-sm" />
                 <input
-                  className="bg-transparent border-none focus:ring-0 text-slate-200 text-sm w-full placeholder:text-slate-500/60 outline-none"
+                  className="bg-transparent border-none focus:ring-0 text-slate-900 dark:text-slate-200 text-sm w-full placeholder:text-slate-500 outline-none"
                   placeholder="Add relevant tags... (press Enter)"
                   type="text"
                   value={tagInput}
@@ -420,7 +420,7 @@ tags.forEach((tag) => {
                   {tags.map((t) => (
                     <span
                       key={t}
-                      className="bg-[#333534] text-[#00ff88] px-3 py-1 rounded-full text-xs flex items-center gap-1 border border-[#00ff88]/20"
+                      className="bg-gray-100 text-[#00ff88] dark:bg-[#333534] px-3 py-1 rounded-full text-xs flex items-center gap-1 border border-[#00ff88]/20"
                     >
                       #{t}
                       <button
@@ -443,26 +443,26 @@ tags.forEach((tag) => {
                 type="button"
                 onClick={openPoll}
                 disabled={isPublishing || Boolean(photoFile || videoFile)}
-                className="w-full flex items-center justify-between p-6 bg-[#1e201f]/40 hover:bg-[#1e201f]/60 border-2 border-dashed border-[#3b4b3d]/30 hover:border-[#00ff88]/40 rounded-xl transition-all duration-300 relative overflow-hidden group disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-between p-6 bg-gray-50 hover:bg-gray-100 border-2 border-dashed border-gray-300 hover:border-[#00ff88]/40 rounded-xl transition-all duration-300 relative overflow-hidden group disabled:opacity-60 disabled:cursor-not-allowed dark:bg-[#1e201f]/40 dark:hover:bg-[#1e201f]/60 dark:border-[#3b4b3d]/30"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-[#00ff88]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="flex items-center gap-5 relative z-10">
-                  <div className="w-12 h-12 rounded-xl bg-[#282a29] flex items-center justify-center border border-[#3b4b3d]/30 group-hover:border-[#00ff88]/35 group-hover:shadow-[0_0_20px_rgba(0,255,136,0.15)] transition-all duration-300">
+                  <div className="w-12 h-12 rounded-xl bg-white border border-gray-300 flex items-center justify-center group-hover:border-[#00ff88]/35 group-hover:shadow-[0_0_20px_rgba(0,255,136,0.15)] transition-all duration-300 dark:bg-[#282a29] dark:border-[#3b4b3d]/30">
                     <MaterialIcon
                       name="poll"
-                      className="text-slate-400 group-hover:text-[#00ff88] text-2xl transition-colors"
+                      className="text-slate-500 dark:text-slate-400 group-hover:text-[#00ff88] text-2xl transition-colors"
                     />
                   </div>
                   <div className="text-left">
-                    <h3 className="text-sm font-black text-slate-400 group-hover:text-slate-200 uppercase tracking-[0.15em] transition-colors">
+                    <h3 className="text-sm font-black text-slate-800 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 uppercase tracking-[0.15em] transition-colors">
                       Create Research Poll
                     </h3>
-                    <p className="text-[10px] text-slate-500/70 uppercase font-bold tracking-wider mt-1 group-hover:text-slate-400/80">
+                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mt-1 group-hover:text-slate-600 dark:text-slate-500/70 dark:group-hover:text-slate-400/80">
                       Incorporate quantitative data points from your network
                     </p>
                   </div>
                 </div>
-                <div className="relative z-10 flex items-center gap-3 text-slate-500/50 group-hover:text-[#00ff88] transition-all">
+                <div className="relative z-10 flex items-center gap-3 text-slate-500 group-hover:text-[#00ff88] transition-all dark:text-slate-500/50">
                   <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-opacity">
                     Launch
                   </span>
@@ -470,7 +470,7 @@ tags.forEach((tag) => {
                 </div>
               </button>
             ) : (
-              <div className="flex flex-col gap-4 bg-[#1e201f] rounded-xl p-6 border border-[#3b4b3d]/20 relative overflow-hidden">
+              <div className="flex flex-col gap-4 bg-white border border-gray-200 rounded-xl p-6 relative overflow-hidden dark:bg-[#1e201f] dark:border-[#3b4b3d]/20">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#00ff88]/5 to-transparent pointer-events-none" />
                 <div className="flex justify-between items-center z-10">
                   <div className="flex items-center gap-2 text-[#00ff88] font-bold text-xs uppercase tracking-widest">
@@ -480,20 +480,20 @@ tags.forEach((tag) => {
                   <button
                     type="button"
                     onClick={discardPoll}
-                    className="text-slate-400 hover:text-red-400 transition-colors flex items-center gap-1 text-[10px] uppercase font-bold tracking-tighter"
+                    className="text-slate-500 hover:text-red-400 dark:text-slate-400 transition-colors flex items-center gap-1 text-[10px] uppercase font-bold tracking-tighter"
                     disabled={isPublishing}
                   >
                     Discard Poll
                   </button>
                 </div>
 
-                <div className="bg-[#121413] rounded-lg p-5 border border-[#3b4b3d]/30 flex flex-col gap-5 z-10 shadow-lg">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 flex flex-col gap-5 z-10 shadow-lg dark:bg-[#121413] dark:border-[#3b4b3d]/30">
                   <div className="flex flex-col gap-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
+                    <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest px-1">
                       Question
                     </label>
                     <input
-                      className="w-full bg-[#1a1c1b] border border-[#3b4b3d]/25 focus:border-[#00ff88]/60 focus:ring-1 focus:ring-[#00ff88]/15 rounded-lg p-3 text-sm text-slate-200 placeholder:text-slate-500/60 transition-all outline-none"
+                      className="w-full bg-gray-100 border border-gray-300 text-slate-900 placeholder:text-slate-500 focus:border-[#00ff88]/60 focus:ring-1 focus:ring-[#00ff88]/15 rounded-lg p-3 text-sm transition-all outline-none dark:bg-[#1a1c1b] dark:border-[#3b4b3d]/25 dark:text-slate-200 dark:placeholder:text-slate-500/60"
                       placeholder="Poll Question..."
                       type="text"
                       value={pollQuestion}
@@ -503,14 +503,14 @@ tags.forEach((tag) => {
                   </div>
 
                   <div className="flex flex-col gap-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
+                    <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest px-1">
                       Options
                     </label>
                     <div className="flex flex-col gap-2">
                       {pollOptions.map((opt, idx) => (
                         <div key={idx} className="group relative flex items-center">
                           <input
-                            className="w-full bg-[#1a1c1b] border border-[#3b4b3d]/25 focus:border-[#00ff88]/60 focus:ring-1 focus:ring-[#00ff88]/15 rounded-lg p-3 pr-10 text-sm text-slate-300 placeholder:text-slate-500/60 transition-all outline-none"
+                            className="w-full bg-gray-100 border border-gray-300 text-slate-900 placeholder:text-slate-500 focus:border-[#00ff88]/60 focus:ring-1 focus:ring-[#00ff88]/15 rounded-lg p-3 pr-10 text-sm transition-all outline-none dark:bg-[#1a1c1b] dark:border-[#3b4b3d]/25 dark:text-slate-300 dark:placeholder:text-slate-500/60"
                             type="text"
                             placeholder={`Option ${idx + 1}`}
                             value={opt}
@@ -520,7 +520,7 @@ tags.forEach((tag) => {
                           <button
                             type="button"
                             onClick={() => removePollOption(idx)}
-                            className="absolute right-3 text-slate-500/70 hover:text-red-400 transition-colors"
+                            className="absolute right-3 text-slate-500 hover:text-red-400 dark:text-slate-500/70 transition-colors"
                             disabled={isPublishing}
                           >
                             <MaterialIcon name="delete" className="text-[18px]" />
@@ -545,12 +545,12 @@ tags.forEach((tag) => {
 
             {/* Media */}
             <div className="flex flex-col gap-4">
-              <label className="text-xs font-bold uppercase tracking-widest text-slate-400 px-1">
+                <label className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 px-1">
                 Visual Media (Max 100MB)
               </label>
 
               {uploadError && (
-                <div className="p-3 bg-red-500/10 border border-red-500/35 rounded-lg text-red-300 text-sm">
+                <div className="p-3 bg-red-50 border border-red-300 rounded-lg text-red-600 text-sm dark:bg-red-500/10 dark:border-red-500/35 dark:text-red-300">
                   <MaterialIcon name="error" className="text-sm mr-1 align-middle" />
                   <span className="align-middle">{uploadError}</span>
                 </div>
@@ -558,15 +558,15 @@ tags.forEach((tag) => {
 
               <div className="grid grid-cols-2 gap-4">
                 <label
-                  className={`bg-[#1e201f] hover:bg-[#333534] border-2 border-dashed border-[#3b4b3d]/40 hover:border-[#00ff88]/50 rounded-xl h-32 flex flex-col items-center justify-center gap-2 transition-all group cursor-pointer ${
-                    isPublishing || videoFile || isPollOpen ? "opacity-50 cursor-not-allowed hover:bg-[#1e201f]" : ""
+                  className={`bg-white hover:bg-gray-50 border-2 border-dashed border-gray-300 hover:border-[#00ff88]/50 rounded-xl h-32 flex flex-col items-center justify-center gap-2 transition-all group cursor-pointer dark:bg-[#1e201f] dark:hover:bg-[#333534] dark:border-[#3b4b3d]/40 ${
+                    isPublishing || videoFile || isPollOpen ? "opacity-50 cursor-not-allowed hover:bg-white dark:hover:bg-[#1e201f]" : ""
                   }`}
                 >
                   <MaterialIcon
                     name="image"
-                    className="text-slate-400 group-hover:text-[#00ff88] text-3xl transition-colors"
+                    className="text-slate-500 dark:text-slate-400 group-hover:text-[#00ff88] text-3xl transition-colors"
                   />
-                  <span className="text-xs text-slate-300 group-hover:text-[#00ff88] font-medium uppercase tracking-tighter">
+                  <span className="text-xs text-slate-800 dark:text-slate-300 group-hover:text-[#00ff88] font-medium uppercase tracking-tighter">
                     Upload Photo
                   </span>
                   <input
@@ -579,15 +579,15 @@ tags.forEach((tag) => {
                 </label>
 
                 <label
-                  className={`bg-[#1e201f] hover:bg-[#333534] border-2 border-dashed border-[#3b4b3d]/40 hover:border-[#00ff88]/50 rounded-xl h-32 flex flex-col items-center justify-center gap-2 transition-all group cursor-pointer ${
-                    isPublishing || photoFile || isPollOpen ? "opacity-50 cursor-not-allowed hover:bg-[#1e201f]" : ""
+                  className={`bg-white hover:bg-gray-50 border-2 border-dashed border-gray-300 hover:border-[#00ff88]/50 rounded-xl h-32 flex flex-col items-center justify-center gap-2 transition-all group cursor-pointer dark:bg-[#1e201f] dark:hover:bg-[#333534] dark:border-[#3b4b3d]/40 ${
+                    isPublishing || photoFile || isPollOpen ? "opacity-50 cursor-not-allowed hover:bg-white dark:hover:bg-[#1e201f]" : ""
                   }`}
                 >
                   <MaterialIcon
                     name="movie"
-                    className="text-slate-400 group-hover:text-[#00ff88] text-3xl transition-colors"
+                    className="text-slate-500 dark:text-slate-400 group-hover:text-[#00ff88] text-3xl transition-colors"
                   />
-                  <span className="text-xs text-slate-300 group-hover:text-[#00ff88] font-medium uppercase tracking-tighter">
+                  <span className="text-xs text-slate-800 dark:text-slate-300 group-hover:text-[#00ff88] font-medium uppercase tracking-tighter">
                     Upload Video
                   </span>
                   <input
@@ -601,15 +601,15 @@ tags.forEach((tag) => {
               </div>
 
               {(selectedPhoto || selectedVideo) && (
-                <div className="rounded-xl border border-[#3b4b3d]/30 bg-[#121413] overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-[#3b4b3d]/20">
-                    <div className="text-xs text-slate-400 font-bold uppercase tracking-widest">
+                <div className="rounded-xl border border-gray-200 bg-white overflow-hidden dark:border-[#3b4b3d]/30 dark:bg-[#121413]">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-[#3b4b3d]/20">
+                    <div className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">
                       Preview
                     </div>
                     <button
                       type="button"
                       onClick={selectedPhoto ? handleRemovePhoto : handleRemoveVideo}
-                      className="text-xs font-bold text-red-300 hover:text-red-200 bg-red-500/10 border border-red-500/25 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 border border-red-300 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed dark:text-red-300 dark:hover:text-red-200 dark:bg-red-500/10 dark:border-red-500/25"
                       disabled={isPublishing}
                     >
                       Remove
@@ -653,7 +653,7 @@ tags.forEach((tag) => {
             </div>
 
             {/* Publish */}
-            <div className="pt-6 border-t border-[#3b4b3d]/25 flex justify-end">
+            <div className="pt-6 border-t border-gray-200 dark:border-[#3b4b3d]/25 flex justify-end">
               <button
                 type="button"
                 onClick={handlePublish}
@@ -679,6 +679,24 @@ tags.forEach((tag) => {
           </div>
         </div>
       </div>
+      <style jsx global>{`
+  /* Chrome, Safari aur Opera ke liye */
+  ::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  /* Firefox ke liye */
+  * {
+    scrollbar-width: none;
+  }
+
+  /* IE aur Edge ke liye */
+  * {
+    -ms-overflow-style: none;
+  }
+`}</style>
     </DashboardLayout>
   );
 };

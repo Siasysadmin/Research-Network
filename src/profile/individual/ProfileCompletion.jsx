@@ -182,98 +182,132 @@ setCompletion(totalPercentage);
     return "Complete your profile to start collaborating on global sustainability projects."; 
   };
 
-  return (
-    <div className="dark min-h-screen bg-[#020604] flex items-center justify-center p-6 relative overflow-hidden font-sans text-white">
+ return (
+  <div className="
+    min-h-screen flex items-center justify-center p-6 relative overflow-hidden font-sans
+
+    bg-slate-50 text-slate-800
+    dark:bg-[#020604] dark:text-white
+  ">
+    
+    {/* Central Glow Effect */}
+    <div 
+      className="absolute inset-0 pointer-events-none" 
+      style={{ background: 'radial-gradient(circle at center, rgba(6, 249, 136, 0.12) 0%, transparent 60%)' }}
+    ></div>
+
+    {/* Vignette Effect (only dark) */}
+    <div 
+      className="absolute inset-0 pointer-events-none hidden dark:block" 
+      style={{ background: 'radial-gradient(circle, transparent 0%, rgba(0,0,0,0.9) 100%)' }}
+    ></div>
+
+    {/* Main Glass Box */}
+    <div className="
+      relative w-full max-w-[380px] pt-16 px-10 pb-12 rounded-[3rem] text-center overflow-hidden
+
+      bg-white border border-gray-200 shadow-xl
+      dark:border-[#06f988]/15 dark:bg-[#08120d]/95 dark:backdrop-blur-[40px]
+      dark:shadow-[0_0_120px_rgba(0,0,0,0.8),0_0_60px_rgba(6,249,136,0.03)]
+    ">
       
-      {/* Central Glow Effect */}
-      <div 
-        className="absolute inset-0 pointer-events-none" 
-        style={{ background: 'radial-gradient(circle at center, rgba(6, 249, 136, 0.12) 0%, transparent 60%)' }}
-      ></div>
+      {/* Close Button */}
+      <button 
+        onClick={handleClose}
+        className="
+          absolute top-8 right-8 transition-opacity
 
-      {/* Vignette Effect */}
-      <div 
-        className="absolute inset-0 pointer-events-none" 
-        style={{ background: 'radial-gradient(circle, transparent 0%, rgba(0,0,0,0.9) 100%)' }}
-      ></div>
+          text-slate-500 hover:text-slate-800
+          dark:text-[#06f988] dark:hover:opacity-80
+        "
+        style={{ filter: 'drop-shadow(0 0 12px rgba(6, 249, 136, 0.5))' }}
+      >
+        <span className="material-symbols-outlined text-2xl font-bold">close</span>
+      </button>
 
-      {/* Main Glass Box */}
-      <div className="relative w-full max-w-[380px] pt-16 px-10 pb-12 rounded-[3rem] text-center shadow-[0_0_120px_rgba(0,0,0,0.8),0_0_60px_rgba(6,249,136,0.03)] overflow-hidden border border-[#06f988]/15 bg-[#08120d]/95 backdrop-blur-[40px]">
-        
-        {/* Close Button */}
-        <button 
-          onClick={handleClose}
-          className="absolute top-8 right-8 text-[#06f988] hover:opacity-80 transition-opacity cursor-pointer" 
-          style={{ filter: 'drop-shadow(0 0 12px rgba(6, 249, 136, 0.5))' }}
-        >
-          <span className="material-symbols-outlined text-2xl font-bold">close</span>
-        </button>
-
-        {/* Circular Progress Section */}
-        <div className="relative flex flex-col items-center justify-center mb-14">
-          <div className="relative w-32 h-32 flex items-center justify-center">
-            <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-              <circle 
-                className="text-white/5" 
-                cx="50" cy="50" fill="transparent" r="45"
-                stroke="currentColor" strokeWidth="5"
-              ></circle>
-              <circle 
-                className="text-[#06f988]" 
-                cx="50" cy="50" fill="transparent" r="45"
-                stroke="currentColor" strokeWidth="5"
-                strokeLinecap="round"
-                style={{ 
-                  strokeDasharray: circumference,
-                  strokeDashoffset: offset,
-                  transition: 'stroke-dashoffset 1s ease',
-                  filter: 'drop-shadow(0 0 12px rgba(6, 249, 136, 0.5))' 
-                }}
-              ></circle>
-            </svg>
-            
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-3xl font-black text-white tracking-tighter">{Math.round(animatedValue)}%</span>
-              <span className="text-[#06f988] text-[8px] font-bold tracking-[0.3em] uppercase">Complete</span>
-            </div>
+      {/* Circular Progress */}
+      <div className="relative flex flex-col items-center justify-center mb-14">
+        <div className="relative w-32 h-32 flex items-center justify-center">
+          <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+            <circle 
+              className="text-gray-200 dark:text-white/5" 
+              cx="50" cy="50" fill="transparent" r="45"
+              stroke="currentColor" strokeWidth="5"
+            ></circle>
+            <circle 
+              className="text-[#06f988]" 
+              cx="50" cy="50" fill="transparent" r="45"
+              stroke="currentColor" strokeWidth="5"
+              strokeLinecap="round"
+              style={{ 
+                strokeDasharray: circumference,
+                strokeDashoffset: offset,
+                transition: 'stroke-dashoffset 1s ease',
+                filter: 'drop-shadow(0 0 12px rgba(6, 249, 136, 0.5))' 
+              }}
+            ></circle>
+          </svg>
+          
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-3xl font-black tracking-tighter text-slate-800 dark:text-white">
+              {Math.round(animatedValue)}%
+            </span>
+            <span className="text-[#06f988] text-[8px] font-bold tracking-[0.3em] uppercase">
+              Complete
+            </span>
           </div>
         </div>
-
-        <div className="space-y-3 mb-10">
-          <h1 className="text-white tracking-tight text-2xl font-black leading-tight">
-            {getStatusText()}
-          </h1>
-          <p className="text-white/50 text-[13px] font-normal leading-relaxed px-4">
-            {getSubText()}
-          </p>
-        </div>
-
-        <div className="pt-8 border-t border-white/5 w-full text-left">
-          <div className="flex flex-col gap-4">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2.5">
-                <div className="bg-[#06f988]/10 p-1.5 rounded-lg">
-                  <span className="material-symbols-outlined text-[#06f988] text-sm flex">verified_user</span>
-                </div>
-                <p className="text-white/40 text-[9px] font-bold leading-none uppercase tracking-[0.25em]">Network Access</p>
-              </div>
-              <span className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-[#06f988] rounded-full shadow-[0_0_10px_#06f988]"></span>
-                <p className="text-[#06f988] text-[10px] font-black leading-none uppercase tracking-widest">Active</p>
-              </span>
-            </div>
-            <div className="rounded-full bg-white/5 h-2 w-full overflow-hidden">
-              <div
-                className="h-full bg-[#06f988] shadow-[0_0_15px_#06f988] transition-all duration-1000"
-                style={{ width: `${completion}%` }}
-              ></div>
-            </div>
-          </div>
-        </div>
-
       </div>
+
+      {/* Text Section */}
+      <div className="space-y-3 mb-10">
+        <h1 className="tracking-tight text-2xl font-black leading-tight text-slate-800 dark:text-white">
+          {getStatusText()}
+        </h1>
+        <p className="text-[13px] leading-relaxed px-4 text-slate-500 dark:text-white/50">
+          {getSubText()}
+        </p>
+      </div>
+
+      {/* Bottom Section */}
+      <div className="pt-8 border-t border-gray-200 dark:border-white/5 w-full text-left">
+        <div className="flex flex-col gap-4">
+          
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2.5">
+              
+              <div className="bg-[#06f988]/10 p-1.5 rounded-lg">
+                <span className="material-symbols-outlined text-[#06f988] text-sm flex">
+                  verified_user
+                </span>
+              </div>
+
+              <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-slate-500 dark:text-white/40">
+                Network Access
+              </p>
+            </div>
+
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 bg-[#06f988] rounded-full shadow-[0_0_10px_#06f988]"></span>
+              <p className="text-[#06f988] text-[10px] font-black uppercase tracking-widest">
+                Active
+              </p>
+            </span>
+          </div>
+
+          <div className="rounded-full bg-gray-200 dark:bg-white/5 h-2 w-full overflow-hidden">
+            <div
+              className="h-full bg-[#06f988] shadow-[0_0_15px_#06f988] transition-all duration-1000"
+              style={{ width: `${completion}%` }}
+            ></div>
+          </div>
+
+        </div>
+      </div>
+
     </div>
-  );
+  </div>
+);
 };
 
 export default ProfileCompletion;

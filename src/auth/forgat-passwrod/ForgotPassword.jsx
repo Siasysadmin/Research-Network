@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router';
+import React, { useState } from "react";
+import { useNavigate } from "react-router";
 import API_CONFIG from "../../config/api.config"; // Make sure the path is correct
-import { toast } from 'react-toastify';
+import { toast } from "react-toastify";
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -13,17 +13,19 @@ const ForgotPassword = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_CONFIG.BASE_URL}/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email }),
-      });
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}/auth/forgot-password`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email }),
+        },
+      );
 
       const data = await response.json();
-      if(data.status==true){
-        navigate("/verify",{state:{email:email}});
-      }
-       else {
+      if (data.status == true) {
+        navigate("/verify", { state: { email: email } });
+      } else {
         toast.error(" to send OTP. Please check your email and try again.");
       }
     } catch (error) {
@@ -40,25 +42,30 @@ const ForgotPassword = () => {
         <div className="bg-white/5 dark:bg-[#183427]/40 backdrop-blur-md border border-primary/15 rounded-2xl p-8 md:p-10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)]">
           <div className="flex flex-col items-center text-center mb-10">
             <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6 ring-8 ring-primary/5">
-              <span 
-                className="material-symbols-outlined text-primary text-4xl" 
+              <span
+                className="material-symbols-outlined text-primary text-4xl"
                 style={{ fontVariationSettings: "'wght' 300" }}
               >
                 lock_reset
               </span>
             </div>
-            <h1 className="text-white text-3xl font-semibold tracking-tight mb-4">
+            <h1 className="text-slate-900 dark:text-white text-3xl font-semibold tracking-tight mb-4">
               Forgot Password
             </h1>
-            <p className="text-gray-400 text-base leading-relaxed max-w-[320px]">
-              Enter your registered email below to receive a secure recovery code.
+            <p className="text-slate-600 dark:text-slate-400 text-base leading-relaxed max-w-[320px]">
+              Enter your registered email below to receive a secure recovery
+              code.
             </p>
           </div>
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form
+            className="space-y-6"
+            onSubmit={handleSubmit}
+            autoComplete="off"
+          >
             <div className="flex flex-col gap-2.5">
-              <label 
-                className="text-white/90 text-sm font-medium px-1" 
+              <label
+                className="text-slate-700 dark:text-white/90 text-sm font-medium px-1"
                 htmlFor="email"
               >
                 Email Address
@@ -68,12 +75,25 @@ const ForgotPassword = () => {
                   mail
                 </span>
                 <input
-                  className="w-full h-14 pl-12 pr-4 bg-[#183427]/60 border border-[#31684e] rounded-xl text-white placeholder:text-[#90cbaf]/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-base font-normal"
+                  autoComplete="off"
+                  className="
+  w-full h-14 pl-12 pr-4 rounded-xl text-base font-normal transition-all
+
+  bg-[#f8fafc] border border-gray-300 
+  text-slate-900 placeholder:text-slate-500
+
+  dark:bg-[#183427]/70 dark:border-[#31684e] 
+  dark:text-white dark:placeholder:text-[#90cbaf]/50
+
+  focus:outline-none focus:ring-2 focus:ring-[#00ff88]/20 focus:border-[#00ff88]
+
+  /* AUTOFILL FIX */
+  autofill:bg-[#f8fafc] dark:autofill:bg-[#183427]/70
+  "
                   id="email"
                   name="email"
                   type="email"
                   placeholder="name@institution.edu"
-                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -81,11 +101,11 @@ const ForgotPassword = () => {
             </div>
 
             <button
-             disabled={loading}
-              className="w-full h-14 bg-primary text-background-dark font-bold text-lg rounded-xl hover:bg-primary/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group shadow-[0_0_20px_rgba(13,242,135,0.2)]"
+              disabled={loading}
+              className="w-full bg-[#0df287] hover:bg-[#0df287]/90 text-[#030806] font-bold py-4 rounded-lg transition-all transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
               type="submit"
             >
-              <span>{loading ? 'Sending...' : 'Send OTP'}</span>
+              <span>{loading ? "Sending..." : "Send OTP"}</span>
               <span className="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">
                 arrow_forward
               </span>
@@ -102,24 +122,6 @@ const ForgotPassword = () => {
               </span>
               Back to Login
             </button>
-          </div>
-        </div>
-
-        <div className="mt-10 flex flex-col items-center gap-6">
-          <div className="flex items-center gap-4 text-gray-600 text-xs font-medium">
-            <a 
-              className="hover:text-gray-400 transition-colors" 
-              href="/terms" // Update this to your actual terms route
-            >
-              Terms of Services
-            </a>
-            <span className="w-1 h-1 bg-gray-700 rounded-full"></span>
-            <a 
-              className="hover:text-gray-400 transition-colors" 
-              href="/privacy" // Update this to your actual privacy policy route
-            >
-              Privacy Policy
-            </a>
           </div>
         </div>
       </main>

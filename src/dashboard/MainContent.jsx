@@ -74,6 +74,9 @@ const MainContent = () => {
     );
   };
 
+  const textRefs = useRef({});
+  const [showReadMore, setShowReadMore] = useState({});
+
   const getCurrentUserId = () => {
     try {
       const userStr = localStorage.getItem("user");
@@ -907,6 +910,18 @@ const MainContent = () => {
       }
     };
   }, [feedData]);
+  useEffect(() => {
+    const newShowReadMore = {};
+
+    Object.keys(textRefs.current).forEach((id) => {
+      const el = textRefs.current[id];
+      if (el) {
+        newShowReadMore[id] = el.scrollHeight > el.clientHeight;
+      }
+    });
+
+    setShowReadMore(newShowReadMore);
+  }, [feedData]); // ✅ sirf feedData
 
   useEffect(() => {
     const currentUserId = getCurrentUserId();
@@ -2542,15 +2557,19 @@ const MainContent = () => {
                               </p>
                             </div>
 
-{Array.isArray(post.hash_tag) && post.hash_tag.length > 0 && (
-  <div className="flex flex-wrap gap-1.5 mb-2 sm:mb-3">
-    {post.hash_tag.map((tag, i) => (
-      <span key={i} className="text-[10px] sm:text-xs font-semibold text-[#00ff88] bg-[#00ff88]/10 border border-[#00ff88]/20 px-2 py-0.5 rounded-full">
-        {tag}
-      </span>
-    ))}
-  </div>
-)}
+                            {Array.isArray(post.hash_tag) &&
+                              post.hash_tag.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5 mb-2 sm:mb-3">
+                                  {post.hash_tag.map((tag, i) => (
+                                    <span
+                                      key={i}
+                                      className="text-[10px] sm:text-xs font-semibold text-[#00ff88] bg-[#00ff88]/10 border border-[#00ff88]/20 px-2 py-0.5 rounded-full"
+                                    >
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                             {post.research_file && (
                               <div className="mb-3 sm:mb-4 md:mb-5">
                                 <div className="bg-[#0e0f10] border border-white/10 rounded-lg sm:rounded-xl p-2.5 sm:p-3 md:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between hover:border-white/20 transition-all gap-2 sm:gap-3">
@@ -2970,38 +2989,63 @@ const MainContent = () => {
                           </div>
 
                           {isTextOnly ? (
-                            <div className="mt-1.5 sm:mt-2 md:mt-3 mb-2 sm:mb-3 md:mb-4 max-w-full">
-                              <div
-                                className={`bg-[#000302] border border-white/10 rounded-lg sm:rounded-xl px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3 text-xs sm:text-sm text-slate-200 leading-relaxed shadow-sm break-words ${expandedPosts[postId] ? "" : "line-clamp-10"}`}
+                            <div className="mb-2 sm:mb-3 md:mb-4 w-full">
+                              <p
+                                ref={(el) => {
+                                  if (el) textRefs.current[postId] = el;
+                                }}
+                                className={`text-xs sm:text-sm text-slate-200 leading-relaxed break-words ${
+                                  expandedPosts[postId] ? "" : "line-clamp-10"
+                                }`}
                               >
                                 {postContent}
-                                {postContent?.length > 300 && (
-                                  <span
-                                    onClick={() => toggleReadMorePost(postId)}
-                                    className="text-[#00ff88] cursor-pointer ml-1 text-[9px] sm:text-xs hover:underline block"
-                                  >
-                                    {expandedPosts[postId]
-                                      ? "Show less"
-                                      : "... Read more"}
-                                  </span>
-                                )}
-                              </div>
+                              </p>
+
+                              {/* 👇 yahi add karna hai */}
+                              {showReadMore[postId] && (
+                                <button
+                                  onClick={() => toggleReadMorePost(postId)}
+                                  className="text-[#00ff88] text-[10px] sm:text-xs hover:underline mt-2 block font-semibold"
+                                >
+                                  {expandedPosts[postId]
+                                    ? " Show less"
+                                    : "... Read more"}
+                                </button>
+                              )}
                             </div>
                           ) : (
-                            <div className="text-xs sm:text-sm leading-relaxed text-slate-300 break-words whitespace-pre-wrap mb-2 sm:mb-3 md:mb-4">
-                              {postContent}
+                            <div className="mb-2 sm:mb-3 md:mb-4">
+                              <div
+                                className={`text-xs sm:text-sm leading-relaxed text-slate-300 break-words whitespace-pre-wrap ${expandedPosts[postId] ? "" : "line-clamp-4"}`}
+                              >
+                                {postContent}
+                              </div>
+                              {postContent?.length > 150 && (
+                                <span
+                                  onClick={() => toggleReadMorePost(postId)}
+                                  className="text-[#00ff88] cursor-pointer text-[9px] sm:text-xs hover:underline block mt-1"
+                                >
+                                  {expandedPosts[postId]
+                                    ? "Show less"
+                                    : "... Read more"}
+                                </span>
+                              )}
                             </div>
                           )}
 
-{Array.isArray(post.hash_tag) && post.hash_tag.length > 0 && (
-  <div className="flex flex-wrap gap-1.5 mb-2 sm:mb-3">
-    {post.hash_tag.map((tag, i) => (
-      <span key={i} className="text-[10px] sm:text-xs font-semibold text-[#00ff88] bg-[#00ff88]/10 border border-[#00ff88]/20 px-2 py-0.5 rounded-full">
-        {tag}
-      </span>
-    ))}
-  </div>
-)}
+                          {Array.isArray(post.hash_tag) &&
+                            post.hash_tag.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 mb-2 sm:mb-3">
+                                {post.hash_tag.map((tag, i) => (
+                                  <span
+                                    key={i}
+                                    className="text-[10px] sm:text-xs font-semibold text-[#00ff88] bg-[#00ff88]/10 border border-[#00ff88]/20 px-2 py-0.5 rounded-full"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           {isMockPost && post.media && (
                             <div className="mt-2 sm:mt-3 md:mt-4 rounded-lg sm:rounded-xl overflow-hidden border border-white/10 bg-black flex justify-center max-h-[200px] sm:max-h-[350px] md:max-h-[500px] relative w-full">
                               {post.mediaType === "image" ? (
@@ -3746,7 +3790,9 @@ const MainContent = () => {
                     </span>
                     <div className="absolute bottom-0 right-0 w-1.5 h-1.5 bg-[#00ff88] rounded-full border border-[#161817]"></div>
                   </div>
-                  <h3 className="text-white font-bold text-xs sm:text-sm">Messages</h3>
+                  <h3 className="text-white font-bold text-xs sm:text-sm">
+                    Messages
+                  </h3>
                 </div>
                 <button
                   onClick={() => setIsChatListOpen(false)}
@@ -3847,7 +3893,9 @@ const MainContent = () => {
                   </div>
                   <div className="absolute bottom-0 right-0 w-1.5 h-1.5 bg-[#00ff88] rounded-full border border-[#161817]"></div>
                 </div>
-                <span className="font-bold text-white text-xs sm:text-sm">Messages</span>
+                <span className="font-bold text-white text-xs sm:text-sm">
+                  Messages
+                </span>
               </div>
               <span className="material-symbols-outlined text-slate-400 text-lg shrink-0">
                 expand_less
@@ -3878,6 +3926,7 @@ const MainContent = () => {
           overflow: hidden;
           text-overflow: ellipsis;
         }
+
         .line-clamp-10 {
           display: -webkit-box;
           -webkit-line-clamp: 10;

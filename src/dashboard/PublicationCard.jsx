@@ -14,33 +14,65 @@ const MaterialIcon = ({ name, className = "", style = {} }) => (
 const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-[#1a2e1a] border border-[#3b4b3d]/50 rounded-2xl p-6 sm:p-8 w-[90%] max-w-md shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/60 backdrop-blur-sm">
+      <div
+        className="
+    bg-white border border-gray-200 text-slate-800
+    dark:bg-[#1a2e1a] dark:border-[#3b4b3d]/50 dark:text-[#e2e3e0]
+    rounded-2xl p-6 sm:p-8 w-[90%] max-w-md shadow-2xl
+  "
+      >
         {/* Icon */}
         <div className="flex justify-center mb-4">
-          <div className="w-14 h-14 rounded-full bg-[#00ff85]/10 flex items-center justify-center">
+          <div
+            className="w-14 h-14 rounded-full 
+bg-green-100 text-green-600
+dark:bg-[#00ff85]/10 dark:text-[#00ff85]
+flex items-center justify-center"
+          >
             <span className="material-symbols-outlined text-3xl text-[#00ff85]">
               publish
             </span>
           </div>
         </div>
         {/* Title */}
-        <h2 className="text-center text-lg sm:text-xl font-extrabold text-[#e2e3e0] uppercase tracking-wide mb-2">
+        <h2
+          className="text-center text-lg sm:text-xl font-extrabold 
+text-slate-800 dark:text-[#e2e3e0] 
+uppercase tracking-wide mb-2"
+        >
+          {" "}
           {title}
         </h2>
         {/* Message */}
-        <p className="text-center text-sm text-[#b9cbb9] mb-6">{message}</p>
+        <p
+          className="text-center text-sm 
+text-slate-600 dark:text-[#b9cbb9] mb-6"
+        >
+          {message}
+        </p>
         {/* Buttons */}
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-[#3b4b3d]/50 text-[#b9cbb9] text-sm font-bold uppercase tracking-widest hover:bg-[#3b4b3d]/30 transition-all"
+            className="
+    flex-1 py-2.5 rounded-xl border 
+    border-gray-300 text-slate-600
+    hover:bg-gray-100
+    dark:border-[#3b4b3d]/50 dark:text-[#b9cbb9] dark:hover:bg-[#3b4b3d]/30
+    text-sm font-bold uppercase tracking-widest transition-all
+  "
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 py-2.5 rounded-xl bg-[#00ff85] text-[#0a1a0a] text-sm font-bold uppercase tracking-widest hover:bg-[#00e676] transition-all shadow-[0_0_15px_rgba(0,255,133,0.3)]"
+            className="
+    flex-1 py-2.5 rounded-xl 
+    bg-green-600 text-white hover:bg-green-700
+    dark:bg-[#00ff85] dark:text-[#0a1a0a] dark:hover:bg-[#00e676]
+    text-sm font-bold uppercase tracking-widest transition-all
+  "
           >
             Publish
           </button>
@@ -65,7 +97,17 @@ const PublicationCard = ({
   const fullPdfUrl = pdfPath ? `${API_CONFIG.BASE_URL}/${pdfPath}` : null;
 
   return (
-    <div className="group relative flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 sm:p-8 bg-[#1a1c1b] rounded-xl border border-[#3b4b3d]/30 hover:bg-[#1e201f] transition-all duration-300 hover:shadow-[0_0_20px_0px_rgba(0,255,133,0.1)] gap-5 sm:gap-4">
+    <div className="
+group relative flex flex-col sm:flex-row items-start sm:items-center justify-between
+p-5 sm:p-8 rounded-xl border transition-all duration-300 gap-5 sm:gap-4
+
+bg-white border-gray-200 text-slate-800
+  border-2 hover:border-[#00ff85]
+
+dark:bg-[#1a1c1b] dark:border-[#3b4b3d]/30 dark:text-[#e2e3e0]
+dark:hover:bg-[#1e201f] dark:hover:border-[#00ff85]
+">
+      {" "}
       {/* Left - Info */}
       <div className="flex flex-col gap-3 sm:gap-4 w-full sm:max-w-3xl">
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -78,19 +120,34 @@ const PublicationCard = ({
             {category || "Uncategorized"}
           </span>
         </div>
-        <h2 className="text-lg sm:text-2xl font-bold text-[#e2e3e0] group-hover:text-[#00ff85] transition-colors tracking-tight">
+        <h2
+          className="
+text-lg sm:text-2xl font-bold tracking-tight transition-colors
+
+text-slate-800 hover:text-green-600
+dark:text-[#e2e3e0] dark:hover:text-[#00ff85]
+"
+        >
+          {" "}
           {title}
         </h2>
         <div className="space-y-1">
           <span className="text-[10px] font-black tracking-[0.2em] text-[#b9cbb9] uppercase">
             ABSTRACT
           </span>
-          <p className="text-xs sm:text-sm text-[#b9cbb9]/80 leading-relaxed italic line-clamp-3">
+          <p
+            className="
+text-xs sm:text-sm leading-relaxed italic line-clamp-3
+
+text-slate-600
+dark:text-[#b9cbb9]/80
+"
+          >
+            {" "}
             {abstract}
           </p>
         </div>
       </div>
-
       {/* Right - Actions */}
       <div className="flex flex-row sm:flex-col items-center sm:items-end gap-3 sm:gap-4 w-full sm:min-w-[140px]">
         {fullPdfUrl && (
@@ -98,7 +155,14 @@ const PublicationCard = ({
             href={fullPdfUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 sm:gap-3 bg-[#333534] border border-[#3b4b3d]/30 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg hover:bg-[#00ff85] hover:text-[#007137] text-[#e2e3e0] transition-all duration-300 whitespace-nowrap"
+            className="
+flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all
+
+bg-gray-100 border border-gray-200 text-slate-700 hover:bg-green-100 hover:text-green-700
+
+dark:bg-[#333534] dark:border-[#3b4b3d]/30 dark:text-[#e2e3e0]
+dark:hover:bg-[#00ff85] dark:hover:text-[#003919]
+"
           >
             <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">
               View PDF
@@ -110,7 +174,13 @@ const PublicationCard = ({
         {statusCode === "2" && (
           <button
             onClick={onPublish}
-            className="flex items-center gap-2 sm:gap-3 bg-[#00ff85] border border-[#00ff85] px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg text-[#003919] hover:brightness-110 transition-all duration-300 whitespace-nowrap"
+            className="
+flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all
+
+bg-green-600 text-white hover:bg-green-700
+
+dark:bg-[#00ff85] dark:text-[#003919] dark:hover:brightness-110
+"
           >
             <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">
               Publish
@@ -479,7 +549,14 @@ const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
   };
 
   return (
-    <article className="bg-[#141414] rounded-2xl border border-white/5 shadow-sm overflow-hidden relative mb-6 sm:mb-8">
+    <article
+      className="
+bg-white border border-gray-200 text-slate-800
+dark:bg-[#141414] dark:border-white/10 text-slate-800 dark:text-white
+rounded-2xl shadow-sm overflow-hidden relative mb-6 sm:mb-8
+"
+    >
+      {" "}
       <div className="p-4 sm:p-5">
         {/* Header - Author Info */}
         <div className="flex items-start gap-3 sm:gap-5 mt-2 sm:mt-4 mb-3 sm:mb-4">
@@ -498,7 +575,7 @@ const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <h4 className="font-bold text-white hover:text-[#00ff85] cursor-pointer transition-colors capitalize truncate text-sm sm:text-base">
+                <h4 className="font-bold text-slate-800 dark:text-white hover:text-[#00ff85] cursor-pointer transition-colors capitalize truncate text-sm sm:text-base">
                   {postData.institute_name
                     ? postData.institute_name
                     : postData.name}
@@ -514,7 +591,7 @@ const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
         </div>
 
         {/* Post Content */}
-        <div className="text-xs sm:text-sm leading-relaxed text-slate-300 break-words whitespace-pre-wrap mb-3 sm:mb-4">
+        <div className="text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-300 break-words whitespace-pre-wrap mb-3 sm:mb-4">
           {displayText}
           {needsReadMore && !isExpanded && "..."}
         </div>
@@ -523,7 +600,7 @@ const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
           <div className="mb-3 sm:mb-4">
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-[#00ff85] hover:text-white text-xs sm:text-sm font-bold transition-colors"
+              className="text-[#00ff85] hover:text-slate-800 dark:text-white text-xs sm:text-sm font-bold transition-colors"
             >
               {isExpanded ? "Read less" : "Read more"}
             </button>
@@ -532,9 +609,9 @@ const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
 
         {/* MEDIA CONTAINER */}
         {(hasImage || hasVideo) && (
-          <div className="relative w-full bg-black overflow-hidden mt-3 sm:mt-4 rounded-xl">
+          <div className="relative w-full bg-gray-100 dark:bg-black overflow-hidden mt-3 sm:mt-4 rounded-xl">
             {hasImage && (
-              <div className="w-full flex items-center justify-center bg-black">
+              <div className="w-full flex items-center justify-center bg-gray-100 dark:bg-black">
                 <img
                   src={`${API_CONFIG.BASE_URL}/${postData.image}`}
                   alt="Post Media"
@@ -548,7 +625,7 @@ const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
 
             {hasVideo && (
               <div
-                className="relative w-full bg-black flex items-center justify-center"
+                className="relative w-full bg-gray-100 dark:bg-black flex items-center justify-center"
                 style={{ minHeight: "300px", maxHeight: "700px" }}
               >
                 <video
@@ -577,14 +654,14 @@ const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
                 )}
                 <button
                   onClick={toggleVideoSound}
-                  className="absolute bottom-4 right-4 bg-black/80 hover:bg-black/95 text-white rounded-full p-3 sm:p-3.5 transition-all z-10 flex items-center justify-center hover:scale-110 shadow-lg"
+                  className="absolute bottom-4 right-4 bg-black/80 hover:bg-black/95 text-slate-800 dark:text-white rounded-full p-3 sm:p-3.5 transition-all z-10 flex items-center justify-center hover:scale-110 shadow-lg"
                 >
                   <MaterialIcon
                     name={isVideoMuted ? "volume_off" : "volume_up"}
                     className="text-xl sm:text-2xl"
                   />
                 </button>
-                <div className="absolute top-4 left-4 bg-black/80 px-3 py-1.5 rounded-lg text-xs text-white font-semibold">
+                <div className="absolute top-4 left-4 bg-black/80 px-3 py-1.5 rounded-lg text-xs text-slate-800 dark:text-white font-semibold">
                   Video
                 </div>
               </div>
@@ -594,7 +671,7 @@ const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
 
         {/* RESEARCH FILE CONTAINER */}
         {postData.research_file && postData.isResearchPost && (
-          <div className="mt-3 sm:mt-4 rounded-xl overflow-hidden border border-white/10 bg-[#0e0f10] p-3 sm:p-4">
+          <div className="mt-3 sm:mt-4 rounded-xl overflow-hidden dark:bg-[#0e0f10] dark:border-white/10 bg-gray-100 border border-gray-200 p-3 sm:p-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
               <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
                 <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-[#0f172a] border border-[#00ff85]/20 flex items-center justify-center shrink-0">
@@ -604,7 +681,7 @@ const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
                   />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs sm:text-sm font-semibold text-white truncate">
+                  <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-white truncate">
                     {postData.research_file.split("/").pop() ||
                       "Research Paper"}
                   </p>
@@ -617,7 +694,7 @@ const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
                 href={`${API_CONFIG.BASE_URL}/${postData.research_file}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto px-4 py-2 bg-[#00ff85] text-black font-bold text-xs sm:text-sm rounded-lg hover:bg-[#00dd77] transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+                className="w-full sm:w-auto px-4 py-2 bg-[#00ff85] text-black font-bold text-xs sm:text-sm rounded-lg hover:bg-[#00e676] dark:bg-[#00ff85] dark:text-black dark:hover:bg-[#00e676]  transition-all flex items-center justify-center gap-2 whitespace-nowrap"
               >
                 <span className="material-symbols-outlined text-sm sm:text-base">
                   open_in_new
@@ -628,10 +705,9 @@ const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
           </div>
         )}
       </div>
-
       {/* POST ACTIONS */}
       <div className="p-4 sm:p-5">
-        <div className="flex items-center gap-3 sm:gap-6 pt-4 border-t border-white/5 flex-wrap">
+        <div className="flex items-center gap-3 sm:gap-6 pt-4 border-t border-gray-200 dark:border-white/5 flex-wrap">
           {/* LIKE */}
           <button
             onClick={handleLike}
@@ -686,7 +762,7 @@ const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
           {/* UNSAVE */}
           <button
             onClick={() => onUnsave(postData.id)}
-            className="ml-auto flex items-center gap-1 sm:gap-2 text-[#00ff85] hover:text-white transition-all"
+            className="ml-auto flex items-center gap-1 sm:gap-2 text-[#00ff85] hover:text-slate-800 dark:text-white transition-all"
           >
             <MaterialIcon
               name="bookmark"
@@ -710,7 +786,8 @@ const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
                     if (e.key === "Enter") addComment();
                   }}
                   placeholder="Add a comment..."
-                  className="w-full bg-[#1e293b] border border-white/10 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm focus:outline-none focus:border-[#00ff85]/50 transition-colors pr-10 text-white"
+                  className="w-full bg-white text-slate-800 border border-gray-300   rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm focus:outline-none focus:border-[#00ff85]/50 transition-colors pr-10 text-slate-800 dark:bg-[#1e293b] dark:text-white dark:border-white/10
+"
                   style={{ outline: "none", boxShadow: "none" }}
                 />
                 <button
@@ -740,7 +817,7 @@ const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-white truncate">
+                        <span className="text-xs font-bold text-slate-800 dark:text-white truncate">
                           {comment.author}
                         </span>
                         <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-2">
@@ -758,7 +835,7 @@ const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
                         </div>
                       </div>
                       <p
-                        className={`text-xs text-slate-300 mt-1 leading-relaxed ${
+                        className={`text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed ${
                           expandedComments[comment.id] ? "" : "line-clamp-3"
                         }`}
                       >
@@ -1072,28 +1149,39 @@ const MyPublications = () => {
         message="Are you sure? This research will be publicly visible.."
       />
 
-      <div className="flex-1 overflow-y-auto px-4 sm:px-8 lg:px-12 py-6 sm:py-10 space-y-6 sm:space-y-8 font-inter relative z-10">
+      <div
+        className="
+flex-1 overflow-y-auto px-4 sm:px-8 lg:px-12 py-6 sm:py-10 space-y-6 sm:space-y-8 font-inter relative z-10
+
+bg-slate-50 text-slate-800
+dark:bg-transparent dark:text-[#e2e3e0]
+"
+      >
+        {" "}
         {/* Header */}
         <div className="flex flex-col gap-1 sm:gap-2">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-[#e2e3e0] uppercase">
+          <h1
+            className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight uppercase
+text-slate-900 dark:text-[#e2e3e0]"
+          >
+            {" "}
             My Research
           </h1>
-          <div className="flex items-center gap-2 text-[#b9cbb9]">
+          <div className="flex items-center gap-2 text-slate-600 dark:text-[#b9cbb9]">
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest">
               Personal Workspace
             </span>
             <div className="w-2 h-2 rounded-full bg-[#61ff97] shadow-[0_0_8px_rgba(97,255,151,0.6)]"></div>
           </div>
         </div>
-
         {/* Tabs */}
-        <div className="flex items-center border-b border-[#3b4b3d]/30 overflow-x-auto scrollbar-hidden">
+        <div className="flex items-center border-b border-gray-200 dark:border-[#3b4b3d]/30 overflow-x-auto scrollbar-hidden">
           <button
             onClick={() => setActiveTab("publications")}
             className={`px-4 sm:px-6 py-3 border-b-2 text-xs sm:text-sm font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
               activeTab === "publications"
                 ? "border-[#00ff85] text-[#00ff85]"
-                : "border-transparent text-[#b9cbb9] hover:text-[#e2e3e0]"
+                : "border-transparent text-slate-500 hover:text-slate-900 dark:text-[#b9cbb9] dark:hover:text-[#e2e3e0]"
             }`}
           >
             My Publications
@@ -1103,13 +1191,12 @@ const MyPublications = () => {
             className={`px-4 sm:px-6 py-3 border-b-2 text-xs sm:text-sm font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
               activeTab === "saved"
                 ? "border-[#00ff85] text-[#00ff85]"
-                : "border-transparent text-[#b9cbb9] hover:text-[#e2e3e0]"
+                : "border-transparent text-slate-500 hover:text-slate-900 dark:text-[#b9cbb9] dark:hover:text-[#e2e3e0]"
             }`}
           >
             Saved
           </button>
         </div>
-
         {/* Content */}
         <div className="flex flex-col gap-4 sm:gap-6 relative">
           {/* PUBLICATIONS TAB */}
@@ -1153,7 +1240,7 @@ const MyPublications = () => {
           {activeTab === "saved" &&
             (loading ? (
               <div className="flex justify-center py-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00ff85]"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 dark:border-[#00ff85]"></div>
               </div>
             ) : savedPosts.length > 0 ? (
               savedPosts.map((post) => (
@@ -1179,7 +1266,7 @@ const MyPublications = () => {
       </div>
 
       {/* Background Glow */}
-      <div className="fixed bottom-0 right-0 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-[#00ff85]/5 rounded-full blur-[120px] pointer-events-none z-0"></div>
+      <div className="fixed bottom-0 right-0 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-emerald-200/40 dark:bg-[#00ff85]/5 rounded-full blur-[120px] pointer-events-none z-0"></div>
 
       <style jsx>{`
         .scrollbar-hidden {

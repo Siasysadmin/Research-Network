@@ -6,11 +6,12 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
-
+import { useTheme } from "../../context/ThemeContext";
 import API_CONFIG from "../../config/api.config";
 
 const IndividualRegister = () => {
   const navigate = useNavigate();
+  const { isDark } = useTheme();
   const [formData, setFormData] = useState(() => {
     const savedData = localStorage.getItem("formData");
     return savedData
@@ -149,7 +150,8 @@ const IndividualRegister = () => {
           state: formData.state,
           city: formData.city,
           pincode: formData.pincode,
-registration_id: data?.registration_id || "",        };
+          registration_id: data?.registration_id || "",
+        };
 
         localStorage.setItem("user", JSON.stringify(userData));
         localStorage.setItem("user_id", data?.user_id || "");
@@ -186,14 +188,14 @@ registration_id: data?.registration_id || "",        };
 
   // UI Classes
   const inputClass =
-    "w-full bg-slate-800/50 border border-white/10 rounded-lg py-3 pl-11 pr-12 outline-none focus:border-[#00ff88]/50 focus:ring-1 focus:ring-[#00ff88]/30 transition-all text-white placeholder:text-slate-500 text-sm";
+    "w-full bg-[#f1f5f9] dark:bg-slate-950/70 border border-gray-300 dark:border-white/10 rounded-xl py-3.5 pl-12 pr-4 outline-none focus:border-[#00ff88]/50 focus:ring-1 focus:ring-[#00ff88]/30 transition-all text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-600";
   const errorInputClass =
     "border-red-500 focus:border-red-500 focus:ring-red-500/30";
   const errorMessageClass =
     "text-red-500 text-xs mt-1 ml-1 flex items-start gap-1";
 
   return (
-    <div className="bg-black text-white font-sans min-h-screen relative overflow-y-auto">
+    <div className="min-h-screen relative overflow-y-auto bg-white text-slate-900 dark:bg-black dark:text-white font-sans">
       {/* Material Icons */}
       <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0,1"
@@ -202,7 +204,7 @@ registration_id: data?.registration_id || "",        };
 
       {/* Background Pattern */}
       <div
-        className="fixed inset-0 pointer-events-none opacity-50"
+        className="fixed inset-0 pointer-events-none opacity-20 dark:opacity-50"
         style={{
           backgroundImage: `radial-gradient(#ffffff08 1px, transparent 1px)`,
           backgroundSize: "40px 40px",
@@ -211,13 +213,13 @@ registration_id: data?.registration_id || "",        };
 
       <main className="w-full min-h-screen flex flex-col items-center justify-center px-4 py-12 relative z-10">
         <div className="w-full max-w-[480px]">
-          <div className="bg-slate-900/40 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 md:p-10 shadow-[0_0_50px_rgba(0,255,136,0.1)]">
+          <div className="bg-white/70 dark:bg-slate-900/40  backdrop-blur-2xl border border-slate-200 dark:border-white/10 rounded-2xl p-6 md:p-10 shadow-[0_0_50px_rgba(0,255,136,0.1)]">
             {/* Header */}
             <div className="text-center mb-8">
               <h1 className="text-2xl lg:text-3xl font-black tracking-tight mb-2">
                 Create Your Account
               </h1>
-              <p className="text-slate-400 text-xs">
+              <p className="text-slate-600 dark:text-slate-300 text-sm">
                 Start your journey as individual researcher
               </p>
             </div>
@@ -226,7 +228,7 @@ registration_id: data?.registration_id || "",        };
             <form onSubmit={handleSubmit} noValidate>
               {/* Full Name Field */}
               <div className="space-y-1.5 mb-4">
-                <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-wider">
                   Full Name <span className="text-red-500">*</span>
                 </label>
                 <div className="relative group">
@@ -255,7 +257,7 @@ registration_id: data?.registration_id || "",        };
 
               {/* Email Field */}
               <div className="space-y-1.5 mb-4">
-                <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-wider">
                   Email ID <span className="text-red-500">*</span>
                 </label>
                 <div className="relative group">
@@ -301,7 +303,7 @@ registration_id: data?.registration_id || "",        };
               <div className="grid grid-cols-2 gap-3 mb-3">
                 {/* Country */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-wider">
                     Country <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
@@ -330,7 +332,7 @@ registration_id: data?.registration_id || "",        };
 
                 {/* State */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-wider">
                     State <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
@@ -362,7 +364,7 @@ registration_id: data?.registration_id || "",        };
               <div className="grid grid-cols-2 gap-3 mb-4">
                 {/* City */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-wider">
                     City <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
@@ -391,7 +393,7 @@ registration_id: data?.registration_id || "",        };
 
                 {/* Pincode */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-wider">
                     Pincode / Zipcode <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
@@ -422,7 +424,7 @@ registration_id: data?.registration_id || "",        };
 
               {/* Password Field */}
               <div className="space-y-1.5 mb-4">
-                <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-wider">
                   Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative group">
@@ -441,7 +443,7 @@ registration_id: data?.registration_id || "",        };
                   <button
                     type="button"
                     onClick={togglePassword}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
                   >
                     <span className="material-symbols-outlined text-lg">
                       {showPassword ? "visibility" : "visibility_off"}
@@ -461,7 +463,7 @@ registration_id: data?.registration_id || "",        };
 
               {/* Confirm Password Field */}
               <div className="space-y-1.5 mb-4">
-                <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-wider">
                   Confirm Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative group">
@@ -480,7 +482,7 @@ registration_id: data?.registration_id || "",        };
                   <button
                     type="button"
                     onClick={toggleConfirmPassword}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
                   >
                     <span className="material-symbols-outlined text-lg">
                       {showConfirmPassword ? "visibility" : "visibility_off"}
@@ -506,9 +508,12 @@ registration_id: data?.registration_id || "",        };
                     type="checkbox"
                     checked={formData.agreeTerms}
                     onChange={handleChange}
-                    className={`w-4 h-4 mt-0.5 rounded border-white/10 bg-white/5 text-[#00ff88] 
-                                               focus:ring-[#00ff88]/30 focus:ring-2 
-                                               ${fieldErrors.agreeTerms ? "border-red-500" : ""}`}
+                    className={`w-4 h-4 mt-0.5 rounded 
+border border-slate-300 dark:border-white/10 
+bg-white dark:bg-white/5 
+text-[#00ff88] 
+focus:ring-[#00ff88]/30 focus:ring-2 
+${fieldErrors.agreeTerms ? "border-red-500" : ""}`}
                     disabled={isLoading}
                   />
                   <label
@@ -518,14 +523,14 @@ registration_id: data?.registration_id || "",        };
                     I agree to{" "}
                     <Link
                       to="/terms"
-                      className="text-[#00ff88] text-sm underline decoration-slate-700 underline-offset-2"
+                      className="text-[#00ff88] text-sm underline decoration-slate-00 "
                     >
                       Terms
                     </Link>{" "}
                     &{" "}
                     <Link
                       to="/privacy"
-                      className="text-[#00ff88] text-sm underline decoration-slate-700 underline-offset-1"
+                      className="text-[#00ff88] text-sm underline decoration-slate-00 "
                     >
                       Privacy
                     </Link>
@@ -566,7 +571,7 @@ registration_id: data?.registration_id || "",        };
             </form>
 
             {/* Login Link */}
-            <div className="mt-8 text-center text-slate-400 text-sm">
+            <div className="mt-8 text-center text-slate-600 dark:text-slate-400 text-sm">
               Already have an account?{" "}
               <button
                 onClick={() => navigate("/login")}

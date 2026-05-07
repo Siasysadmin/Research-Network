@@ -10,9 +10,9 @@ const Step5 = ({ progress, onBack, onNext }) => {
     }
     return [];
   });
-  
+
   const [customInput, setCustomInput] = useState("");
-  
+
   const [customGoals, setCustomGoals] = useState(() => {
     const savedData = localStorage.getItem("step5");
     if (savedData) {
@@ -34,16 +34,19 @@ const Step5 = ({ progress, onBack, onNext }) => {
   // Save to localStorage whenever state changes
   useEffect(() => {
     console.log("Saving to localStorage:", { selectedGoals, customGoals });
-    localStorage.setItem("step5", JSON.stringify({ 
-      selectedGoals, 
-      customGoals 
-    }));
+    localStorage.setItem(
+      "step5",
+      JSON.stringify({
+        selectedGoals,
+        customGoals,
+      }),
+    );
   }, [selectedGoals, customGoals]);
 
   const toggleGoal = (title) => {
     setSelectedGoals((prev) => {
-      const newState = prev.includes(title) 
-        ? prev.filter((goal) => goal !== title) 
+      const newState = prev.includes(title)
+        ? prev.filter((goal) => goal !== title)
         : [...prev, title];
       console.log("Toggle goal:", title, "New state:", newState);
       return newState;
@@ -64,13 +67,18 @@ const Step5 = ({ progress, onBack, onNext }) => {
       console.log("Adding custom goal:", newGoal, "New state:", newState);
       return newState;
     });
-    
+
     setSelectedGoals((prev) => {
       const newState = [...prev, customInput.trim()];
-      console.log("Adding to selected:", customInput.trim(), "New state:", newState);
+      console.log(
+        "Adding to selected:",
+        customInput.trim(),
+        "New state:",
+        newState,
+      );
       return newState;
     });
-    
+
     setCustomInput("");
   };
 
@@ -80,7 +88,7 @@ const Step5 = ({ progress, onBack, onNext }) => {
       console.log("Removing custom goal:", goalId, "New state:", newState);
       return newState;
     });
-    
+
     setSelectedGoals((prev) => {
       const newState = prev.filter((goal) => goal !== title);
       console.log("Removing from selected:", title, "New state:", newState);
@@ -95,7 +103,15 @@ const Step5 = ({ progress, onBack, onNext }) => {
   const isSelected = (title) => selectedGoals.includes(title);
 
   return (
-    <div className="min-h-screen bg-[#0f231a] font-display transition-colors duration-300">
+    <div
+      className="
+min-h-screen font-display transition-colors duration-300
+
+bg-white text-slate-900
+dark:bg-[#0f231a] dark:text-white
+"
+    >
+      {" "}
       <div className="relative flex min-h-screen w-full flex-col">
         <div className="flex h-full grow flex-col">
           <main className="flex flex-1 items-center justify-center py-10">
@@ -103,12 +119,25 @@ const Step5 = ({ progress, onBack, onNext }) => {
               {/* Header */}
               <div className="flex flex-col gap-4 p-4">
                 <div className="flex items-center justify-between">
-                  <p className="text-white text-[13px] uppercase tracking-[0.2em] font-semibold">
+                  <p
+                    className="
+text-[13px] uppercase tracking-[0.2em] font-semibold
+
+text-slate-700
+dark:text-white
+"
+                  >
+                    {" "}
                     Step 5 of 6
                   </p>
                   <button
                     onClick={handleNext}
-                    className="flex items-center gap-1 px-0 py-0 border-none bg-transparent hover:text-white text-white/60 text-xs font-semibold tracking-wider transition-all"
+                    className="
+flex items-center gap-1 text-xs font-semibold tracking-wider transition-all
+
+text-gray-500 hover:text-black
+dark:text-white/60 dark:hover:text-white
+"
                   >
                     Skip
                     <span className="material-symbols-outlined text-sm">
@@ -116,7 +145,8 @@ const Step5 = ({ progress, onBack, onNext }) => {
                     </span>
                   </button>
                 </div>
-                <div className="rounded-full bg-white/10 h-1 overflow-hidden w-28">
+                <div className="rounded-full bg-gray-200 dark:bg-white/10 h-1 overflow-hidden w-28">
+                  {" "}
                   <div
                     className="h-full rounded-full bg-primary transition-all duration-300"
                     style={{ width: `${progress}%` }}
@@ -126,10 +156,26 @@ const Step5 = ({ progress, onBack, onNext }) => {
 
               {/* Title */}
               <div className="text-center px-4">
-                <h1 className="text-white tracking-light text-[32px] font-bold leading-tight pb-2 pt-6">
+                <h1
+                  className="
+text-[32px] font-bold leading-tight pb-2 pt-6
+
+text-slate-900
+dark:text-white
+"
+                >
+                  {" "}
                   Which type of collaborations interest you?
                 </h1>
-                <p className="text-gray-400 text-base font-normal leading-normal pb-6">
+                <p
+                  className="
+text-base
+
+text-gray-500
+dark:text-gray-400
+"
+                >
+                  {" "}
                   Select all that apply to help us match you with the right
                   sustainability researchers.
                 </p>
@@ -144,21 +190,25 @@ const Step5 = ({ progress, onBack, onNext }) => {
                     <div
                       key={goal.id}
                       onClick={() => toggleGoal(goal.title)}
-                      className={`bg-[#1a3328] flex flex-col gap-4 rounded-xl p-6 cursor-pointer transition-all duration-200 overflow-hidden
-                        ${
-                          selected
-                            ? "border-2 border-[#06f988] shadow-[0_0_15px_rgba(6,249,136,0.4)]"
-                            : "border-2 border-[#214a37] hover:border-[#06f988]/50"
-                        }`}
+                      className={`
+flex flex-col gap-4 rounded-xl p-6 cursor-pointer transition-all duration-200
+
+bg-gray-50 border-2 border-gray-200
+hover:border-[#00ff88]/50
+
+dark:bg-[#1a3328] dark:border-[#214a37]
+
+${selected ? "border-[#00ff88] shadow-[0_0_15px_rgba(0,255,136,0.3)]" : ""}
+`}
                     >
                       <div className="flex justify-between items-start flex-shrink-0">
                         <span
-                          className={`material-symbols-outlined text-4xl flex-shrink-0
-                            ${selected ? "text-[#06f988]" : "text-[#2f6a4e]"}`}
+                          className={`material-symbols-outlined text-4xl
+  ${selected ? "text-[#00ff88]" : "text-gray-400 dark:text-[#2f6a4e]"}`}
                         >
                           {goal.icon}
                         </span>
-                        
+
                         <div
                           className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all
                           ${
@@ -175,7 +225,15 @@ const Step5 = ({ progress, onBack, onNext }) => {
                         </div>
                       </div>
                       <div className="overflow-hidden">
-                        <h3 className="text-white text-lg font-bold leading-tight break-words">
+                        <h3
+                          className="
+text-lg font-bold leading-tight break-words
+
+text-slate-900
+dark:text-white
+"
+                        >
+                          {" "}
                           {goal.title}
                         </h3>
                       </div>
@@ -191,13 +249,17 @@ const Step5 = ({ progress, onBack, onNext }) => {
                     <div
                       key={goal.id}
                       onClick={() => toggleGoal(goal.title)}
-                      className={`bg-[#1a3328] flex flex-col gap-4 rounded-xl p-6 cursor-pointer transition-all duration-200 relative group/card overflow-hidden
-                        ${
-                          selected
-                            ? "border-2 border-[#06f988] shadow-[0_0_15px_rgba(6,249,136,0.4)]"
-                            : "border-2 border-[#214a37] hover:border-[#06f988]/50"
-                        }`}
-                    >
+                     className="
+bg-white border border-gray-200
+dark:bg-[#1a3328] dark:border-[#214a37]
+
+flex flex-col gap-4 rounded-xl p-5
+cursor-pointer transition-all duration-200
+
+overflow-hidden break-words
+min-w-0
+">
+                    
                       <div className="flex justify-between items-start flex-shrink-0">
                         <div
                           className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all
@@ -211,7 +273,7 @@ const Step5 = ({ progress, onBack, onNext }) => {
                             check
                           </span>
                         </div>
-                        
+
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -225,9 +287,17 @@ const Step5 = ({ progress, onBack, onNext }) => {
                         </button>
                       </div>
                       <div className="overflow-hidden">
-                        <h3 className="text-white text-lg font-bold leading-tight break-words overflow-wrap-anywhere">
-                          {goal.title}
-                        </h3>
+                       <h3 className="
+text-slate-900 dark:text-white 
+text-sm font-bold leading-snug
+
+break-words break-all
+whitespace-normal
+
+max-w-full
+">
+  {goal.title}
+</h3>
                       </div>
                     </div>
                   );
@@ -245,7 +315,16 @@ const Step5 = ({ progress, onBack, onNext }) => {
                       e.key === "Enter" && handleAddCustomGoal()
                     }
                     placeholder="Add custom interest..."
-                    className="flex-1 bg-[#1a3328] border-2 border-[#2f6a4e] rounded-xl px-4 py-4 text-white focus:border-[#06f988] focus:ring-0 transition-all outline-none"
+                    className="
+flex-1 rounded-xl px-4 py-4 outline-none transition-all
+
+bg-white border-2 border-gray-300 text-slate-900
+placeholder:text-gray-400
+focus:border-[#00ff88] focus:ring-2 focus:ring-[#00ff88]/20
+
+dark:bg-[#1a3328] dark:border-[#2f6a4e] dark:text-white
+dark:placeholder:text-[#8eccaf]/40
+"
                   />
                   <button
                     onClick={handleAddCustomGoal}
@@ -260,10 +339,12 @@ const Step5 = ({ progress, onBack, onNext }) => {
               </div>
 
               {/* Navigation Buttons */}
-              <div className="flex items-center justify-between gap-3 p-4 mt-8 border-t border-[#214a37]">
+              <div className="flex items-center justify-between gap-3 p-4 mt-8 border-t  border-gray-200
+dark:border-[#214a37]">
                 <button
                   onClick={onBack}
-                  className="px-10 py-3 rounded-[10px] border-2 border-[#06f988]/30 text-[#06f988] font-bold hover:bg-[#06f988]/5 flex items-center justify-center gap-2 transition-all active:scale-95">
+                  className="px-10 py-3 rounded-[10px] border-2 border-[#06f988]/30 text-[#06f988] font-bold hover:bg-[#06f988]/5 flex items-center justify-center gap-2 transition-all active:scale-95"
+                >
                   <span className="material-symbols-outlined text-xl">
                     arrow_back
                   </span>
@@ -272,7 +353,8 @@ const Step5 = ({ progress, onBack, onNext }) => {
                 <button
                   onClick={handleNext}
                   disabled={selectedGoals.length === 0}
-                  className="px-10 py-3 rounded-lg bg-[#06f988] text-[#0f231a] font-bold hover:shadow-[0_0_20px_rgba(0,255,136,0.4)] flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">  
+                  className="px-10 py-3 rounded-lg bg-[#06f988] text-[#0f231a] font-bold hover:shadow-[0_0_20px_rgba(0,255,136,0.4)] flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   Next
                   <span className="material-symbols-outlined text-xl">
                     arrow_forward
@@ -282,7 +364,7 @@ const Step5 = ({ progress, onBack, onNext }) => {
             </div>
           </main>
         </div>
-      </div>  
+      </div>
     </div>
   );
 };
