@@ -51,6 +51,7 @@ import GroupDetails from "./dashboard/GroupDetails";
 import BoardMember from "./dashboard/BoardMember/BoardMember";
 import Event from "./dashboard/Event/Event";
 import MyEvents from "./dashboard/Event/MyEvents";
+import NotificationPopup from "./dashboard/NotificationPopup";
 
 // settings
 import Settings from "./settings/setting";
@@ -160,6 +161,7 @@ import { ThemeProvider } from "./context/ThemeContext";
         <Route path="/group" element={<GroupDetails />} />
         <Route path="/dashboard/create-event" element={<Event />} />
         <Route path="/dashboard/my-event" element={<MyEvents />} />
+        <Route path="/dashboard/notifications" element={<NotificationPopup />} />
 
         {/* Settings */}
         <Route path="/settings" element={<Settings />} />
