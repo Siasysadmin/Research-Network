@@ -1071,7 +1071,7 @@ border-b border-slate-200 dark:border-[#3b4b3d]/30 transition-all"
                     />
                   ) : (
                     <>
-                      <div className="flex-1 overflow-y-auto p-4 lg:p-5 space-y-3 lg:space-y-4 hide-scrollbar bg-[#f9fafb] dark:bg-[#121413]/30akshitapatidar29072005@gmail.com min-h-0">
+                      <div className="flex-1 overflow-y-auto p-4 lg:p-5 space-y-3 lg:space-y-4 hide-scrollbar bg-[#f9fafb] dark:bg-[#121413]/30 min-h-0">
                         {activeChatData.messages?.length === 0 ? (
                           <div className="flex items-center justify-center h-full text-slate-500 font-mono text-sm uppercase italic opacity-40">
                             SAY HI TO START MESSAGING
@@ -1101,8 +1101,8 @@ border-b border-slate-200 dark:border-[#3b4b3d]/30 transition-all"
                                   <div
                                     className={`px-4 py-2.5 lg:py-3 rounded-2xl text-sm leading-relaxed inline-block max-w-full text-left ${
                                       msg.isMine
-                                        ? "bg-white dark:bg-[#0d0f0e] text-white border border-[#00ff85]/30 rounded-tr-none"
-                                        : "bg-[#1e201f] text-[#e2e3e0] border border-white/5 rounded-tl-none"
+                                        ? "bg-slate-200 dark:bg-[#0d0f0e] text-slate-900 dark:text-white border border-slate-300 dark:border-[#00ff85]/30 rounded-tr-none"
+                                        : "bg-[#1e201f] text-[#e2e3e0]:bg-slate-100 dark:bg-[#1e201f] text-slate-800 dark:text-[#e2e3e0] border border-white/5 rounded-tl-none"
                                     }`}
                                   >
                                     {msg.localFile && (
