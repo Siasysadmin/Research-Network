@@ -1,0 +1,47 @@
+/* Main Card Style */
+.movement-card {
+  border: 1px solid rgba(0, 255, 136, 0.2); /* Soft green border */
+  box-shadow: 
+    0 0 40px rgba(0, 255, 136, 0.05), /* Bahut halka outer glow */
+    inset 0 0 20px rgba(0, 255, 136, 0.05); /* Card ke andar ka glow */
+}
+
+/* Filled Button Style */
+.neon-btn-filled {
+  width: 100%;
+  @media (min-width: 640px) { width: auto; }
+  padding: 1.25rem 3rem;
+  border-radius: 0.75rem;
+  background-color: #00FF88;
+  color: black;
+  font-weight: 900;
+  font-size: 1.25rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+}
+
+.neon-btn-filled:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 40px rgba(0, 255, 136, 0.7);
+}
+
+/* Outline Button Style */
+.neon-btn-outline {
+  width: 100%;
+  @media (min-width: 640px) { width: auto; }
+  padding: 1.25rem 3rem;
+  border-radius: 0.75rem;
+  border: 2px solid #00FF88;
+  color: #00FF88;
+  background: transparent;
+  font-weight: 900;
+  font-size: 1.25rem;
+  transition: all 0.3s ease;
+}
+
+.neon-btn-outline:hover {
+  background-color: #00FF88;
+  color: black;
+  transform: scale(1.05);
+  box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+}
