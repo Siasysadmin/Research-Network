@@ -1,43 +1,52 @@
 import "../styles/Fields.css";
 import "../styles/Movement.css";
-import heroImg from "../assets/images/hero.png";
+import heroDark from "../assets/images/hero.png";
+import heroLight from "../assets/images/hero_light.png";
 import { Link } from "react-router-dom";
+import { useTheme } from "../context/ThemeContext";
 
 import { useNavigate } from "react-router-dom";
 
 export default function Home() {
   const navigate = useNavigate();
+  const { isDark, toggleTheme } = useTheme();
   const fields = [
     { title: "Sustainable Agriculture & Food System", icon: "agriculture" },
-    { title: "Water Resources and Conversion",        icon: "waves" },
-    { title: "Climate Change & Environment",          icon: "air" },
+    { title: "Water Resources and Conversion", icon: "waves" },
+    { title: "Climate Change & Environment", icon: "air" },
     { title: "Circular Economy and Waste Management", icon: "recycling" },
   ];
 
   const sdgs = [
-    { title: "No Poverty",                                icon: "volunteer_activism" },
-    { title: "Zero Hunger",                               icon: "nutrition" },
-    { title: "Good Health and Well-being",                icon: "favorite" },
-    { title: "Quality Education",                         icon: "school" },
-    { title: "Gender Equality",                           icon: "diversity_3" },
-    { title: "Clean Water and Sanitation",                icon: "water_drop" },
-    { title: "Affordable and Clean Energy",               icon: "bolt" },
-    { title: "Decent Work and Economic Growth",           icon: "trending_up" },
-    { title: "Industry, Innovation and Infrastructure",   icon: "precision_manufacturing" },
-    { title: "Reduced Inequalities",                      icon: "balance" },
-    { title: "Sustainable Cities and Communities",        icon: "location_city" },
-    { title: "Responsible Consumption and Production",    icon: "recycling" },
-    { title: "Climate Action",                            icon: "eco" },
-    { title: "Life Below Water",                          icon: "tsunami" },
-    { title: "Life on Land",                              icon: "forest" },
-    { title: "Peace, Justice and Strong Institutions",    icon: "gavel" },
-    { title: "Partnerships for the Goals",                icon: "handshake" },
+    { title: "No Poverty", icon: "volunteer_activism" },
+    { title: "Zero Hunger", icon: "nutrition" },
+    { title: "Good Health and Well-being", icon: "favorite" },
+    { title: "Quality Education", icon: "school" },
+    { title: "Gender Equality", icon: "diversity_3" },
+    { title: "Clean Water and Sanitation", icon: "water_drop" },
+    { title: "Affordable and Clean Energy", icon: "bolt" },
+    { title: "Decent Work and Economic Growth", icon: "trending_up" },
+    {
+      title: "Industry, Innovation and Infrastructure",
+      icon: "precision_manufacturing",
+    },
+    { title: "Reduced Inequalities", icon: "balance" },
+    { title: "Sustainable Cities and Communities", icon: "location_city" },
+    { title: "Responsible Consumption and Production", icon: "recycling" },
+    { title: "Climate Action", icon: "eco" },
+    { title: "Life Below Water", icon: "tsunami" },
+    { title: "Life on Land", icon: "forest" },
+    { title: "Peace, Justice and Strong Institutions", icon: "gavel" },
+    { title: "Partnerships for the Goals", icon: "handshake" },
   ];
 
   return (
     <>
       {/* ================= HERO SECTION ================= */}
-      <section className="relative min-h-screen bg-black overflow-hidden">
+      <section
+        className="relative min-h-screen  overflow-hidden 
+        bg-white text-black dark:bg-black dark:text-white"
+      >
         {/* TOP BAR */}
         <div className="absolute top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 flex justify-between items-center z-50">
           {/* LOGO */}
@@ -46,22 +55,31 @@ export default function Home() {
               GSIF
             </span>
             <div className="flex flex-col leading-none">
-              <span className="text-white text-[10px] sm:text-xs md:text-sm font-bold tracking-[0.15em] sm:tracking-[0.25em]">
+              <span className="text-black dark:text-white text-[10px] sm:text-xs md:text-sm font-bold tracking-[0.15em] sm:tracking-[0.25em]">
                 RESEARCH
               </span>
-              <span className="text-white text-[10px] sm:text-xs md:text-sm font-bold tracking-[0.15em] sm:tracking-[0.25em]">
+              <span className="text-black dark:text-white text-[10px] sm:text-xs md:text-sm font-bold tracking-[0.15em] sm:tracking-[0.25em]">
                 NETWORK
               </span>
             </div>
           </div>
 
           {/* LOGIN */}
-          <button
-            onClick={() => navigate("/login")}
-            className="px-3 py-1.5 sm:px-5 sm:py-2 border border-[#00FF88] text-[#00FF88] rounded-md font-semibold hover:bg-[#00FF88] hover:text-black transition text-sm sm:text-base"
-          >
-            Login
-          </button>
+          <div className="flex items-center gap-3">
+            {/* <button
+              onClick={toggleTheme}
+              className="px-3 py-1.5 sm:px-4 sm:py-2 border border-[#00FF88] text-[#00FF88] rounded-md hover:bg-[#00FF88] hover:text-black transition text-sm"
+            >
+              {isDark ? "Light Mode" : "Dark Mode"}
+            </button> */}
+
+            <button
+              onClick={() => navigate("/login")}
+              className="px-3 py-1.5 sm:px-5 sm:py-2 border border-[#00FF88] text-[#00FF88] rounded-md font-semibold hover:bg-[#00FF88] hover:text-black transition text-sm sm:text-base"
+            >
+              Login
+            </button>
+          </div>
         </div>
 
         {/* HERO CONTENT */}
@@ -69,12 +87,16 @@ export default function Home() {
           {/* LEFT TEXT */}
           <div className="lg:col-span-7 space-y-4 sm:space-y-6 lg:space-y-8 mt-24 lg:mt-0 text-center lg:text-left z-20 relative">
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-black leading-tight">
-              <span className="text-white">A Global Network for </span>
+              <span className="text-black dark:text-white">
+                A Global Network for{" "}
+              </span>
               <span className="text-[#00FF88]">Sustainability</span>{" "}
-              <span className="text-white">Researchers & Institutions</span>
+              <span className="text-black dark:text-white">
+                Researchers & Institutions
+              </span>
             </h1>
 
-            <p className="text-slate-400 text-sm sm:text-base md:text-lg max-w-xl mx-auto lg:mx-0">
+            <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base md:text-lg max-w-xl mx-auto lg:mx-0">
               Publish research, organize events, and connect with sustainability
               leaders through GSIF's collaborative platform.
             </p>
@@ -103,11 +125,10 @@ export default function Home() {
 
             {/* The Image with faded edges using CSS Mask */}
             <img
-              src={heroImg}
+              src={isDark ? heroDark : heroLight}
               alt="GSIF Network"
               className="w-full max-w-[300px] sm:max-w-[400px] lg:max-w-[500px] object-contain relative z-10 pointer-events-none"
               style={{
-                // Fades out the borders of the image smoothly into transparency
                 WebkitMaskImage:
                   "radial-gradient(circle at center, black 40%, transparent 75%)",
                 maskImage:
@@ -119,7 +140,10 @@ export default function Home() {
       </section>
 
       {/* ================= About SECTION ================= */}
-      <section id="about" className="py-16 sm:py-20 md:py-24 lg:py-32 overflow-hidden bg-black relative border-t border-white/5">
+      <section
+        id="about"
+        className="py-16 sm:py-20 md:py-24 lg:py-32 overflow-hidden bg-white dark:bg-black border-t border-gray-200 dark:border-white/5"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 xl:gap-20 items-center">
             {/* Left Content */}
@@ -127,10 +151,12 @@ export default function Home() {
               <div className="space-y-4 lg:space-y-6">
                 <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight text-center lg:text-left">
                   About <span className="text-[#00FF88]">GSIF</span>{" "}
-                  <span className="text-white">Research Network</span>
+                  <span className="text-black dark:text-white">
+                    Research Network
+                  </span>
                 </h2>
 
-                <p className="text-slate-400 text-base sm:text-lg md:text-xl leading-relaxed text-center lg:text-left">
+                <p className="text-slate-600 dark:text-slate-400 text-base sm:text-lg md:text-xl leading-relaxed text-center lg:text-left">
                   The GSIF Research Network exists to bridge the gap between
                   individual researchers and research institutions by offering a
                   trusted space for collaboration, visibility, and knowledge
@@ -153,7 +179,7 @@ export default function Home() {
                     <h4 className="text-lg sm:text-xl font-bold">
                       Our Mission
                     </h4>
-                    <p className="text-slate-500 text-sm sm:text-base">
+                    <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base">
                       Our mission is to support and empower
                       sustainability-focused researchers and research
                       institutions by providing a centralized digital platform
@@ -175,7 +201,7 @@ export default function Home() {
 
                   <div className="space-y-1 sm:space-y-2">
                     <h4 className="text-lg sm:text-xl font-bold">Our Vision</h4>
-                    <p className="text-slate-500 text-sm sm:text-base">
+                    <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base">
                       Our vision is to build the world's leading global research
                       network dedicated to sustainability. We envision a
                       connected ecosystem where researchers and institutions
@@ -193,7 +219,7 @@ export default function Home() {
               <div className="absolute -inset-4 bg-[#00FF88]/5 rounded-[3rem] blur-3xl"></div>
 
               <div className="relative p-1 bg-gradient-to-br from-[#00FF88]/30 to-transparent rounded-2xl sm:rounded-3xl">
-                <div className="bg-[#0a0a0a] rounded-xl sm:rounded-[1.4rem] p-6 sm:p-8 lg:p-12 space-y-6 lg:space-y-8 border border-white/5">
+                <div className="bg-white dark:bg-[#0a0a0a] rounded-xl sm:rounded-[1.4rem] p-6 sm:p-8 lg:p-12 space-y-6 lg:space-y-8 border border-gray-200 dark:border-white/5">
                   <div className="space-y-3 sm:space-y-4">
                     <span className="text-[#00FF88] font-bold uppercase tracking-widest text-xs sm:text-sm block text-center lg:text-left">
                       Our Impact
@@ -204,13 +230,13 @@ export default function Home() {
                   </div>
 
                   <div className="space-y-4 sm:space-y-6">
-                    <p className="text-slate-400 text-sm sm:text-base leading-relaxed italic text-center lg:text-left">
+                    <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base leading-relaxed italic text-center lg:text-left">
                       “Through the GSIF Research Network, we are building a
                       growing global ecosystem that supports
                       sustainability-focused research and collaboration”
                     </p>
 
-                    <p className="text-slate-400 text-sm sm:text-base leading-relaxed text-center lg:text-left">
+                    <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base leading-relaxed text-center lg:text-left">
                       By centralizing sustainability-focused studies and
                       fostering collaboration, the platform contributes to
                       informed decision-making and meaningful global
@@ -225,14 +251,14 @@ export default function Home() {
       </section>
 
       {/* ================= WHO CAN JOIN SECTION ================= */}
-      <section className="py-16 sm:py-20 md:py-24 lg:py-32 bg-white/5 border-y border-white/5 relative overflow-hidden">
+      <section className="py-16 sm:py-20 md:py-24 lg:py-32 bg-gray-50 dark:bg-white/5 border-y border-gray-200 dark:border-white/5 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
           {/* Heading */}
           <div className="text-center space-y-3 sm:space-y-4 mb-12 sm:mb-16 lg:mb-20">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight uppercase">
               Who Can Join?
             </h2>
-            <p className="text-slate-400 max-w-2xl mx-auto text-sm sm:text-base md:text-lg leading-relaxed px-4">
+            <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto text-sm sm:text-base md:text-lg leading-relaxed px-4">
               Open to individual researchers and institutions working toward
               sustainability
             </p>
@@ -242,7 +268,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 lg:gap-12 max-w-5xl mx-auto">
             {/* Individual Researcher */}
             <div className="group relative p-1 border-2 border-[#00FF88] rounded-[1.5rem] sm:rounded-[2rem] transition-all duration-500 hover:bg-gradient-to-br hover:from-[#00FF88]/40 hover:to-transparent">
-              <div className="h-full bg-black rounded-[1.4rem] sm:rounded-[1.85rem] p-6 sm:p-8 lg:p-10 flex flex-col items-center text-center space-y-4 sm:space-y-6 transition-all duration-500 group-hover:bg-black/90">
+              <div className="h-full bg-white dark:bg-black rounded-[1.4rem] sm:rounded-[1.85rem] p-6 sm:p-8 lg:p-10 flex flex-col items-center text-center space-y-4 sm:space-y-6 transition-all duration-500 group-hover:bg-white/90 dark:group-hover:bg-black/90">
                 <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-full bg-[#00FF88]/10 border border-[#00FF88]/20 flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:bg-[#00FF88]/20 group-hover:shadow-[0_0_30px_rgba(0,255,136,0.2)]">
                   <span className="material-symbols-outlined text-[#00FF88] text-3xl sm:text-4xl lg:text-5xl">
                     person_search
@@ -253,7 +279,7 @@ export default function Home() {
                   <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold">
                     Individual Researcher
                   </h3>
-                  <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
+                  <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base leading-relaxed">
                     Perfect for academics, PhD candidates, and independent
                     scientists. Build your personal brand, connect with global
                     peers, and access a vast library of sustainability data to
@@ -261,7 +287,7 @@ export default function Home() {
                   </p>
                 </div>
 
-                <ul className="text-left text-slate-500 space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
+                <ul className="text-left text-slate-600 dark:text-slate-500 space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
                   <li className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-[#00FF88] text-sm">
                       check_circle
@@ -286,7 +312,7 @@ export default function Home() {
 
             {/* Institute Researcher */}
             <div className="group relative p-1 border-2 border-[#00FF88] rounded-[1.5rem] sm:rounded-[2rem] transition-all duration-500 hover:bg-gradient-to-br hover:from-[#00FF88]/40 hover:to-transparent">
-              <div className="h-full bg-black rounded-[1.4rem] sm:rounded-[1.85rem] p-6 sm:p-8 lg:p-10 flex flex-col items-center text-center space-y-4 sm:space-y-6 transition-all duration-500 group-hover:bg-black/90">
+              <div className="h-full bg-white dark:bg-black rounded-[1.4rem] sm:rounded-[1.85rem] p-6 sm:p-8 lg:p-10 flex flex-col items-center text-center space-y-4 sm:space-y-6 transition-all duration-500 group-hover:bg-white/90 dark:group-hover:bg-black/90">
                 <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-full bg-[#00FF88]/10 border border-[#00FF88]/20 flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:bg-[#00FF88]/20 group-hover:shadow-[0_0_30px_rgba(0,255,136,0.2)]">
                   <span className="material-symbols-outlined text-[#00FF88] text-3xl sm:text-4xl lg:text-5xl">
                     account_balance
@@ -297,7 +323,7 @@ export default function Home() {
                   <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold">
                     Institute Researcher
                   </h3>
-                  <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
+                  <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base leading-relaxed">
                     Tailored for academic institutions, universities, and
                     dedicated research centers. Facilitate large-scale research
                     projects, manage multiple researcher profiles, and elevate
@@ -305,7 +331,7 @@ export default function Home() {
                   </p>
                 </div>
 
-                <ul className="text-left text-slate-500 space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
+                <ul className="text-left text-slate-600 dark:text-slate-500 space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
                   <li className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-[#00FF88] text-sm">
                       check_circle
@@ -335,13 +361,13 @@ export default function Home() {
       </section>
 
       {/* ================= RESEARCH ECOSYSTEM SECTION ================= */}
-      <section className="py-16 sm:py-20 md:py-24 lg:py-32 bg-black">
+      <section className="py-16 sm:py-20 md:py-24 lg:py-32 bg-white dark:bg-black">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="text-center space-y-3 sm:space-y-4 mb-12 sm:mb-16 lg:mb-20">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight uppercase">
               OUR RESEARCH ECOSYSTEM
             </h2>
-            <p className="text-slate-400 max-w-2xl mx-auto text-sm sm:text-base md:text-lg leading-relaxed px-4">
+            <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto text-sm sm:text-base md:text-lg leading-relaxed px-4">
               Our platform brings researchers and institutions together to
               publish, discover, and collaborate on sustainability-focused
               research.
@@ -383,17 +409,22 @@ export default function Home() {
             ].map((item, i) => (
               <div
                 key={i}
-                className="p-6 sm:p-8 lg:p-10 rounded-2xl bg-gradient-to-br from-black to-slate-900 border-2 border-[#00FF88]/50 shadow-inner shadow-[#00FF88]/20 transition-all neon-glow-hover group"
+                className="p-6 sm:p-8 lg:p-10 rounded-2xl bg-gradient-to-br from-white to-slate-100 dark:from-black dark:to-slate-900 border-2 border-[#00FF88]/50 shadow-inner shadow-[#00FF88]/20 transition-all neon-glow-hover group"
               >
                 <div className="mb-4 sm:mb-6 lg:mb-8 block">
-                  <span className="material-symbols-outlined text-[#00FF88] text-3xl sm:text-4xl lg:text-5xl">
+                  <span
+                    className="material-symbols-outlined 
+  text-emerald-600 
+  dark:text-[#00FF88] 
+  text-3xl sm:text-4xl lg:text-5xl"
+                  >
                     {item.icon}
                   </span>
                 </div>
                 <h3 className="text-lg sm:text-xl lg:text-2xl font-bold mb-2 sm:mb-3 lg:mb-4">
                   {item.title}
                 </h3>
-                <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
+                <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base leading-relaxed">
                   {item.desc}
                 </p>
               </div>
@@ -403,13 +434,13 @@ export default function Home() {
       </section>
 
       {/* ================= RESEARCH STEPS SECTION ================= */}
-      <section className="py-16 sm:py-20 md:py-24 lg:py-32 bg-white/5 border-y border-white/5">
+      <section className="py-16 sm:py-20 md:py-24 lg:py-32 bg-gray-50 dark:bg-white/5 border-y border-gray-200 dark:border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="max-w-3xl mx-auto text-center mb-12 sm:mb-16 lg:mb-24">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4 sm:mb-6">
               How Research Moves Forward
             </h2>
-            <p className="text-slate-400 text-base sm:text-lg md:text-xl leading-relaxed px-4">
+            <p className="text-slate-600 dark:text-slate-400 text-base sm:text-lg md:text-xl leading-relaxed px-4">
               A streamlined journey to connect, discover, and share impactful
               research.
             </p>
@@ -443,8 +474,8 @@ export default function Home() {
                 className={`relative ${i !== 3 ? "step-connector" : ""}`}
               >
                 <div
-                  className="p-6 sm:p-8 lg:p-12 rounded-2xl sm:rounded-3xl bg-black 
-  border-2 border-white/10
+                  className="p-6 sm:p-8 lg:p-12 rounded-2xl sm:rounded-3xl bg-white dark:bg-black 
+  border-2 border-gray-200 dark:border-white/10
   flex flex-col md:flex-row items-center gap-6 sm:gap-8 lg:gap-12 group
   transition-all duration-500
   hover:border-[#00FF88]
@@ -458,7 +489,7 @@ export default function Home() {
                     <h3 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold">
                       Step {item.step}: {item.title}
                     </h3>
-                    <p className="text-slate-400 text-sm sm:text-base lg:text-lg xl:text-xl leading-relaxed">
+                    <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base lg:text-lg xl:text-xl leading-relaxed">
                       {item.desc}
                     </p>
                   </div>
@@ -477,7 +508,7 @@ export default function Home() {
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter">
               Built for Every Field
             </h2>
-            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-slate-400 leading-relaxed max-w-4xl mx-auto lg:mx-0">
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-slate-600 dark:text-slate-400 leading-relaxed max-w-4xl mx-auto lg:mx-0">
               Our platform supports sustainability research across diverse
               disciplines, enabling interdisciplinary collaboration and global
               impact
@@ -513,7 +544,7 @@ export default function Home() {
 
       {/* ================= RESEARCH MOVEMENT SECTION ================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20 md:py-24 lg:py-32">
-        <div className="rounded-2xl sm:rounded-3xl lg:rounded-[3rem] bg-gradient-to-br from-[#00FF88]/20 via-black to-black border border-[#00FF88]/20 p-6 sm:p-8 md:p-12 lg:p-24 text-center relative overflow-hidden">
+        <div className="rounded-2xl sm:rounded-3xl lg:rounded-[3rem] bg-gradient-to-br from-[#00FF88]/20 via-white to-white dark:via-black dark:to-black border border-[#00FF88]/20 p-6 sm:p-8 md:p-12 lg:p-24 text-center relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-full bg-emerald-500/5 rounded-2xl sm:rounded-3xl lg:rounded-[3rem] blur-[40px] sm:blur-[60px] lg:blur-[80px] pointer-events-none"></div>
 
           <div className="relative z-10 max-w-4xl mx-auto space-y-6 sm:space-y-8 lg:space-y-10">
@@ -521,7 +552,7 @@ export default function Home() {
               Be part of a global sustainability research movement
             </h2>
 
-            <p className="text-slate-400 text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed">
+            <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed">
               Contribute to global sustainability research, collaborate across
               disciplines, and create real-world environmental and social impact
             </p>
@@ -546,44 +577,57 @@ export default function Home() {
         </div>
       </section>
 
-     {/* ================= FOOTER ================= */}
-      <footer className="bg-black border-t border-white/10 px-8 py-14">
+      {/* ================= FOOTER ================= */}
+      <footer className="bg-white dark:bg-black border-t border-gray-200 dark:border-white/10 px-8 py-14">
         <div className="max-w-7xl mx-auto flex flex-col items-center gap-6 text-center">
-
           {/* Logo - Center */}
           <div>
             <p className="text-2xl sm:text-3xl font-black tracking-widest">
               <span className="text-[#00FF88]">GSIF </span>
-              <span className="text-white">RESEARCH NETWORK</span>
+              <span className="text-black dark:text-white">
+                RESEARCH NETWORK
+              </span>
             </p>
           </div>
 
           {/* Nav Links */}
           <div className="flex items-center gap-6 sm:gap-10 flex-wrap justify-center">
-          <button
-  onClick={() => {
-    document.getElementById("about")?.scrollIntoView({ behavior: "smooth" });
-  }}
-  className="text-slate-400 hover:text-[#00FF88] text-sm sm:text-base font-medium transition-colors"
->
-  About Us
-</button>
-           <Link to="/privacy" className="text-slate-400 hover:text-[#00FF88] text-sm sm:text-base font-medium transition-colors">Privacy Policy</Link>
-           <Link to="/terms" className="text-slate-400 hover:text-[#00FF88] text-sm sm:text-base font-medium transition-colors">Terms & Conditions</Link>
-            <span className="text-slate-400 text-sm sm:text-base font-medium">
-              Contact: <span className="text-[#00FF88] font-semibold">research@gsif.org</span>
+            <button
+              onClick={() => {
+                document
+                  .getElementById("about")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="text-slate-600 dark:text-slate-400 hover:text-[#00FF88] text-sm sm:text-base font-medium transition-colors"
+            >
+              About Us
+            </button>
+            <Link
+              to="/privacy"
+              className="text-slate-600 dark:text-slate-400 hover:text-[#00FF88] text-sm sm:text-base font-medium transition-colors"
+            >
+              Privacy Policy
+            </Link>
+            <Link
+              to="/terms"
+              className="text-slate-600 dark:text-slate-400 hover:text-[#00FF88] text-sm sm:text-base font-medium transition-colors"
+            >
+              Terms & Conditions
+            </Link>
+            <span className="text-slate-600 dark:text-slate-400 text-sm sm:text-base font-medium">
+              Contact:{" "}
+              <span className="text-[#00FF88] font-semibold">
+                connect@gsi.foundation
+              </span>
             </span>
           </div>
 
           {/* Divider */}
-          <div className="w-full border-t border-white/10 pt-4">
-            <p className="text-slate-500 text-sm">
-              © 2024 GSIF Research Network. All rights reserved.
+          <div className="w-full border-t border-gray-200 dark:border-white/10 pt-4">
+            <p className="text-slate-500 dark:text-slate-500 text-sm">
+              © 2026 GSIF Research Network. All rights reserved.
             </p>
           </div>
-
-        
-
         </div>
       </footer>
     </>

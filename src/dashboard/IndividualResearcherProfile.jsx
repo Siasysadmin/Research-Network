@@ -15,9 +15,9 @@ const IndividualResearcherProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [profileImage, setProfileImage] = useState(null);
-const [connectionCount, setConnectionCount] = useState(0);
-const [connectedUsersList, setConnectedUsersList] = useState([]); // List save karne ke liye
-const [showConnectionsModal, setShowConnectionsModal] = useState(false); // Modal on/off karne ke liye
+  const [connectionCount, setConnectionCount] = useState(0);
+  const [connectedUsersList, setConnectedUsersList] = useState([]); // List save karne ke liye
+  const [showConnectionsModal, setShowConnectionsModal] = useState(false); // Modal on/off karne ke liye
 
   const getFullImageUrl = (path) => {
     if (!path) return null;
@@ -27,40 +27,39 @@ const [showConnectionsModal, setShowConnectionsModal] = useState(false); // Moda
     return `${API_CONFIG.BASE_URL}/${path}`;
   };
 
- useEffect(() => {
-  Promise.all([fetchProfileData(), fetchConnectedUsers()]);
-}, [location.state]);
+  useEffect(() => {
+    Promise.all([fetchProfileData(), fetchConnectedUsers()]);
+  }, [location.state]);
 
-const fetchConnectedUsers = async () => {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+  const fetchConnectedUsers = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
 
-    const response = await fetch(
-      `${API_CONFIG.BASE_URL}/user/connected-users-list`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}/user/connected-users-list`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
         },
+      );
+
+      const result = await response.json();
+      if (result.status && result.data) {
+        setConnectionCount(result.data.length);
+        setConnectedUsersList(result.data);
       }
-    );
-
-    const result = await response.json();
-    if (result.status && result.data) {
-      setConnectionCount(result.data.length);
-      setConnectedUsersList(result.data);
+    } catch (err) {
+      console.error("Failed to fetch connections", err);
     }
-  } catch (err) {
-    console.error("Failed to fetch connections", err);
-  }
-  // ✅ Koi setLoading nahi — profile data aate hi page show ho jayega
-};
+    // ✅ Koi setLoading nahi — profile data aate hi page show ho jayega
+  };
 
-
- const disconnectUser = async (connectedUserId) => {
+  const disconnectUser = async (connectedUserId) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
@@ -75,14 +74,16 @@ const fetchConnectedUsers = async () => {
             Accept: "application/json",
           },
           body: JSON.stringify({ connected_user_id: String(connectedUserId) }),
-        }
+        },
       );
 
       const result = await response.json();
 
       if (result.status) {
         // 1. Profile modal ki list se remove karo aur count ghata do
-        setConnectedUsersList((prev) => prev.filter((u) => u.id !== connectedUserId));
+        setConnectedUsersList((prev) =>
+          prev.filter((u) => u.id !== connectedUserId),
+        );
         setConnectionCount((prev) => prev - 1);
 
         // 2. ✅ Home Feed (MainContent) ke liye LocalStorage bhi update karo
@@ -90,7 +91,10 @@ const fetchConnectedUsers = async () => {
         if (savedFeedConnections) {
           const parsedConnections = JSON.parse(savedFeedConnections);
           parsedConnections[connectedUserId] = false; // Is user ko feed me disconnected mark kar do
-          localStorage.setItem("feedConnectedUsers", JSON.stringify(parsedConnections));
+          localStorage.setItem(
+            "feedConnectedUsers",
+            JSON.stringify(parsedConnections),
+          );
         }
       }
     } catch (err) {
@@ -99,44 +103,44 @@ const fetchConnectedUsers = async () => {
   };
 
   const fetchProfileData = async () => {
-  try {
-    setLoading(true);
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setError("Please login to view profile");
-      setLoading(false);
-      return;
-    }
-
-    const response = await fetch(
-      `${API_CONFIG.BASE_URL}/profile/get-profile-individual`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      },
-    );
-
-    const result = await response.json();
-
-    if (result.status && result.data) {
-      setProfileData(result.data);
-      setError(null);
-      // ✅ Image URL pehle set karo — image load hona shuru ho jaye
-      setProfileImage(getFullImageUrl(result.data.profile_image));
-      if (result.data.registration_id) {
-        localStorage.setItem("registration_id", result.data.registration_id);
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("Please login to view profile");
+        setLoading(false);
+        return;
       }
+
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}/profile/get-profile-individual`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+        },
+      );
+
+      const result = await response.json();
+
+      if (result.status && result.data) {
+        setProfileData(result.data);
+        setError(null);
+        // ✅ Image URL pehle set karo — image load hona shuru ho jaye
+        setProfileImage(getFullImageUrl(result.data.profile_image));
+        if (result.data.registration_id) {
+          localStorage.setItem("registration_id", result.data.registration_id);
+        }
+      }
+    } catch (err) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false); // ✅ Sirf profileData loading control karo
     }
-  } catch (err) {
-    setError("Network error. Please try again.");
-  } finally {
-    setLoading(false); // ✅ Sirf profileData loading control karo
-  }
-};
+  };
 
   const getProfileValue = (key, defaultValue = "") => {
     return profileData?.[key] || defaultValue;
@@ -220,9 +224,14 @@ const fetchConnectedUsers = async () => {
 
   return (
     <DashboardLayout>
-      <div className="mx-auto px-4 py-10 pb-12 flex-1 max-w-7xl">
+      <div
+        className="mx-auto px-4 py-10 pb-12 flex-1 max-w-7xl 
+bg-white text-slate-800 
+dark:bg-[#0a0a0a] dark:text-white"
+      >
+        {" "}
         <section className="mb-12">
-          <div className="flex flex-col md:flex-row items-center gap-8 bg-[#0a0a0a]/50 p-8 rounded-2xl border border-[#1a1a1a]">
+          <div className="flex flex-col md:flex-row items-center gap-8 bg-white border border-gray-200 p-8 rounded-2xl border dark:bg-[#0a0a0a]/50 dark:border-[#1a1a1a]">
             <div className="relative">
               <div className="w-32 h-32 rounded-full ring-4 ring-[#0df287]/20 p-1 overflow-hidden">
                 <img
@@ -238,31 +247,29 @@ const fetchConnectedUsers = async () => {
             </div>
 
             <div className="flex-1 text-center md:text-left">
-  <h1 className="text-3xl font-bold text-white mb-1">
-    {getProfileValue("name") || ""}
-  </h1>
-  <p className="text-[#0df287] font-medium">
-    Individual Researcher •{" "}
-    {getProfileValue("describes", "")}
-  </p>
-  <p className="text-sm text-slate-400 mt-1">
-    Registration ID:{" "}
-    {getProfileValue("registration_id") || ""}
-  </p>
-</div>
-<div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
-              
+              <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-1">
+                {getProfileValue("name") || ""}
+              </h1>
+              <p className="text-[#0df287] font-medium">
+                Individual Researcher • {getProfileValue("describes", "")}
+              </p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Registration ID: {getProfileValue("registration_id") || ""}
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
               <button
                 onClick={() => setShowConnectionsModal(true)}
                 className="px-4 py-2 border border-[#0df287]/50 text-[#0df287] bg-[#0df287]/10 hover:bg-[#0df287]/20 transition-all rounded-full font-medium text-xs sm:text-sm"
               >
-                View Connections 
-              </button>             
+                View Connections
+              </button>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
               <button
                 onClick={() => navigate("/dashboard/individual-edit-profile")}
-                className="flex items-center justify-center gap-2 px-6 py-2.5 border border-slate-700 text-slate-300 hover:bg-white/5 hover:border-slate-500 transition-all rounded-lg font-bold text-sm"
+                className="flex items-center justify-center gap-2 px-6 py-2.5 text-slate-700 border-gray-300 hover:bg-gray-100
+dark:text-slate-300 dark:border-slate-700 dark:hover:bg-white/5 hover:border-slate-500 transition-all rounded-lg font-bold text-sm"
               >
                 <MaterialIcon name="edit" className="text-lg" />
                 Edit Profile
@@ -270,29 +277,31 @@ const fetchConnectedUsers = async () => {
             </div>
           </div>
         </section>
-
-
         <div className="flex flex-col gap-6">
           {/* PERSONAL INFORMATION */}
           <details
-            className="group bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl"
+            className="group bg-white border border-gray-200
+dark:bg-[#0a0a0a] dark:border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl"
             open
           >
             <summary className="px-8 py-6 cursor-pointer hover:bg-white/5 transition-colors flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <MaterialIcon name="person" className="text-[#0df287]" />
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                   Personal Information
                 </h2>
               </div>
-              <MaterialIcon name="expand_more" className="text-slate-400" />
+              <MaterialIcon
+                name="expand_more"
+                className="text-slate-500 dark:text-slate-400"
+              />
             </summary>
             <div className="p-8 border-t border-[#1a1a1a] space-y-8">
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase">
                   Date of Birth
                 </label>
-                <p className="text-lg text-white font-medium">
+                <p className="text-lg text-slate-900 dark:text-white font-medium">
                   {/* ✅ Formatted Date output */}
                   {formatDate(getProfileValue("date_of_birth"))}
                 </p>
@@ -303,7 +312,7 @@ const fetchConnectedUsers = async () => {
                   <label className="text-xs font-bold text-slate-500 uppercase">
                     Country
                   </label>
-                  <p className="text-lg text-white font-medium uppercase">
+                  <p className="text-lg text-slate-900 dark:text-white font-medium uppercase">
                     {getProfileValue("country") || ""}
                   </p>
                 </div>
@@ -311,7 +320,7 @@ const fetchConnectedUsers = async () => {
                   <label className="text-xs font-bold text-slate-500 uppercase">
                     State
                   </label>
-                  <p className="text-lg text-white font-medium uppercase">
+                  <p className="text-lg text-slate-900 dark:text-white font-medium uppercase">
                     {getProfileValue("state") || ""}
                   </p>
                 </div>
@@ -319,7 +328,7 @@ const fetchConnectedUsers = async () => {
                   <label className="text-xs font-bold text-slate-500 uppercase">
                     City
                   </label>
-                  <p className="text-lg text-white font-medium capitalize">
+                  <p className="text-lg text-slate-900 dark:text-white font-medium capitalize">
                     {getProfileValue("city") || ""}
                   </p>
                 </div>
@@ -327,7 +336,7 @@ const fetchConnectedUsers = async () => {
                   <label className="text-xs font-bold text-slate-500 uppercase">
                     Pincode
                   </label>
-                  <p className="text-lg text-white font-medium">
+                  <p className="text-lg text-slate-900 dark:text-white font-medium">
                     {getProfileValue("pincode") || ""}
                   </p>
                 </div>
@@ -346,15 +355,21 @@ const fetchConnectedUsers = async () => {
           </details>
 
           {/* PROFESSIONAL INFORMATION */}
-          <details className="group bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl">
+          <details
+            className="group bg-white border border-gray-200
+dark:bg-[#0a0a0a] dark:border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl"
+          >
             <summary className="px-8 py-6 cursor-pointer hover:bg-white/5 transition-colors flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <MaterialIcon name="school" className="text-[#0df287]" />
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                   Professional Information
                 </h2>
               </div>
-              <MaterialIcon name="expand_more" className="text-slate-400" />
+              <MaterialIcon
+                name="expand_more"
+                className="text-slate-500 dark:text-slate-400"
+              />
             </summary>
             <div className="p-8 border-t border-[#1a1a1a] space-y-10">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -375,7 +390,7 @@ const fetchConnectedUsers = async () => {
                         </span>
                       ))
                     ) : (
-                      <p className="text-slate-400 text-sm">
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">
                         No SDG goals selected
                       </p>
                     )}
@@ -402,7 +417,7 @@ const fetchConnectedUsers = async () => {
                   <label className="text-xs font-bold text-slate-500 uppercase">
                     Current Research Level
                   </label>
-                  <p className="text-lg text-white font-medium">
+                  <p className="text-lg text-slate-900 dark:text-white font-medium">
                     {getProfileValue("current_research") || ""}
                   </p>
                 </div>
@@ -418,12 +433,13 @@ const fetchConnectedUsers = async () => {
                     experiences.map((exp, index) => (
                       <div
                         key={index}
-                        className="p-4 bg-black/40 rounded-lg border border-[#1a1a1a]"
+                        className="p-4 bg-gray-50 border-gray-200
+dark:bg-black/40 dark:border-[#1a1a1a]"
                       >
-                        <h4 className="text-sm font-bold text-white">
+                        <h4 className="text-sm font-bold text-slate-500 dark:text-slate-400">
                           {exp.role}
                         </h4>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
                           {exp.company} • {exp.duration}
                         </p>
                         <p className="text-sm text-slate-300 mt-2">
@@ -432,7 +448,9 @@ const fetchConnectedUsers = async () => {
                       </div>
                     ))
                   ) : (
-                    <p className="text-slate-400"></p>
+                    <p className="text-slate-500 dark:text-slate-400">
+                      No work experience added yet.
+                    </p>
                   )}
                 </div>
               </div>
@@ -440,18 +458,24 @@ const fetchConnectedUsers = async () => {
           </details>
 
           {/* CONTACT */}
-          <details className="group bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl">
+          <details
+            className="group bg-white border border-gray-200
+dark:bg-[#0a0a0a] dark:border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl"
+          >
             <summary className="px-8 py-6 cursor-pointer hover:bg-white/5 transition-colors flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <MaterialIcon
                   name="contact_support"
                   className="text-[#0df287]"
                 />
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                   Contact & Social
                 </h2>
               </div>
-              <MaterialIcon name="expand_more" className="text-slate-400" />
+              <MaterialIcon
+                name="expand_more"
+                className="text-slate-500 dark:text-slate-400"
+              />
             </summary>
             <div className="p-8 border-t border-[#1a1a1a] space-y-4 max-w-2xl">
               <ContactItem
@@ -495,26 +519,31 @@ const fetchConnectedUsers = async () => {
           </details>
         </div>
       </div>
-{/* ✅ Connections Modal */}
+      {/* ✅ Connections Modal */}
       {showConnectionsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[80vh]">
+          <div
+            className="bg-white border border-gray-200
+dark:bg-[#0a0a0a] dark:border-[#1a1a1a] rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[80vh]"
+          >
             {/* Modal Header */}
             <div className="flex items-center justify-between p-4 sm:p-6 border-b border-[#1a1a1a]">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <MaterialIcon name="group" className="text-[#0df287]" />
-                 Connections :
-                  <p 
-    className="text-sm text-slate-400 mt-1 cursor-pointer hover:text-[#0df287] transition-colors inline-block"
-    onClick={() => setShowConnectionsModal(true)}
-  >
-     <span className="text-white font-bold">{connectionCount}</span>
-  </p>
+                Connections :
+                <p
+                  className="text-sm text-slate-500 dark:text-slate-400 mt-1 cursor-pointer hover:text-[#0df287] transition-colors inline-block"
+                  onClick={() => setShowConnectionsModal(true)}
+                >
+                  <span className="text-slate-900 dark:text-white font-bold">
+                    {connectionCount}
+                  </span>
+                </p>
               </h3>
-              
+
               <button
                 onClick={() => setShowConnectionsModal(false)}
-                className="text-slate-400 hover:text-white transition-colors"
+                className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white transition-colors"
               >
                 <MaterialIcon name="close" />
               </button>
@@ -525,33 +554,40 @@ const fetchConnectedUsers = async () => {
               {connectedUsersList.length > 0 ? (
                 connectedUsersList.map((connUser) => (
                   <div
-  key={connUser.id}
-  className="flex items-center gap-4 p-3 bg-[#111] border border-[#1a1a1a] rounded-xl hover:border-[#0df287]/50 transition-colors"
->
-  <img
-    src={getFullImageUrl(connUser.profile_image) || avatar}
-    alt={connUser.name}
-    className="w-12 h-12 rounded-full object-cover border border-[#1a1a1a]"
-    onError={(e) => { e.target.src = avatar; }}
-  />
-  <div className="flex-1 min-w-0">
-    <h4 className="text-white font-bold text-sm truncate">
-      {connUser.user_type === 'institute' ? connUser.institute_name || connUser.name : connUser.name}
-    </h4>
-    <p className="text-xs text-[#0df287] capitalize truncate">
-      {connUser.user_type} Researcher
-    </p>
-  </div>
- <button
-  onClick={() => disconnectUser(connUser.id)}
-  className="text-slate-400 hover:text-red-400 transition-colors p-1"
->
-  <MaterialIcon name="person_remove" className="text-xl" />
-</button>
-</div>
+                    key={connUser.id}
+                    className="flex items-center gap-4 p-3  border bbg-gray-100
+dark:bg-[#111] order-[#1a1a1a] rounded-xl hover:border-[#0df287]/50 transition-colors"
+                  >
+                    <img
+                      src={getFullImageUrl(connUser.profile_image) || avatar}
+                      alt={connUser.name}
+                      className="w-12 h-12 rounded-full object-cover border border-[#1a1a1a]"
+                      onError={(e) => {
+                        e.target.src = avatar;
+                      }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-slate-900 dark:text-white font-bold text-sm truncate">
+                        {connUser.user_type === "institute"
+                          ? connUser.institute_name || connUser.name
+                          : connUser.name}
+                      </h4>
+                      <p className="text-xs text-[#0df287] capitalize truncate">
+                        {connUser.user_type} Researcher
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => disconnectUser(connUser.id)}
+                      className="text-slate-500 dark:text-slate-400 hover:text-red-400 transition-colors p-1"
+                    >
+                      <MaterialIcon name="person_remove" className="text-xl" />
+                    </button>
+                  </div>
                 ))
               ) : (
-                <p className="text-slate-500 text-sm text-center py-8">No connections found.</p>
+                <p className="text-slate-500 text-sm text-center py-8">
+                  No connections found.
+                </p>
               )}
             </div>
           </div>
@@ -587,7 +623,10 @@ const ContactItem = ({ label, value, icon, isLink }) => (
     </label>
 
     {/* Input-style Container */}
-    <div className="flex items-center gap-3 p-4 bg-[#050505] border border-[#1a1a1a] rounded-xl hover:border-slate-700 transition-all group">
+    <div
+      className="flex items-center gap-3 p-4 bg-gray-50 border-gray-200 text-slate-900
+dark:bg-[#050505] dark:border-[#1a1a1a] dark:text-white rounded-xl hover:border-slate-700 transition-all group"
+    >
       {/* Icon with specific color */}
       <div className="flex items-center justify-center text-slate-500 group-hover:text-[#0df287] transition-colors">
         <MaterialIcon name={icon} className="text-xl" />
@@ -600,12 +639,14 @@ const ContactItem = ({ label, value, icon, isLink }) => (
             href={value}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-white hover:text-[#0df287] transition-colors font-medium"
+            className="text-sm text-slate-900 dark:text-white hover:text-[#0df287] transition-colors font-medium"
           >
             {value}
           </a>
         ) : (
-          <p className="text-sm text-white font-medium">{value}</p>
+          <p className="text-sm text-slate-900 dark:text-white font-medium">
+            {value}
+          </p>
         )}
       </div>
     </div>

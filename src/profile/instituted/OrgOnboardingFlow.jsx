@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Step1 from "./OrganizationOnboarding";
 import Step2 from "./OrganizationLocation";
@@ -36,6 +36,11 @@ const OrgOnboardingFlow = () => {
   // Progress calculation
   const progress = ((currentStep - 1) / totalSteps) * 100;
 
+   useEffect(() => {
+      if (!stepMap[step]) {
+        navigate("/organization-onboarding/one");
+      }
+    }, [step, navigate]);
   // Next Step
   const next = () => {
     if (currentStep < totalSteps) {

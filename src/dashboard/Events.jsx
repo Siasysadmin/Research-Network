@@ -19,7 +19,15 @@ const InfoRow = ({ icon, label, value }) => (
       <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">
         {label}
       </p>
-      <p className="text-sm text-slate-200">{value}</p>
+      <p
+        className="
+text-sm
+text-slate-700
+dark:text-slate-200
+"
+      >
+        {value}
+      </p>{" "}
     </div>
   </div>
 );
@@ -49,7 +57,11 @@ const EventDetailModal = ({ event, onClose, formatEventDate, formatTime }) => {
       style={{ backgroundColor: "rgba(0,0,0,0.85)" }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-[#0a120e] border border-[#32ff9922] rounded-2xl w-full max-w-lg overflow-hidden shadow-[0_0_60px_rgba(50,255,153,0.08)] flex flex-col max-h-[90vh]">
+      <div
+        className="
+bg-white border border-slate-200 shadow-sm hover:shadow-xl dark:bg-[#0a120e] dark:border-[#32ff9922]
+rounded-2xl w-full max-w-lg overflow-hidden shadow-[0_0_60px_rgba(50,255,153,0.08)] flex flex-col max-h-[90vh]"
+      >
         <div className="relative shrink-0">
           {bannerUrl ? (
             <img
@@ -86,7 +98,12 @@ const EventDetailModal = ({ event, onClose, formatEventDate, formatTime }) => {
           }}
         >
           <div className="mb-4">
-            <h2 className="text-xl font-bold text-white leading-tight mb-1">
+            <h2
+              className="
+text-xl font-bold
+text-slate-900
+dark:text-white leading-tight mb-1"
+            >
               {event.event_title?.trim()}
             </h2>
             {event.organizer_name && (
@@ -190,14 +207,27 @@ const EventDetailModal = ({ event, onClose, formatEventDate, formatTime }) => {
               <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-2">
                 About this Event
               </p>
-              <div className="bg-[#111f17] border border-[#32ff9912] rounded-xl p-4 text-xs text-slate-400 leading-relaxed">
+              <div
+                className="
+bg-slate-100 border border-slate-200 text-slate-700
+dark:bg-[#111f17] dark:border-[#32ff9912] dark:text-slate-400
+rounded-xl p-4 text-xs
+ leading-relaxed"
+              >
                 {event.event_description || event.description}
               </div>
             </div>
           )}
         </div>
 
-        <div className="shrink-0 px-6 py-4 border-t border-[#32ff9912] bg-[#0a120e]">
+        <div
+          className="
+shrink-0 px-6 py-4
+border-t border-slate-200 bg-white
+dark:border-[#32ff9912] dark:bg-[#0a120e]
+"
+        >
+          {" "}
           <button
             onClick={onClose}
             className="w-full bg-[#32ff9910] hover:bg-[#32ff9920] border border-[#32ff9925] text-[#32ff99] font-semibold py-2.5 rounded-xl text-xs transition-all"
@@ -233,10 +263,15 @@ const EventCard = ({ event, index, onSelect, formatEventDate, formatTime }) => {
       : [];
 
   return (
-    <div className="group relative bg-[#0d1a12] border border-[#1a3525] rounded-2xl overflow-hidden transition-all duration-300 hover:border-[#32ff9935] hover:shadow-[0_4px_32px_rgba(50,255,153,0.06)]">
+    <div
+      className="
+group relative
+bg-white border border-slate-200
+dark:bg-[#0d1a12] dark:border-[#1a3525] rounded-2xl overflow-hidden transition-all duration-300 hover:border-[#32ff9935] hover:shadow-[0_4px_32px_rgba(50,255,153,0.06)]"
+    >
       {/* Banner / Header */}
-      <div className="relative w-full h-36 overflow-hidden">
-        {bannerUrl ? (
+<div className="relative w-full h-44 overflow-hidden">
+          {bannerUrl ? (
           <>
             <img
               src={bannerUrl}
@@ -290,11 +325,15 @@ const EventCard = ({ event, index, onSelect, formatEventDate, formatTime }) => {
           </div>
 
           <div className="flex-1 min-w-0 pt-1">
-            <h4 className="font-bold text-[13px] text-white leading-snug line-clamp-2 group-hover:text-[#e8fff4] transition-colors">
+            <h4
+              className="
+font-bold text-[20px] leading-snug text-slate-900
+dark:text-white   transition-colors"
+            >
               {event.event_title?.trim()}
             </h4>
             {event.organizer_name && (
-              <p className="text-[10px] text-[#32ff9960] mt-0.5 truncate">
+              <p className="text-[10px] text-slate-500 dark:text-[#32ff9960] mt-0.5 truncate">
                 by {event.organizer_name}
               </p>
             )}
@@ -303,13 +342,13 @@ const EventCard = ({ event, index, onSelect, formatEventDate, formatTime }) => {
 
         {/* Meta */}
         <div className="space-y-1.5 mb-3">
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-500">
             <span className="material-symbols-outlined text-[12px] text-[#32ff9950] shrink-0">
               location_on
             </span>
             <span className="truncate">{location}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-500">
             <span className="material-symbols-outlined text-[12px] text-[#32ff9950] shrink-0">
               schedule
             </span>
@@ -318,7 +357,7 @@ const EventCard = ({ event, index, onSelect, formatEventDate, formatTime }) => {
             </span>
           </div>
           {isMultiDay && (
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-500">
               <span className="material-symbols-outlined text-[12px] text-[#32ff9950] shrink-0">
                 date_range
               </span>
@@ -341,7 +380,7 @@ const EventCard = ({ event, index, onSelect, formatEventDate, formatTime }) => {
               </span>
             ))}
             {categories.length > 3 && (
-              <span className="px-2 py-0.5 text-[9px] text-slate-600">
+              <span className="px-2 py-0.5 text-[9px] text-slate-600 dark:text-slate-500">
                 +{categories.length - 3} more
               </span>
             )}
@@ -469,18 +508,17 @@ const Events = () => {
         />
       )}
 
-     <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-1">
             <div className="w-1 h-7 rounded-full bg-gradient-to-b from-[#32ff99] to-[#32ff9940]" />
-            <h2 className="text-2xl font-black text-white tracking-tight">
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
               Events
             </h2>
-           
           </div>
           <p className="text-sm text-slate-500 ml-4">
-          Explore events hosted across the GSIF ecosystem
+            Explore events hosted across the GSIF ecosystem
           </p>
         </div>
 
@@ -497,13 +535,26 @@ const Events = () => {
                 }}
               />
             </div>
-            <span className="text-slate-500 text-sm">Loading events...</span>
+            <span
+              className="
+text-slate-600
+dark:text-slate-500
+text-sm
+"
+            >
+              Loading events...
+            </span>
           </div>
         )}
 
         {/* Empty State */}
         {!loading && pastEvents.length === 0 && (
-          <div className="relative bg-[#0d1a12] border border-[#1a3525] rounded-2xl p-16 text-center overflow-hidden">
+          <div
+            className="
+relative
+bg-white border border-slate-200
+dark:bg-[#0d1a12] dark:border-[#1a3525] rounded-2xl p-16 text-center overflow-hidden"
+          >
             <div className="absolute inset-0 flex items-center justify-center opacity-[0.03]">
               <span
                 className="material-symbols-outlined text-[#32ff99]"
@@ -518,7 +569,14 @@ const Events = () => {
                   event_busy
                 </span>
               </div>
-              <p className="text-white font-bold text-base mb-1">
+              <p
+                className="
+font-bold text-base mb-1
+text-slate-900
+dark:text-white
+"
+              >
+                {" "}
                 No past events yet
               </p>
               <p className="text-slate-500 text-sm">
