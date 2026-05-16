@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import Layout from "../Admin/Layout/Layout";
+import avatar from "../assets/images/avatar.jpg";
 import API_CONFIG from "../config/api.config";
+
 
 const MaterialIcon = ({ name, className = "" }) => (
   <span className={`material-symbols-outlined ${className}`}>{name}</span>
@@ -14,7 +16,9 @@ const Toast = ({ message, type, onClose }) => {
 
   return (
     <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-white ${
-      type === "success" ? "bg-green-500" : "bg-red-500"
+      type === "success"
+          ? "bg-green-500 dark:bg-green-600"
+          : "bg-red-500 dark:bg-red-600"
     }`}>
       {message}
     </div>
@@ -247,23 +251,23 @@ const BoardMembers = () => {
   // =========================
   // AVATAR COMPONENT
   // =========================
-  const MemberAvatar = ({ member, displayName }) => {
-    const [imgError, setImgError] = useState(false);
-    const imageUrl = getProfileImageUrl(member);
+const MemberAvatar = ({ member, displayName }) => {
+  const [imgSrc, setImgSrc] = useState(
+    getProfileImageUrl(member) || avatar
+  );
 
-    if (imageUrl && !imgError) {
-      return (
-        <img
-          src={imageUrl}
-          alt={displayName}
-          className="w-full h-full object-cover rounded-full"
-          onError={() => setImgError(true)}
-        />
-      );
-    }
+  return (
+    <img
+      src={imgSrc}
+      alt={displayName}
+      className="w-full h-full object-cover rounded-full"
+      onError={() => setImgSrc(avatar)}
+    />
+  );
+
 
     return (
-      <MaterialIcon name="account_circle" className="text-5xl text-slate-400" />
+      <MaterialIcon name="account_circle" className="text-5xl text-gray-500 dark:text-slate-400" />
     );
   };
 
@@ -282,10 +286,10 @@ const BoardMembers = () => {
         {/* HEADER */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight mt-4">
+            <h2 className="text-2xl font-bold tracking-tight mt-4 text-gray-900 dark:text-white">
               Board Members Management
             </h2>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-gray-600 dark:text-slate-400">
               Overview and management of the current institutional advisory
               board.
             </p>
@@ -294,7 +298,7 @@ const BoardMembers = () => {
 
         {/* LOADING */}
         {loading ? (
-          <p className="text-center text-gray-400">Loading board members...</p>
+          <p className="text-center text-gray-600 dark:text-gray-400">Loading board members...</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
             {filteredMembers.map((member) => {
@@ -314,20 +318,20 @@ const BoardMembers = () => {
                     stableIds.current.get(member.registration_id) ||
                     member.registration_id
                   }
-                  className="bg-[#13231a] border border-[#1e3a2c] rounded-lg p-4 flex flex-col items-center text-center shadow-lg hover:-translate-y-1 transition-all duration-200"
+                  className="bg-white dark:bg-[#13231a] border border-gray-200 dark:border-[#1e3a2c] rounded-lg p-4 flex flex-col items-center text-center shadow-md dark:shadow-lg hover:-translate-y-1 transition-all duration-200"
                 >
                   {/* AVATAR */}
-                  <div className="size-16 rounded-full bg-[#0a120e] border-2 border-[#1e3a2c] flex items-center justify-center mb-3 overflow-hidden">
+                  <div className="size-16 rounded-full bg-gray-100 dark:bg-[#0a120e] border-2 border-gray-200 dark:border-[#1e3a2c] flex items-center justify-center mb-3 overflow-hidden">
                     <MemberAvatar member={member} displayName={displayName} />
                   </div>
 
-                  <h3 className="text-base font-bold text-white mb-1">
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">
                     {displayName}
                   </h3>
-                  <p className="text-xs text-[#00ff88] font-semibold mb-1">
+                  <p className="text-xs text-[#00aa66] dark:text-[#00ff88] font-semibold mb-1">
                     {member.registration_id}
                   </p>
-                  <p className="text-xs text-slate-400 mb-4 break-all whitespace-normal text-center w-full">
+                  <p className="text-xs text-gray-600 dark:text-slate-400 mb-4 break-all whitespace-normal text-center w-full">
                     {member.email}
                   </p>
                   <button
@@ -337,7 +341,7 @@ const BoardMembers = () => {
                       setRegistrationId("");
                       setSearchedUser(null);
                     }}
-                    className="w-full py-2 px-2 bg-[#00ff88]/10 hover:bg-[#00ff88] text-[#00ff88] hover:text-[#0a120e] text-xs font-bold rounded-lg border border-[#00ff88]/20 transition-all flex items-center justify-center gap-2"
+                    className="w-full py-2 px-2 bg-[#00ff88]/10 hover:bg-[#00ff88] text-[#00aa66] dark:text-[#00ff88] hover:text-[#0a120e] text-xs font-bold rounded-lg border border-[#00ff88]/20 transition-all flex items-center justify-center gap-2"
                   >
                     <MaterialIcon name="cached" className="text-sm" />
                     REPLACE MEMBER
@@ -351,15 +355,15 @@ const BoardMembers = () => {
 
       {/* POPUP */}
       {showReplacePopup && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-[#13231a] border border-[#1e3a2c] rounded-lg w-[420px] p-6 min-h-[320px] flex flex-col">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-[#13231a] border border-gray-200 dark:border-[#1e3a2c] rounded-lg w-[420px] p-6 min-h-[320px] flex flex-col">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-white">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                 Replace Board Member
               </h3>
               <button
                 onClick={() => setShowReplacePopup(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-gray-500 dark:text-slate-400 hover:text-black dark:hover:text-white"
               >
                 ✕
               </button>
@@ -370,40 +374,40 @@ const BoardMembers = () => {
               placeholder="Enter Registration ID (Example: SRN9814)"
               value={registrationId}
               onChange={(e) => setRegistrationId(e.target.value)}
-              className="w-full mb-4 px-3 py-2 bg-[#0a120e] border border-[#1e3a2c] rounded-md text-white text-sm outline-none"
+              className="w-full mb-4 px-3 py-2 bg-white dark:bg-[#0a120e] border border-gray-300 dark:border-[#1e3a2c] rounded-md text-gray-900 dark:text-white text-sm outline-none focus:border-[#00ff88] focus:ring-0"
             />
 
             {searchLoading && (
-              <p className="text-center text-gray-400">Searching user...</p>
+              <p className="text-center text-gray-600 dark:text-gray-400">Searching user...</p>
             )}
 
             {registrationId && !searchLoading && !searchedUser && (
-              <p className="text-center text-gray-400 text-sm">No user found</p>
+              <p className="text-center text-gray-600 dark:text-gray-400 text-sm">No user found</p>
             )}
 
             {searchedUser && (
-              <div className="bg-[#0a120e] p-3 rounded flex justify-between items-center">
+              <div className="bg-gray-100 dark:bg-[#0a120e] p-3 rounded flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div>
-                  <p className="text-white font-semibold">
+                  <p className="text-gray-900 dark:text-white font-semibold">
                     {searchedUser.user_type === "individual"
                       ? searchedUser.name
                       : searchedUser.institute_name || searchedUser.name}
                   </p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
                     Type: {searchedUser.user_type}
                   </p>
                   {searchedUser.user_type === "institute" && (
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
                       Institute:{" "}
                       {searchedUser.institute_name || searchedUser.name}
                     </p>
                   )}
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
                     Email: {searchedUser.email}
                   </p>
                 </div>
                 <button
-                  className="bg-[#00ff88] text-black px-3 py-1 rounded text-sm font-semibold"
+                  className="bg-[#00ff88] hover:bg-[#00dd77] text-black px-3 py-1 rounded text-sm font-semibold transition-all"
                   onClick={() => replaceBoardMember()}
                 >
                   UPDATE

@@ -130,39 +130,58 @@ useEffect(() => {
   if (!isOpen) return null;
 
   return (
-    <div className="bg-[#020604] font-sans text-white min-h-screen flex items-center justify-center p-6 relative overflow-y-auto">
-      {/* Background Glow */}
+<div className="
+font-sans min-h-screen flex items-center justify-center p-6 relative overflow-y-auto
+
+bg-white text-slate-900
+dark:bg-[#020604] dark:text-white
+">
+        {/* Background Glow */}
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
-          background:
-            "radial-gradient(circle at center, rgba(6, 249, 136, 0.1) 0%, transparent 70%)",
-        }}
+  background: "radial-gradient(circle at center, rgba(6,249,136,0.08) 0%, transparent 70%)"
+}}
       ></div>
 
       {/* Main Glass Panel */}
-      <div className="relative w-full max-w-[370px] pt-14 px-8 pb-12 rounded-[2.5rem] text-center shadow-[0_0_100px_rgba(0,0,0,0.9)] border border-[#06f988]/15 bg-[rgba(8,18,13,0.98)] backdrop-blur-[40px]">
-        {/* Close Button */}
+<div className="
+relative w-full max-w-[370px] pt-14 px-8 pb-12 rounded-[2.5rem] text-center
+
+shadow-[0_0_100px_rgba(0,0,0,0.1)]
+bg-white border border-gray-200
+
+dark:shadow-[0_0_100px_rgba(0,0,0,0.9)]
+dark:bg-[rgba(8,18,13,0.98)] dark:border-[#06f988]/15
+
+backdrop-blur-[40px]
+">
+          {/* Close Button */}
         <button
           onClick={handleCloseAndNavigate}
-          className="absolute top-6 right-7 text-[#06f988]/50 hover:text-[#06f988] transition-colors z-20"
-        >
+className="
+absolute top-6 right-7 transition-colors z-20
+
+text-gray-400 hover:text-black
+dark:text-[#06f988]/50 dark:hover:text-[#06f988]
+"        >
           <span className="material-symbols-outlined text-xl">close</span>
         </button>
 
         {/* Success Circle Section */}
         <div className="relative flex flex-col items-center justify-center mb-10">
           <div className="relative w-32 h-32 flex items-center justify-center">
-            <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-              <circle
-                className="text-white/5"
-                cx="50"
-                cy="50"
-                fill="transparent"
-                r="44"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
+            <svg className="w-full h-full -rotate-90 text-gray-200
+dark:text-white/5"   viewBox="0 0 100 100">
+             <circle
+  className="text-gray-200 dark:text-white/5"
+  cx="50"
+  cy="50"
+  fill="transparent"
+  r="44"
+  stroke="currentColor"
+  strokeWidth="4"
+/>
               {/* Dynamic ring */}
               <circle
                 className="text-[#06f988]"
@@ -184,7 +203,12 @@ useEffect(() => {
 
             <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
               {/* Dynamic % */}
-              <span className="text-3xl font-black text-white tracking-tighter leading-none">
+              <span className="
+text-3xl font-black tracking-tighter leading-none
+
+text-slate-900
+dark:text-white
+">
                 {animatedValue}%
               </span>
               <span className="text-[#06f988] text-[9px] font-bold tracking-[0.2em] uppercase mt-1">
@@ -196,26 +220,41 @@ useEffect(() => {
 
         {/* Text Content */}
         <div className="space-y-3 mb-10">
-          <h1 className="text-white tracking-tight text-xl font-bold leading-tight px-4">
+          <h1 className="
+tracking-tight text-xl font-bold leading-tight px-4
+
+text-slate-900
+dark:text-white
+">
             Your Institute Profile is Active
           </h1>
-          <p className="text-white/50 text-[13px] font-normal leading-relaxed">
+          <p className="
+text-[13px] font-normal leading-relaxed
+
+text-gray-500
+dark:text-white/50
+">
             Seamlessly connect with internal teams and access institute-specific
             resources and projects.
           </p>
         </div>
 
         {/* Network Status Section */}
-        <div className="pt-8 border-t border-white/5 w-full">
+        <div className="pt-8 border-t border-gray-200
+dark:border-white/5 w-full">
           <div className="flex flex-col gap-4">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#06f988]/60 text-xs">
                   verified_user
                 </span>
-                <p className="text-white/40 text-[9px] font-bold uppercase tracking-widest">
-                  Network Status
-                </p>
+               <p className="
+text-gray-400
+dark:text-white/40
+text-[9px] font-bold uppercase tracking-widest
+">
+  Network Status
+</p>
               </div>
               <span className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 bg-[#06f988] rounded-full shadow-[0_0_8px_#06f988]"></span>
@@ -226,8 +265,12 @@ useEffect(() => {
             </div>
 
             {/* Dynamic bar */}
-            <div className="rounded-full bg-white/5 h-1.5 w-full overflow-hidden">
-              <div
+<div className="
+rounded-full h-1.5 w-full overflow-hidden
+
+bg-gray-200
+dark:bg-white/5
+">              <div
                 className="h-full bg-[#06f988] shadow-[0_0_10px_#06f988] transition-all duration-1000"
                 style={{ width: `${completion}%` }}
               ></div>

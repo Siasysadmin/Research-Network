@@ -14,12 +14,14 @@ const ResetPassword = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
- 
+
   const email = location.state?.email || localStorage.getItem("userEmail");
   const otp = location.state?.otp || localStorage.getItem("userOtp");
-  
+
   // ✅ YEH CHECK KAREIN KI VERIFICATION ACTUALLY HUI HAI YA NAHI
-  const isVerified = location.state?.isVerified || localStorage.getItem("isOtpVerified") === "true";
+  const isVerified =
+    location.state?.isVerified ||
+    localStorage.getItem("isOtpVerified") === "true";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,7 +31,7 @@ const ResetPassword = () => {
       return;
     }
 
-      if (password.length < 6) {
+    if (password.length < 6) {
       toast.error("Password must be at least 6 characters long");
       return;
     }
@@ -55,7 +57,7 @@ const ResetPassword = () => {
             password: password,
             confirm_password: confirmPassword,
           }),
-        }
+        },
       );
 
       const data = await response.json();
@@ -80,34 +82,69 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#10221a] text-white flex flex-col font-sans relative overflow-hidden">
+    <div
+      className="
+min-h-screen flex flex-col font-sans relative overflow-hidden
+
+bg-white text-slate-900 
+dark:bg-[#10221a] dark:text-white
+"
+    >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,#ffffff05_1px,transparent_0)] bg-[size:24px_24px]" />
-      
+
       <main className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
         <div className="w-full max-w-[480px]">
-          
           {/* ✅ SIRF TAB DIKHAYEN JAB VERIFICATION SUCCESSFUL HO */}
           {isVerified && (
             <div className="mb-8 flex items-center justify-center gap-3 bg-[#0df287]/10 border border-[#0df287]/20 rounded-xl px-4 py-3">
               <CheckCircle size={20} className="text-[#0df287]" />
-              <p className="text-[#0df287] text-sm font-semibold">Identity successfully verified</p>
+              <p className="text-[#0df287] text-sm font-semibold">
+                Identity successfully verified
+              </p>
             </div>
           )}
 
-          <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-2xl shadow-2xl">
+          <div
+            className="
+bg-white 
+dark:bg-white/5 
+backdrop-blur-md 
+border border-gray-200 
+dark:border-white/10 
+p-8 md:p-10 rounded-2xl shadow-2xl
+"
+          >
+            {" "}
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold mb-3 tracking-tight">Set New Password</h1>
-              <p className="text-white/60 text-sm leading-relaxed">
-                Choose a strong password to secure your climate research data and simulation models.
+              <h1
+                className="text-3xl font-bold mb-3 tracking-tight 
+text-slate-900 dark:text-white"
+              >
+                Set New Password
+              </h1>
+
+              <p className="text-slate-600 dark:text-white/60 text-sm leading-relaxed">
+                Choose a strong password to secure your climate research data
+                and simulation models.
               </p>
             </div>
-
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-white/80">New Password</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-white/80">
+                  New Password
+                </label>
                 <div className="relative group">
                   <input
-                    className="w-full bg-white/5 border border-white/10 rounded-lg h-12 px-4 focus:ring-1 focus:ring-[#0df287] focus:border-[#0df287] outline-none transition-all placeholder:text-white/20 text-white"
+                    className="
+  w-full h-12 px-4 rounded-lg transition-all outline-none
+
+  bg-gray-100 border border-gray-300 
+  text-slate-900 placeholder:text-slate-500
+
+  dark:bg-white/5 dark:border-white/10 
+  dark:text-white dark:placeholder:text-white/20
+
+  focus:ring-1 focus:ring-[#0df287] focus:border-[#0df287]"
                     placeholder="••••••••"
                     type={showPassword ? "text" : "password"}
                     value={password}
@@ -115,13 +152,17 @@ const ResetPassword = () => {
                   />
                   <button
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-[#0df287] transition-colors"
+                    className="
+absolute right-3 top-1/2 -translate-y-1/2 
+text-slate-500 dark:text-white/40 
+hover:text-[#0df287] transition-colors
+"
                     type="button"
                   >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    {showPassword ? <Eye size={20} /> : <EyeOff size={20} />}
                   </button>
                 </div>
-                 {/* ✅ PASSWORD STRENGTH INDICATOR (OPTIONAL) */}
+                {/* ✅ PASSWORD STRENGTH INDICATOR (OPTIONAL) */}
                 {password.length > 0 && password.length < 6 && (
                   <p className="text-xs text-red-400 mt-1">
                     Password must be at least 6 characters
@@ -130,10 +171,22 @@ const ResetPassword = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-white/80">Confirm New Password</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-white/80">
+                  Confirm New Password
+                </label>
                 <div className="relative group">
                   <input
-                    className="w-full bg-white/5 border border-white/10 rounded-lg h-12 px-4 focus:ring-1 focus:ring-[#0df287] focus:border-[#0df287] outline-none transition-all placeholder:text-white/20 text-white"
+                    className="
+  w-full h-12 px-4 rounded-lg transition-all outline-none
+
+  bg-gray-100 border border-gray-300 
+  text-slate-900 placeholder:text-slate-500
+
+  dark:bg-white/5 dark:border-white/10 
+  dark:text-white dark:placeholder:text-white/20
+
+  focus:ring-1 focus:ring-[#0df287] focus:border-[#0df287]
+  "
                     placeholder="••••••••"
                     type={showConfirmPassword ? "text" : "password"}
                     value={confirmPassword}
@@ -141,10 +194,18 @@ const ResetPassword = () => {
                   />
                   <button
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-[#0df287] transition-colors"
+                    className="
+absolute right-3 top-1/2 -translate-y-1/2 
+text-slate-500 dark:text-white/40 
+hover:text-[#0df287] transition-colors
+"
                     type="button"
                   >
-                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    {showConfirmPassword ? (
+                      <Eye size={20} />
+                    ) : (
+                      <EyeOff size={20} />
+                    )}
                   </button>
                 </div>
               </div>
@@ -157,14 +218,6 @@ const ResetPassword = () => {
                 {loading ? "Updating..." : "Update Password"}
               </button>
             </form>
-          </div>
-
-          <div className="mt-6 text-center">
-            <div className="flex items-center justify-center gap-2 text-[12px] font-medium text-[#0df287]/40">
-              <a className="hover:text-[#0df287] transition-colors cursor-pointer">Terms of service</a>
-              <span className="opacity-50">•</span>
-              <a className="hover:text-[#0df287] transition-colors cursor-pointer">Privacy policy</a>
-            </div>
           </div>
         </div>
       </main>

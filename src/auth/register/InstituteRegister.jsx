@@ -2,7 +2,7 @@
 // INSTITUTE REGISTRATION - ADDRESS FIRST, THEN WEBSITE
 // ============================================
 
-import React, { useState ,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
@@ -15,22 +15,22 @@ const InstituteRegister = () => {
 
   const [step, setStep] = useState(1);
 
-  const [formData, setFormData] = useState( () => {
-     const savedData = localStorage.getItem("formData");
-  return savedData
-    ? JSON.parse(savedData)
-    : {
-    instituteName: "",
-    email: "",
-    contactNumber: "",
-    address: "",
-    instituteWebsite: "",
-    adminName: "",
-    professionalRole: "",
-    password: "",
-    confirmPassword: "",
-    agreeTerms: false,
-    };
+  const [formData, setFormData] = useState(() => {
+    const savedData = localStorage.getItem("formData");
+    return savedData
+      ? JSON.parse(savedData)
+      : {
+          instituteName: "",
+          email: "",
+          contactNumber: "",
+          address: "",
+          instituteWebsite: "",
+          adminName: "",
+          professionalRole: "",
+          password: "",
+          confirmPassword: "",
+          agreeTerms: false,
+        };
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -230,19 +230,19 @@ const InstituteRegister = () => {
   };
 
   useEffect(() => {
-  localStorage.setItem("formData", JSON.stringify(formData));
-}, [formData]);
+    localStorage.setItem("formData", JSON.stringify(formData));
+  }, [formData]);
 
   // EXACT same classes as IndividualRegister
   const inputClass =
-    "w-full bg-slate-800/50 border border-white/10 rounded-lg py-3 pl-11 pr-12 outline-none focus:border-[#00ff88]/50 focus:ring-1 focus:ring-[#00ff88]/30 transition-all text-white placeholder:text-slate-500 text-sm";
+    "w-full bg-[#f1f5f9] dark:bg-slate-950/70 border border-gray-300 dark:border-white/10 rounded-lg py-3 pl-11 pr-12 outline-none focus:border-[#00ff88]/50 focus:ring-1 focus:ring-[#00ff88]/30 transition-all text-slate-900 dark:text-white placeholder:text-slate-500 dark:text-slate-500 dark:placeholder:text-slate-600";
   const errorInputClass =
     "border-red-500 focus:border-red-500 focus:ring-red-500/30";
   const errorMessageClass =
     "text-red-500 text-xs mt-1 ml-1 flex items-start gap-1";
 
   return (
-    <div className="bg-black text-white font-sans min-h-screen relative overflow-y-auto">
+    <div className="min-h-screen relative overflow-y-auto bg-white text-slate-900 dark:bg-black text-slate-900 dark:text-white font-sans">
       {/* Material Icons */}
       <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0,1"
@@ -260,13 +260,13 @@ const InstituteRegister = () => {
 
       <main className="w-full min-h-screen flex flex-col items-center justify-center px-4 py-12 relative z-10">
         <div className="w-full max-w-[480px]">
-          <div className="bg-slate-900/40 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 md:p-10 shadow-[0_0_50px_rgba(0,255,136,0.1)]">
+          <div className="bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200 dark:border-white/10 rounded-2xl p-6 md:p-10 shadow-[0_0_50px_rgba(0,255,136,0.1)]">
             {/* Header */}
             <div className="text-center mb-8">
               <h1 className="text-2xl lg:text-3xl font-black tracking-tight mb-2">
                 {step === 1 ? "Institute Details" : "Institute Representative"}
               </h1>
-              <p className="text-slate-400 text-xs">
+              <p className="text-slate-600 dark:text-slate-400 text-xs">
                 {step === 1
                   ? "Register your institute for research collaborations"
                   : "Add representative details to complete registration"}
@@ -277,11 +277,11 @@ const InstituteRegister = () => {
               <form onSubmit={(e) => e.preventDefault()} noValidate>
                 {/* Institute Name */}
                 <div className="space-y-1.5 mb-4">
-                  <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                  <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider ml-1">
                     Institute Name <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
-                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-lg group-focus-within:text-[#00ff88]">
+                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-500 text-lg group-focus-within:text-[#00ff88]">
                       apartment
                     </span>
                     <input
@@ -306,11 +306,11 @@ const InstituteRegister = () => {
 
                 {/* Email */}
                 <div className="space-y-1.5 mb-4">
-                  <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                  <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider ml-1">
                     Email ID <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
-                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-lg group-focus-within:text-[#00ff88]">
+                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-500 text-lg group-focus-within:text-[#00ff88]">
                       mail
                     </span>
                     <input
@@ -349,7 +349,7 @@ const InstituteRegister = () => {
 
                 {/* Contact Number */}
                 <div className="space-y-1.5 mb-4">
-                  <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                  <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider ml-1">
                     Contact Number <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
@@ -384,11 +384,11 @@ const InstituteRegister = () => {
 
                 {/* ADDRESS - pehle */}
                 <div className="space-y-1.5 mb-4">
-                  <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                  <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider ml-1">
                     Address <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
-                    <span className="material-symbols-outlined absolute left-3.5 top-3 text-slate-500 text-lg group-focus-within:text-[#00ff88]">
+                    <span className="material-symbols-outlined absolute left-3.5 top-3 text-slate-500 dark:text-slate-500 text-lg group-focus-within:text-[#00ff88]">
                       location_on
                     </span>
                     <textarea
@@ -418,11 +418,11 @@ const InstituteRegister = () => {
 
                 {/* INSTITUTE WEBSITE - baad mein */}
                 <div className="space-y-1.5 mb-6">
-                  <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                  <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider ml-1">
                     Institute Website <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
-                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-lg group-focus-within:text-[#00ff88]">
+                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-500 text-lg group-focus-within:text-[#00ff88]">
                       language
                     </span>
                     <input
@@ -472,11 +472,11 @@ const InstituteRegister = () => {
               <form onSubmit={handleSubmit} noValidate>
                 {/* Admin Name */}
                 <div className="space-y-1.5 mb-4">
-                  <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                  <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider ml-1">
                     Representative Name <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
-                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-lg group-focus-within:text-[#00ff88]">
+                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-500 text-lg group-focus-within:text-[#00ff88]">
                       person
                     </span>
                     <input
@@ -501,11 +501,11 @@ const InstituteRegister = () => {
 
                 {/* Professional Role */}
                 <div className="space-y-1.5 mb-4">
-                  <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                  <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider ml-1">
                     Professional Role <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
-                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-lg group-focus-within:text-[#00ff88]">
+                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-500 text-lg group-focus-within:text-[#00ff88]">
                       work
                     </span>
                     <input
@@ -530,11 +530,11 @@ const InstituteRegister = () => {
 
                 {/* Password */}
                 <div className="space-y-1.5 mb-4">
-                  <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                  <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider ml-1">
                     Password <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
-                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-lg group-focus-within:text-[#00ff88]">
+                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-500 text-lg group-focus-within:text-[#00ff88]">
                       lock
                     </span>
                     <input
@@ -549,7 +549,7 @@ const InstituteRegister = () => {
                     <button
                       type="button"
                       onClick={togglePassword}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-5000 hover:text-slate-900 dark:text-white transition-colors"
                     >
                       <span className="material-symbols-outlined text-lg">
                         {showPassword ? "visibility" : "visibility_off"}
@@ -571,11 +571,11 @@ const InstituteRegister = () => {
 
                 {/* Confirm Password */}
                 <div className="space-y-1.5 mb-4">
-                  <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                  <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider ml-1">
                     Confirm Password <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
-                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-lg group-focus-within:text-[#00ff88]">
+                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-500 text-lg group-focus-within:text-[#00ff88]">
                       lock
                     </span>
                     <input
@@ -590,7 +590,7 @@ const InstituteRegister = () => {
                     <button
                       type="button"
                       onClick={toggleConfirmPassword}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-5000 hover:text-slate-900 dark:text-white transition-colors"
                     >
                       <span className="material-symbols-outlined text-lg">
                         {showConfirmPassword ? "visibility" : "visibility_off"}
@@ -608,7 +608,7 @@ const InstituteRegister = () => {
                 </div>
 
                 {/* Terms Checkbox */}
-                <div className="pt-2 mb-6">
+                <div className="pt-2 mb-4">
                   <div className="flex items-start gap-3">
                     <input
                       id="terms"
@@ -616,26 +616,29 @@ const InstituteRegister = () => {
                       type="checkbox"
                       checked={formData.agreeTerms}
                       onChange={handleChange}
-                      className={`w-4 h-4 mt-0.5 rounded border-white/10 bg-white/5 text-[#00ff88] 
-                                focus:ring-[#00ff88]/30 focus:ring-2 
-                                ${fieldErrors.agreeTerms ? "border-red-500" : ""}`}
+                      className={`w-4 h-4 mt-0.5 rounded 
+border border-slate-300 dark:border-white/10 
+bg-white dark:bg-white/5 
+text-[#00ff88] 
+focus:ring-[#00ff88]/30 focus:ring-2 
+${fieldErrors.agreeTerms ? "border-red-500" : ""}`}
                       disabled={isLoading}
                     />
                     <label
                       htmlFor="terms"
-                      className="text-xs text-slate-400 leading-snug"
+                      className="text-xs text-slate-600 dark:text-slate-400 leading-snug"
                     >
                       I agree to{" "}
                       <Link
                         to="/terms"
-                        className="text-[#00ff88] text-sm underline decoration-slate-700 underline-offset-2"
+                        className="text-[#00ff88] text-sm underline decoration-slate-00 underline-offset-2"
                       >
                         Terms
                       </Link>{" "}
                       &{" "}
                       <Link
                         to="/privacy"
-                        className="text-[#00ff88] text-sm underline decoration-slate-700 underline-offset-1"
+                        className="text-[#00ff88] text-sm underline decoration-slate-00 underline-offset-1"
                       >
                         Privacy
                       </Link>
@@ -657,7 +660,7 @@ const InstituteRegister = () => {
                     type="button"
                     onClick={handleBack}
                     disabled={isLoading}
-                    className="w-48 border border-white/10 hover:border-white/20 text-white font-bold py-3 px-1 rounded-lg 
+                    className="w-48 border border-white/10 hover:border-white/20 text-slate-900 dark:text-white font-bold py-3 px-1 rounded-lg 
                              transition-all flex items-center justify-center gap-4 text-sm uppercase 
                              active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -699,7 +702,7 @@ const InstituteRegister = () => {
             )}
 
             {/* Login Link */}
-            <div className="mt-8 text-center text-slate-400 text-sm">
+            <div className="mt-8 text-center text-slate-600 dark:text-slate-400 text-sm">
               Already have an account?{" "}
               <button
                 onClick={() => navigate("/login")}

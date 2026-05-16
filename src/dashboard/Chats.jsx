@@ -28,7 +28,6 @@ const Chats = () => {
   const [showProfile, setShowProfile] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [groupChatKey, setGroupChatKey] = useState(0);
-
   const [blockedUserIds, setBlockedUserIds] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
 
@@ -38,7 +37,6 @@ const Chats = () => {
   const searchInputRef = useRef(null);
   const messageInputRef = useRef(null);
   const messagesEndRef = useRef(null);
-
   const imageAttachRef = useRef(null);
   const videoAttachRef = useRef(null);
 
@@ -46,8 +44,12 @@ const Chats = () => {
   const chatsRef = useRef([]);
   const currentUserIdRef = useRef("");
 
-  // ✅ FIX 2: Sending flag — polling ke saath conflict avoid karo
+  // FIX 1: isSendingRef properly managed with finally block
   const isSendingRef = useRef(false);
+
+  // FIX 2: Track in-flight poll to prevent overlapping calls
+  const isPollingRef = useRef(false);
+  const isBgPollingRef = useRef(false);
 
   const getAuthToken = () =>
     localStorage.getItem("token") || localStorage.getItem("authToken");
@@ -73,16 +75,13 @@ const Chats = () => {
   useEffect(() => {
     activeChatIdRef.current = activeChatId;
   }, [activeChatId]);
-
   useEffect(() => {
     chatsRef.current = chats;
   }, [chats]);
-
   useEffect(() => {
     currentUserIdRef.current = currentUserId;
   }, [currentUserId]);
 
-  // ✅ FIX 1: LocalStorage mein timestamps save karo
   const saveTimestampsToStorage = useCallback((chatsList) => {
     const timestamps = {};
     chatsList.forEach((c) => {
@@ -91,20 +90,62 @@ const Chats = () => {
     localStorage.setItem("chatTimestamps", JSON.stringify(timestamps));
   }, []);
 
+  // FIX 3: Deduplicate — server msgs arrive → remove ALL temp msgs (they are now confirmed)
+  // Logic: if server returned ANY new messages after our send, clear all temp msgs
+  // This prevents sender seeing double messages
+  const deduplicateMessages = useCallback((serverMsgs, existingMsgs) => {
+    // Get only temp msgs from existing
+    const tempMsgs = (existingMsgs || []).filter((m) =>
+      String(m.id).startsWith("temp-"),
+    );
+
+    if (tempMsgs.length === 0) {
+      // No temp msgs — just dedupe server msgs by ID
+      const seen = new Map();
+      serverMsgs.forEach((m) => seen.set(String(m.id), m));
+      return Array.from(seen.values()).sort(
+        (a, b) => a.timestamp - b.timestamp,
+      );
+    }
+
+    // Check if server msgs contain real versions of our temp msgs
+    // Match by: isMine=true AND similar timestamp (within 10 seconds) AND same text
+    const serverMineMessages = serverMsgs.filter((m) => m.isMine);
+
+    const unresolvedTemps = tempMsgs.filter((temp) => {
+      // If server has a mine-message with same text sent within 10s window → temp is resolved
+      const isResolved = serverMineMessages.some(
+        (s) =>
+          s.text === temp.text &&
+          Math.abs(s.timestamp - temp.timestamp) < 10000,
+      );
+      return !isResolved; // Keep only unresolved temps
+    });
+
+    // Build final list: server msgs + unresolved temps only
+    const seen = new Map();
+    serverMsgs.forEach((m) => seen.set(String(m.id), m));
+    unresolvedTemps.forEach((m) => seen.set(String(m.id), m));
+
+    return Array.from(seen.values()).sort((a, b) => a.timestamp - b.timestamp);
+  }, []);
+
   const fetchBlockedUserIds = useCallback(async () => {
     try {
       const token = getAuthToken();
-      const res = await fetch(`${API_CONFIG.BASE_URL}/account/get-blocked-users`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `${API_CONFIG.BASE_URL}/account/get-blocked-users`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
+      );
       const data = await res.json();
       if (data.status && Array.isArray(data.data)) {
-        const ids = data.data.map((u) => String(u.id));
-        setBlockedUserIds(ids);
+        setBlockedUserIds(data.data.map((u) => String(u.id)));
       }
     } catch (err) {
       console.error("Error fetching blocked users:", err);
@@ -115,36 +156,35 @@ const Chats = () => {
     fetchBlockedUserIds();
   }, [fetchBlockedUserIds]);
 
- // Chats.jsx mein redirection handle karne wala useEffect update karein:
-useEffect(() => {
-  const newGroup = location.state?.newGroup;
-  if (!newGroup || loading) return;
+  useEffect(() => {
+    const newGroup = location.state?.newGroup;
+    if (!newGroup || loading) return;
 
-  setChats((prev) => {
-    const alreadyExists = prev.some(
-      (c) => String(c.id) === String(newGroup.id),
-    );
-    if (alreadyExists) return prev;
+    setChats((prev) => {
+      const alreadyExists = prev.some(
+        (c) => String(c.id) === String(newGroup.id),
+      );
+      if (alreadyExists) return prev;
+      const groupWithTimestamp = {
+        ...newGroup,
+        timestamp: Date.now(),
+        time: new Date().toLocaleTimeString("en-IN", {
+          hour12: true,
+          hour: "numeric",
+          minute: "2-digit",
+        }),
+      };
+      const updatedChats = [groupWithTimestamp, ...prev];
+      const sorted = [...updatedChats].sort(
+        (a, b) => b.timestamp - a.timestamp,
+      );
+      saveTimestampsToStorage(sorted);
+      return sorted;
+    });
 
-    // Naye group ko current timestamp dena taaki wo top par aaye
-    const groupWithTimestamp = {
-      ...newGroup,
-      timestamp: Date.now(), // WhatsApp behavior: New action = Top position
-      time: new Date().toLocaleTimeString("en-IN", {
-        hour12: true, hour: "numeric", minute: "2-digit"
-      })
-    };
-
-    const updatedChats = [groupWithTimestamp, ...prev];
-    // Sorting ensure karein
-    const sorted = [...updatedChats].sort((a, b) => b.timestamp - a.timestamp);
-    saveTimestampsToStorage(sorted);
-    return sorted;
-  });
-
-  setActiveChatId(newGroup.id);
-  navigate(location.pathname, { replace: true, state: {} });
-}, [location.state, loading, navigate, saveTimestampsToStorage]);
+    setActiveChatId(newGroup.id);
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.state, loading, navigate, saveTimestampsToStorage]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -152,7 +192,10 @@ useEffect(() => {
         setShowAddMenu(false);
       if (groupMenuRef.current && !groupMenuRef.current.contains(event.target))
         setShowGroupMenu(false);
-      if (attachMenuRef.current && !attachMenuRef.current.contains(event.target))
+      if (
+        attachMenuRef.current &&
+        !attachMenuRef.current.contains(event.target)
+      )
         setShowAttachMenu(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -164,7 +207,6 @@ useEffect(() => {
       setLoading(true);
       try {
         const token = getAuthToken();
-
         const [usersRes, groupsRes] = await Promise.all([
           fetch(`${API_CONFIG.BASE_URL}/user/get-all-users`, {
             method: "GET",
@@ -184,10 +226,8 @@ useEffect(() => {
 
         const usersData = await usersRes.json();
         const groupsData = await groupsRes.json();
-
-        // ✅ FIX 1: LocalStorage se saved timestamps restore karo
         const savedTimestamps = JSON.parse(
-          localStorage.getItem("chatTimestamps") || "{}"
+          localStorage.getItem("chatTimestamps") || "{}",
         );
 
         let formattedUsers = [];
@@ -195,36 +235,29 @@ useEffect(() => {
           usersData.data ||
           usersData.users ||
           (Array.isArray(usersData) ? usersData : null);
-
         if (userList) {
           formattedUsers = userList.map((user) => {
-            let finalName = "";
-            let finalType = "";
-
-            if (user.user_type === "institute") {
-              finalName =
-                user.institute_details?.institute_name ||
-                user.name ||
-                "Unknown Institute";
-              finalType = "Research Institute";
-            } else {
-              finalName = user.name || "Unknown Individual";
-              finalType = "Individual";
-            }
-
-            let profileImg = null;
-            if (user.user_type === "institute") {
-              profileImg = user.profile_institute_details?.profile_image
-                ? `${API_CONFIG.BASE_URL}/${user.profile_institute_details.profile_image}`
-                : null;
-            } else {
-              profileImg = user.profile_individual_details?.profile_image
-                ? `${API_CONFIG.BASE_URL}/${user.profile_individual_details.profile_image}`
-                : null;
-            }
-
-            const userId = String(user.id || user.user_id || Math.random().toString());
-
+            const finalName =
+              user.user_type === "institute"
+                ? user.institute_details?.institute_name ||
+                  user.name ||
+                  "Unknown Institute"
+                : user.name || "Unknown Individual";
+            const finalType =
+              user.user_type === "institute"
+                ? "Research Institute"
+                : "Individual";
+            const profileImg =
+              user.user_type === "institute"
+                ? user.profile_institute_details?.profile_image
+                  ? `${API_CONFIG.BASE_URL}/${user.profile_institute_details.profile_image}`
+                  : null
+                : user.profile_individual_details?.profile_image
+                  ? `${API_CONFIG.BASE_URL}/${user.profile_individual_details.profile_image}`
+                  : null;
+            const userId = String(
+              user.id || user.user_id || Math.random().toString(),
+            );
             return {
               id: userId,
               name: finalName,
@@ -233,7 +266,6 @@ useEffect(() => {
               lastMsg: `Say hi to ${finalName}...`,
               isActive: false,
               isGroup: false,
-              // ✅ FIX 1: Saved timestamp restore karo
               timestamp: savedTimestamps[userId] || 0,
               unreadCount: 0,
               avatars: [profileImg || defaultAvatar],
@@ -250,7 +282,6 @@ useEffect(() => {
               ? `${API_CONFIG.BASE_URL}/${group.profile}`
               : null;
             const groupId = `group_${group.group_id}`;
-
             return {
               id: groupId,
               groupId: String(group.group_id),
@@ -261,8 +292,10 @@ useEffect(() => {
               isActive: false,
               isGroup: true,
               isAdmin: group.is_admin === 1,
-              // ✅ FIX 1: Saved timestamp restore karo
-              timestamp: savedTimestamps[groupId] || new Date(group.created_at).getTime() || Date.now(),
+              timestamp:
+                savedTimestamps[groupId] ||
+                new Date(group.created_at).getTime() ||
+                Date.now(),
               unreadCount: 0,
               avatars: [profileUrl || defaultAvatar],
               messages: [],
@@ -271,11 +304,9 @@ useEffect(() => {
           });
         }
 
-        // ✅ FIX 1: Combine karke sort karo saved timestamps ke hisaab se
         const allChats = [...formattedGroups, ...formattedUsers].sort(
-          (a, b) => b.timestamp - a.timestamp
+          (a, b) => b.timestamp - a.timestamp,
         );
-
         setChats(allChats);
         setInitialLoadComplete(true);
       } catch (error) {
@@ -285,50 +316,56 @@ useEffect(() => {
         setLoading(false);
       }
     };
-
     fetchAll();
   }, [currentUserId]);
 
-  const fetchMessagesForChat = useCallback(async (chatId) => {
-    if (!chatId) return;
-
-    
-    if (isSendingRef.current) return;
-
-    const token = getAuthToken();
-    const uid = currentUserIdRef.current;
-
-    const currentChats = chatsRef.current;
-    const chatData = currentChats.find((c) => String(c.id) === String(chatId));
-    if (!chatData || chatData.isGroup) return;
-
-    try {
-      const response = await fetch(
-        `${API_CONFIG.BASE_URL}/message/message-get`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ receiver_id: chatId }),
-        },
+  // FIX 4: Core fetch — replace temp msgs with real, no duplicate
+  const fetchMessagesForChat = useCallback(
+    async (chatId, force = false) => {
+      if (!chatId) return;
+      const currentChats = chatsRef.current;
+      const chatData = currentChats.find(
+        (c) => String(c.id) === String(chatId),
       );
+      if (!chatData || chatData.isGroup) return;
 
-      const result = await response.json();
+      // Skip if sending, unless forced
+      if (isSendingRef.current && !force) return;
 
-      if (result.status && result.data) {
+      const token = getAuthToken();
+      const uid = currentUserIdRef.current;
+
+      try {
+        const response = await fetch(
+          `${API_CONFIG.BASE_URL}/message/message-get`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ receiver_id: chatId }),
+          },
+        );
+
+        const result = await response.json();
+        if (!result.status || !result.data) return;
+
         const formattedMessages = result.data.map((msg) => {
           let extractedFile = null;
-          if (msg.file_path) {
-            extractedFile = msg.file_path;
-          } else if (msg.files && Array.isArray(msg.files) && msg.files.length > 0) {
+          if (msg.file_path) extractedFile = msg.file_path;
+          else if (
+            msg.files &&
+            Array.isArray(msg.files) &&
+            msg.files.length > 0
+          )
             extractedFile = msg.files[0];
-          }
 
           let safeFileType = msg.file_type;
           if (!safeFileType && extractedFile) {
-            safeFileType = extractedFile.toLowerCase().endsWith(".mp4") ? "video" : "image";
+            safeFileType = extractedFile.toLowerCase().endsWith(".mp4")
+              ? "video"
+              : "image";
           }
 
           return {
@@ -347,7 +384,9 @@ useEffect(() => {
             text: msg.message,
             isMine: String(msg.sender_id) === uid,
             isSystem: false,
-            file: extractedFile ? { path: extractedFile, type: safeFileType } : null,
+            file: extractedFile
+              ? { path: extractedFile, type: safeFileType }
+              : null,
           };
         });
 
@@ -363,10 +402,8 @@ useEffect(() => {
                 : chat.avatars[0],
             }));
 
-            // ✅ FIX 2: Temp messages ko preserve karo (jo abhi send ho rahe hain)
-            const existingTempMsgs = (chat.messages || []).filter(
-              (m) => String(m.id).startsWith("temp-")
-            );
+            // FIX 5: Pass server msgs + existing chat msgs — deduplicator removes resolved temps
+            const allMsgs = deduplicateMessages(msgs, chat.messages || []);
 
             const latestMsg = msgs[msgs.length - 1];
             const unreadCount = result.data.filter(
@@ -375,13 +412,11 @@ useEffect(() => {
                 String(m.receiver_id) === uid &&
                 String(m.is_seen) === "0",
             ).length;
-
             const newTimestamp = latestMsg?.timestamp || chat.timestamp;
 
             return {
               ...chat,
-              // ✅ FIX 2: Server messages + temp messages dono raho
-              messages: [...msgs, ...existingTempMsgs],
+              messages: allMsgs,
               messagesLoaded: true,
               lastMsg: latestMsg
                 ? latestMsg.isMine
@@ -394,28 +429,25 @@ useEffect(() => {
             };
           });
 
-          // ✅ FIX 1: Timestamps localStorage mein save karo
           saveTimestampsToStorage(updated);
-
           return [...updated].sort((a, b) => b.timestamp - a.timestamp);
         });
+      } catch (error) {
+        console.error("Error fetching messages:", error);
       }
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-    }
-  }, [saveTimestampsToStorage]);
+    },
+    [saveTimestampsToStorage, deduplicateMessages],
+  );
 
+  // Initial load: fetch active chat first, then others
   useEffect(() => {
     if (!initialLoadComplete || chats.length === 0) return;
-
     const alreadyLoaded = chats.some((c) => c.messagesLoaded);
     if (alreadyLoaded) return;
 
-    const activeChat = chats.find(
-      (c) => String(c.id) === String(activeChatId),
-    );
+    const activeChat = chats.find((c) => String(c.id) === String(activeChatId));
     if (activeChat && !activeChat.isGroup && !activeChat.messagesLoaded) {
-      fetchMessagesForChat(activeChat.id);
+      fetchMessagesForChat(activeChat.id, true);
     }
 
     const timer = setTimeout(() => {
@@ -428,25 +460,35 @@ useEffect(() => {
         )
         .slice(0, 5);
       Promise.allSettled(
-        otherChats.map((chat) => fetchMessagesForChat(chat.id)),
+        otherChats.map((chat) => fetchMessagesForChat(chat.id, true)),
       );
     }, 1000);
 
     return () => clearTimeout(timer);
   }, [initialLoadComplete, chats.length, activeChatId, fetchMessagesForChat]);
 
+  // FIX 6: Polling — active chat 1s, background 3s, no overlap, no race
   useEffect(() => {
     if (chats.length === 0) return;
 
-    const activePollInterval = setInterval(() => {
+    // Active chat poll: 1s interval, skip if already polling or sending
+    const activePollInterval = setInterval(async () => {
       const activeId = activeChatIdRef.current;
-      if (activeId) {
-        fetchMessagesForChat(activeId);
-      }
-    }, 3000);
+      if (!activeId) return;
+      if (isPollingRef.current) return;
+      if (isSendingRef.current) return;
 
+      isPollingRef.current = true;
+      try {
+        await fetchMessagesForChat(activeId, false);
+      } finally {
+        isPollingRef.current = false;
+      }
+    }, 1000);
+
+    // Background poll: 3s, lightweight — only unread count + last msg
     const backgroundPollInterval = setInterval(async () => {
-      // ✅ FIX 2: Sending ke waqt background polling bhi skip karo
+      if (isBgPollingRef.current) return;
       if (isSendingRef.current) return;
 
       const token = getAuthToken();
@@ -457,78 +499,81 @@ useEffect(() => {
       const otherChats = currentChats.filter(
         (c) => !c.isGroup && String(c.id) !== String(activeId),
       );
-
       if (otherChats.length === 0) return;
 
-      const results = await Promise.allSettled(
-        otherChats.map((chat) =>
-          fetch(`${API_CONFIG.BASE_URL}/message/message-get`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ receiver_id: chat.id }),
-          }).then((r) => r.json()),
-        ),
-      );
+      isBgPollingRef.current = true;
+      try {
+        const results = await Promise.allSettled(
+          otherChats.map((chat) =>
+            fetch(`${API_CONFIG.BASE_URL}/message/message-get`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ receiver_id: chat.id }),
+            }).then((r) => r.json()),
+          ),
+        );
 
-      let hasUpdates = false;
-      const updates = {};
+        let hasUpdates = false;
+        const updates = {};
 
-      results.forEach((result, idx) => {
-        if (result.status !== "fulfilled") return;
-        const data = result.value;
-        const chat = otherChats[idx];
-        if (!data.status || !data.data) return;
+        results.forEach((result, idx) => {
+          if (result.status !== "fulfilled") return;
+          const data = result.value;
+          const chat = otherChats[idx];
+          if (!data.status || !data.data) return;
 
-        const msgs = data.data;
-        const unreadCount = msgs.filter(
-          (m) =>
-            String(m.sender_id) !== uid &&
-            String(m.receiver_id) === uid &&
-            String(m.is_seen) === "0",
-        ).length;
+          const msgs = data.data;
+          const unreadCount = msgs.filter(
+            (m) =>
+              String(m.sender_id) !== uid &&
+              String(m.receiver_id) === uid &&
+              String(m.is_seen) === "0",
+          ).length;
+          const latestMsg = msgs[msgs.length - 1];
+          const lastMsgText = latestMsg
+            ? String(latestMsg.sender_id) === uid
+              ? `You: ${latestMsg.message || "Sent an attachment"}`
+              : latestMsg.message || "Sent an attachment"
+            : null;
+          const lastTimestamp = latestMsg
+            ? new Date(latestMsg.created_at).getTime()
+            : 0;
 
-        const latestMsg = msgs[msgs.length - 1];
-        const lastMsgText = latestMsg
-          ? String(latestMsg.sender_id) === uid
-            ? `You: ${latestMsg.message || "Sent an attachment"}`
-            : latestMsg.message || "Sent an attachment"
-          : null;
-        const lastTimestamp = latestMsg
-          ? new Date(latestMsg.created_at).getTime()
-          : 0;
-
-        if (
-          chat.unreadCount !== unreadCount ||
-          chat.timestamp !== lastTimestamp
-        ) {
-          hasUpdates = true;
-          updates[chat.id] = { unreadCount, lastMsgText, lastTimestamp };
-        }
-      });
-
-      if (hasUpdates) {
-        setChats((prevChats) => {
-          const updated = prevChats.map((chat) => {
-            const update = updates[chat.id];
-            if (!update) return chat;
-            return {
-              ...chat,
-              unreadCount: update.unreadCount,
-              lastMsg: update.lastMsgText || chat.lastMsg,
-              timestamp: update.lastTimestamp || chat.timestamp,
-            };
-          });
-          const sorted = [...updated].sort((a, b) => b.timestamp - a.timestamp);
-          // ✅ FIX 1: Timestamps save karo
-          
-          saveTimestampsToStorage(sorted);
-          return sorted;
+          if (
+            chat.unreadCount !== unreadCount ||
+            chat.timestamp !== lastTimestamp
+          ) {
+            hasUpdates = true;
+            updates[chat.id] = { unreadCount, lastMsgText, lastTimestamp };
+          }
         });
+
+        if (hasUpdates) {
+          setChats((prevChats) => {
+            const updated = prevChats.map((chat) => {
+              const update = updates[chat.id];
+              if (!update) return chat;
+              return {
+                ...chat,
+                unreadCount: update.unreadCount,
+                lastMsg: update.lastMsgText || chat.lastMsg,
+                timestamp: update.lastTimestamp || chat.timestamp,
+              };
+            });
+            const sorted = [...updated].sort(
+              (a, b) => b.timestamp - a.timestamp,
+            );
+            saveTimestampsToStorage(sorted);
+            return sorted;
+          });
+        }
+      } finally {
+        isBgPollingRef.current = false;
       }
-    }, 5000);
+    }, 3000);
 
     return () => {
       clearInterval(activePollInterval);
@@ -536,20 +581,12 @@ useEffect(() => {
     };
   }, [chats.length, fetchMessagesForChat, saveTimestampsToStorage]);
 
-  const handleChatClick = async (chatId) => {
-    setActiveChatId(chatId);
-    setShowProfile(false);
-
-    setChats((prevChats) =>
-      prevChats.map((c) =>
-        String(c.id) === String(chatId) ? { ...c, unreadCount: 0 } : c,
-      ),
-    );
-
+  // FIX 7: message-seen only for non-group, non-self chats
+  const markMessagesSeen = useCallback(async (chatId) => {
     const chatData = chatsRef.current.find(
       (c) => String(c.id) === String(chatId),
     );
-    if (chatData?.isGroup) return;
+    if (!chatData || chatData.isGroup) return;
 
     try {
       const token = getAuthToken();
@@ -564,8 +601,35 @@ useEffect(() => {
     } catch (error) {
       console.error("Error marking messages as seen:", error);
     }
+  }, []);
 
-    fetchMessagesForChat(chatId);
+  const handleChatClick = async (chatId) => {
+    setActiveChatId(chatId);
+    setShowProfile(false);
+
+    const chatData = chatsRef.current.find(
+      (c) => String(c.id) === String(chatId),
+    );
+
+    // ✅ Group ke liye alag handling
+    if (chatData?.isGroup) {
+      // Sirf active hone par reset karo, seen API mat bulao
+      setChats((prevChats) =>
+        prevChats.map((c) =>
+          String(c.id) === String(chatId) ? { ...c, unreadCount: 0 } : c,
+        ),
+      );
+      return;
+    }
+
+    // Normal 1-on-1 chat
+    setChats((prevChats) =>
+      prevChats.map((c) =>
+        String(c.id) === String(chatId) ? { ...c, unreadCount: 0 } : c,
+      ),
+    );
+    markMessagesSeen(chatId);
+    fetchMessagesForChat(chatId, true);
   };
 
   const handleFileSelect = (e, type) => {
@@ -577,6 +641,7 @@ useEffect(() => {
     e.target.value = null;
   };
 
+  // FIX 8: Proper optimistic send + temp replace + finally reset isSendingRef
   const handleSendMessage = async () => {
     if (!activeChatId) return;
     if (!messageText.trim() && !selectedFile) return;
@@ -587,14 +652,12 @@ useEffect(() => {
 
     setMessageText("");
     setSelectedFile(null);
+    if (messageInputRef.current) messageInputRef.current.style.height = "auto";
 
     const currentTime = new Date();
     const tempId = `temp-${Date.now()}`;
-
     let localPreviewUrl = null;
-    if (fileToSend) {
-      localPreviewUrl = URL.createObjectURL(fileToSend);
-    }
+    if (fileToSend) localPreviewUrl = URL.createObjectURL(fileToSend);
 
     const newMsg = {
       id: tempId,
@@ -609,12 +672,12 @@ useEffect(() => {
       text: textToSend,
       isMine: true,
       isSystem: false,
-      localFile: fileToSend ? { url: localPreviewUrl, type: fileTypeToSend } : null,
+      localFile: fileToSend
+        ? { url: localPreviewUrl, type: fileTypeToSend }
+        : null,
     };
 
-    // ✅ FIX 2: Sending flag set karo
-    isSendingRef.current = true;
-
+    // Optimistic UI update
     setChats((prevChats) => {
       const updated = prevChats.map((chat) => {
         if (String(chat.id) !== String(activeChatId)) return chat;
@@ -628,25 +691,29 @@ useEffect(() => {
         };
       });
       const sorted = [...updated].sort((a, b) => b.timestamp - a.timestamp);
-      // ✅ FIX 1: Timestamp save karo send ke waqt
       saveTimestampsToStorage(sorted);
       return sorted;
     });
 
+    if (isSendingRef.current) return;
+
+    if (!activeChatId) return;
+    if (!messageText.trim() && !selectedFile) return;
+
+    isSendingRef.current = true;
+
     try {
       const token = getAuthToken();
       let response;
+
       if (fileToSend) {
         const formData = new FormData();
         formData.append("receiver_id", activeChatId);
         formData.append("message", textToSend || "");
         formData.append("file", fileToSend);
-
         response = await fetch(`${API_CONFIG.BASE_URL}/message/message-send`, {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
           body: formData,
         });
       } else {
@@ -664,9 +731,15 @@ useEffect(() => {
       }
 
       const result = await response.json();
-      if (!result.status) {
+
+      if (result.status) {
+        // FIX 9: Replace temp msg with real server msg immediately
+        // Force fetch to get real ID and replace temp
+        isSendingRef.current = false; // Reset BEFORE fetch so it runs
+        await fetchMessagesForChat(activeChatId, true);
+      } else {
         toast.error("Failed to send message");
-        // ✅ FIX 2: Fail hone par temp message hatao
+        // Remove temp msg on failure
         setChats((prevChats) =>
           prevChats.map((chat) => {
             if (String(chat.id) !== String(activeChatId)) return chat;
@@ -674,13 +747,11 @@ useEffect(() => {
               ...chat,
               messages: (chat.messages || []).filter((m) => m.id !== tempId),
             };
-          })
+          }),
         );
       }
     } catch (error) {
-      console.error("Error sending message:", error);
       toast.error("Error sending message");
-      // ✅ FIX 2: Error par temp message hatao
       setChats((prevChats) =>
         prevChats.map((chat) => {
           if (String(chat.id) !== String(activeChatId)) return chat;
@@ -688,15 +759,12 @@ useEffect(() => {
             ...chat,
             messages: (chat.messages || []).filter((m) => m.id !== tempId),
           };
-        })
+        }),
       );
-     }
-     // finally {
-    //   // ✅ FIX 2: 2 second baad flag clear karo (server pe save ho jaaye)
-    //   setTimeout(() => {
-    //     isSendingRef.current = false;
-    //   }, 2000);
-    // }
+    } finally {
+      // FIX 1: Always reset — this was missing before!
+      isSendingRef.current = false;
+    }
   };
 
   const handleClearChat = async () => {
@@ -714,7 +782,6 @@ useEffect(() => {
           body: JSON.stringify({ other_user_id: activeChatId }),
         },
       );
-
       const result = await response.json();
       if (result.status) {
         setChats((prevChats) =>
@@ -753,17 +820,12 @@ useEffect(() => {
           },
         },
       );
-
       const result = await response.json();
       if (result.status) {
         setChats((prevChats) =>
           prevChats.map((chat) => {
             if (String(chat.id) !== String(activeChatId)) return chat;
-            return {
-              ...chat,
-              lastMsg: "Chat cleared",
-              timestamp: 0,
-            };
+            return { ...chat, lastMsg: "Chat cleared", timestamp: 0 };
           }),
         );
         setGroupChatKey((prev) => prev + 1);
@@ -777,18 +839,18 @@ useEffect(() => {
     }
   };
 
-  const filteredChats = (searchQuery.trim()
-    ? chats.filter((chat) =>
-        chat.name.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
-    : chats
+  const filteredChats = (
+    searchQuery.trim()
+      ? chats.filter((chat) =>
+          chat.name.toLowerCase().includes(searchQuery.toLowerCase()),
+        )
+      : chats
   ).filter((chat) => chat.isGroup || !blockedUserIds.includes(String(chat.id)));
 
   const activeChatData = chats.find(
     (c) => String(c.id) === String(activeChatId),
   );
 
-  // ✅ Auto scroll to bottom jab messages update hon
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -797,21 +859,23 @@ useEffect(() => {
 
   return (
     <DashboardLayout>
-      <div className="flex-1 h-[calc(100vh-176px)] md:h-[calc(100vh-128px)] overflow-hidden flex flex-col font-inter bg-[#0d0f0e] w-full">
+      <div className="flex-1 h-[calc(100vh-176px)] md:h-[calc(100vh-128px)] overflow-hidden flex flex-col font-inter bg-white dark:bg-[#0d0f0e] w-full">
         <div className="flex flex-1 p-3 lg:p-4 gap-4 lg:gap-6 h-full min-h-0 max-w-[1800px] mx-auto w-full">
           {/* LEFT SIDEBAR */}
-          <div className={`${activeChatId ? 'hidden md:flex' : 'flex'} w-full md:w-[340px] lg:w-[350px] flex-col bg-[#1a1c1b] rounded-2xl border border-[#3b4b3d]/30 md:shrink-0 shadow-lg min-h-0 h-full`}>
+          <div
+            className={`${activeChatId ? "hidden md:flex" : "flex"} w-full md:w-[340px] lg:w-[350px] flex-col bg-[#f8fafc] dark:bg-[#1a1c1b] rounded-2xl border border-slate-200 dark:border-[#3b4b3d]/30 md:shrink-0 shadow-lg min-h-0 h-full`}
+          >
             <div className="p-4 lg:p-5 flex items-center justify-between border-b border-[#3b4b3d]/20 relative shrink-0">
-              <h2 className="text-xl lg:text-2xl font-extrabold text-white tracking-tight">
+              <h2 className="text-xl lg:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                 Active Feeds
               </h2>
               <div className="relative flex items-center" ref={addMenuRef}>
                 {showAddMenu && (
                   <div
                     onClick={() => navigate("/dashboard/CreateGroup")}
-                    className="absolute right-full top-0 mr-3 w-48 bg-[#1a1c1b] border border-[#3b4b3d]/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeIn"
+                    className="absolute right-full top-0 mr-3 w-48 bg-white dark:bg-[#1a1c1b] border border-[#3b4b3d]/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeIn"
                   >
-                    <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-[#3b4b3d]/20 hover:text-white transition-all text-sm font-bold">
+                    <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-[#3b4b3d]/20 hover:text-slate-900 dark:hover:text-white transition-all text-sm font-bold">
                       <MaterialIcon name="group_add" className="text-[18px]" />{" "}
                       NEW GROUP
                     </button>
@@ -831,7 +895,7 @@ useEffect(() => {
             </div>
 
             <div className="px-3 pt-3 pb-2 shrink-0">
-              <div className="flex items-center bg-[#121413] border border-[#3b4b3d]/40 rounded-full px-4 py-2">
+              <div className="flex items-center bg-slate-100 dark:bg-[#121413] border border-slate-300 dark:border-[#3b4b3d]/40 text-slate-800 dark:text-white rounded-full px-4 py-2">
                 <MaterialIcon
                   name="search"
                   className="text-slate-500 text-[18px] mr-2 shrink-0"
@@ -839,7 +903,7 @@ useEffect(() => {
                 <input
                   ref={searchInputRef}
                   type="text"
-                  className="w-full bg-transparent text-sm text-white outline-none focus:ring-0 focus:border-transparent"
+                  className="w-full bg-transparent text-sm text-slate-800 dark:text-white outline-none focus:ring-0 focus:border-transparent"
                   placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -848,7 +912,7 @@ useEffect(() => {
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="text-slate-500 hover:text-white transition-colors ml-1 shrink-0"
+                    className="text-slate-500 hover:text-slate-900 dark:text-white transition-colors ml-1 shrink-0"
                   >
                     <MaterialIcon name="close" className="text-[16px]" />
                   </button>
@@ -872,8 +936,8 @@ useEffect(() => {
                     onClick={() => handleChatClick(chat.id)}
                     className={`group cursor-pointer p-3 lg:p-3.5 rounded-xl transition-all relative ${
                       String(activeChatId) === String(chat.id)
-                        ? "bg-[#121413] border-l-4 border-l-[#00ff85] border-y border-r border-[#3b4b3d]/20 shadow-sm"
-                        : "border border-transparent hover:bg-[#121413]/50"
+                        ? "bg-emerald-50 dark:bg-[#121413] border-l-4 border-l-[#00ff85] border-y border-r border-emerald-200 dark:border-[#3b4b3d]/20 shadow-sm"
+                        : "border border-transparent hover:bg-slate-100 dark:hover:bg-[#121413]/50"
                     }`}
                   >
                     <div className="flex gap-3 lg:gap-4 items-center">
@@ -899,11 +963,7 @@ useEffect(() => {
                       <div className="flex-1 min-w-0 flex justify-between items-start">
                         <div className="min-w-0 pr-2 flex-1">
                           <h4
-                            className={`text-sm font-bold truncate flex items-center gap-1.5 ${
-                              String(activeChatId) === String(chat.id)
-                                ? "text-[#00ff85]"
-                                : "text-white group-hover:text-[#e2e3e0]"
-                            }`}
+                            className={`text-sm font-bold truncate flex items-center gap-1.5 ${String(activeChatId) === String(chat.id) ? "text-emerald-600 dark:text-[#00ff85]" : "text-slate-900 dark:text-white group-hover:text-slate-900 dark:group-hover:text-[#e2e3e0]"}`}
                           >
                             <span className="truncate">{chat.name}</span>
                             {chat.isYou && (
@@ -913,22 +973,14 @@ useEffect(() => {
                             )}
                           </h4>
                           <p
-                            className={`text-[11px] lg:text-xs truncate mt-1 ${
-                              String(activeChatId) === String(chat.id)
-                                ? "text-[#e2e3e0]"
-                                : "text-slate-500"
-                            }`}
+                            className={`text-[11px] lg:text-xs truncate mt-1 ${String(activeChatId) === String(chat.id) ? "text-slate-700 dark:text-[#e2e3e0]" : "text-slate-500"}`}
                           >
                             {chat.lastMsg}
                           </p>
                         </div>
                         <div className="flex flex-col items-end shrink-0 pl-2">
                           <span
-                            className={`text-[9px] lg:text-[10px] font-mono ${
-                              chat.unreadCount > 0
-                                ? "text-[#00ff85]"
-                                : "text-slate-500"
-                            }`}
+                            className={`text-[9px] lg:text-[10px] font-mono ${chat.unreadCount > 0 ? "text-[#00ff85]" : "text-slate-500"}`}
                           >
                             {chat.time}
                           </span>
@@ -947,7 +999,9 @@ useEffect(() => {
           </div>
 
           {/* RIGHT CHAT WINDOW */}
-          <div className={`${!activeChatId ? 'hidden md:flex' : 'flex'} flex-1 flex-col bg-transparent rounded-2xl overflow-hidden min-w-0 relative h-full`}>
+          <div
+            className={`${!activeChatId ? "hidden md:flex" : "flex"} flex-1 flex-col bg-transparent rounded-2xl overflow-hidden min-w-0 relative h-full`}
+          >
             {activeChatData ? (
               showProfile ? (
                 activeChatData.isGroup ? (
@@ -963,14 +1017,17 @@ useEffect(() => {
                 )
               ) : (
                 <>
-                  <div
-                    className="h-14 lg:h-16 border-b border-[#3b4b3d]/30 px-4 lg:px-6 flex items-center justify-between shrink-0 bg-[#0d0f0e] transition-all"
-                  >
-                    <div className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer" onClick={() => setShowProfile(true)}>
-                      {/* Back button - mobile only */}
+                  <div className="h-14 lg:h-16 border border-slate-200 dark:border-[#3b4b3d]/30 px-4 lg:px-6 flex items-center justify-between shrink-0 bg-white dark:bg-[#0d0f0e] border-b border-slate-200 dark:border-[#3b4b3d]/30 transition-all">
+                    <div
+                      className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer"
+                      onClick={() => setShowProfile(true)}
+                    >
                       <button
-                        className="md:hidden text-slate-400 hover:text-white p-1 shrink-0"
-                        onClick={(e) => { e.stopPropagation(); setActiveChatId(null); }}
+                        className="md:hidden text-slate-400 hover:text-slate-900 dark:text-white p-1 shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveChatId(null);
+                        }}
                       >
                         <MaterialIcon name="arrow_back" className="text-xl" />
                       </button>
@@ -994,7 +1051,7 @@ useEffect(() => {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <h3 className="text-base lg:text-lg font-bold text-white truncate">
+                        <h3 className="text-base lg:text-lg font-bold text-slate-900 dark:text-white truncate">
                           {activeChatData.name}
                         </h3>
                         <p className="text-[11px] text-slate-500 font-mono mt-0.5">
@@ -1012,7 +1069,7 @@ useEffect(() => {
                         ref={groupMenuRef}
                       >
                         {showGroupMenu && (
-                          <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 bg-[#1a1c1b] border border-[#3b4b3d]/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeIn">
+                          <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 bg-white dark:bg-[#1a1c1b] border border-[#3b4b3d]/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeIn">
                             <button
                               onClick={
                                 activeChatData.isGroup
@@ -1031,11 +1088,7 @@ useEffect(() => {
                         )}
                         <button
                           onClick={() => setShowGroupMenu(!showGroupMenu)}
-                          className={`w-9 h-9 flex items-center justify-center rounded-full transition-colors ${
-                            showGroupMenu
-                              ? "bg-[#3b4b3d]/30 text-white"
-                              : "hover:bg-[#3b4b3d]/20 text-slate-300"
-                          }`}
+                          className={`w-9 h-9 flex items-center justify-center rounded-full transition-colors ${showGroupMenu ? "bg-[#3b4b3d]/30 text-white" : "hover:bg-slate-100 dark:hover:bg-[#3b4b3d]/20 text-slate-500 dark:text-slate-300"}`}
                         >
                           <MaterialIcon
                             name="more_vert"
@@ -1051,13 +1104,30 @@ useEffect(() => {
                       key={groupChatKey}
                       group={activeChatData}
                       currentUserId={currentUserId}
-                      onLastMessage={(groupId, lastMsg, timestamp, time) => {
+                      // GroupChat ko yeh updated prop do:
+                      onLastMessage={(
+                        groupId,
+                        lastMsg,
+                        timestamp,
+                        time,
+                        unreadCount,
+                      ) => {
                         setChats((prev) => {
-                          const updated = prev.map((c) =>
-                            String(c.id) === String(groupId)
-                              ? { ...c, lastMsg, timestamp, time }
-                              : c,
-                          );
+                          const updated = prev.map((c) => {
+                            if (String(c.id) !== String(groupId)) return c;
+                            return {
+                              ...c,
+                              lastMsg,
+                              timestamp,
+                              time,
+                              // Sirf tab increment karo jab group active na ho
+                              unreadCount:
+                                String(activeChatIdRef.current) ===
+                                String(groupId)
+                                  ? 0
+                                  : (unreadCount ?? c.unreadCount),
+                            };
+                          });
                           const sorted = [...updated].sort(
                             (a, b) => b.timestamp - a.timestamp,
                           );
@@ -1068,7 +1138,7 @@ useEffect(() => {
                     />
                   ) : (
                     <>
-                      <div className="flex-1 overflow-y-auto p-4 lg:p-5 space-y-3 lg:space-y-4 hide-scrollbar bg-[#121413]/30 min-h-0">
+                      <div className="flex-1 overflow-y-auto p-4 lg:p-5 space-y-3 lg:space-y-4 hide-scrollbar bg-[#f9fafb] dark:bg-[#121413]/30 min-h-0">
                         {activeChatData.messages?.length === 0 ? (
                           <div className="flex items-center justify-center h-full text-slate-500 font-mono text-sm uppercase italic opacity-40">
                             SAY HI TO START MESSAGING
@@ -1087,23 +1157,30 @@ useEffect(() => {
                                     className={`flex items-baseline gap-2 ${msg.isMine ? "justify-end" : ""}`}
                                   >
                                     <span
-                                      className={`text-[11px] font-bold uppercase tracking-wider ${msg.isMine ? "text-[#00ff85]" : "text-white"}`}
+                                      className={`text-[11px] font-bold uppercase tracking-wider ${msg.isMine ? "text-[#00ff85]" : "text-slate-900 dark:text-white"}`}
                                     >
                                       {msg.sender}
                                     </span>
                                     <span className="text-[9px] font-mono text-slate-500">
                                       {msg.time}
                                     </span>
+                                    {/* FIX 10: Show sending indicator for temp msgs */}
+                                    {String(msg.id).startsWith("temp-") && (
+                                      <span className="text-[9px] font-mono text-slate-400 italic">
+                                        sending...
+                                      </span>
+                                    )}
                                   </div>
                                   <div
                                     className={`px-4 py-2.5 lg:py-3 rounded-2xl text-sm leading-relaxed inline-block max-w-full text-left ${
                                       msg.isMine
-                                        ? "bg-[#0d0f0e] text-white border border-[#00ff85]/30 rounded-tr-none"
-                                        : "bg-[#1e201f] text-[#e2e3e0] border border-white/5 rounded-tl-none"
-                                    }`}
+                                        ? "bg-slate-200 dark:bg-[#0d0f0e] text-slate-900 dark:text-white border border-slate-300 dark:border-[#00ff85]/30 rounded-tr-none"
+                                        : "bg-slate-100 dark:bg-[#1e201f] text-slate-800 dark:text-[#e2e3e0] border border-slate-200 dark:border-white/5 rounded-tl-none"
+                                    } ${String(msg.id).startsWith("temp-") ? "opacity-70" : ""}`}
                                   >
-                                    {msg.localFile && (
-                                      msg.localFile.type === "image" || msg.localFile.type?.includes("image") ? (
+                                    {msg.localFile &&
+                                      (msg.localFile.type === "image" ||
+                                      msg.localFile.type?.includes("image") ? (
                                         <img
                                           src={msg.localFile.url}
                                           alt="attachment preview"
@@ -1115,32 +1192,60 @@ useEffect(() => {
                                           controls
                                           className="max-w-full sm:max-w-[250px] rounded-lg mb-2 bg-black border border-white/10"
                                         />
-                                      )
-                                    )}
-                                    {msg.file && msg.file.path && (
+                                      ))}
+                                    {msg.file &&
+                                      msg.file.path &&
                                       (() => {
-                                        const cleanBaseUrl = API_CONFIG.BASE_URL.replace(/\/$/, "");
-                                        const cleanPath = msg.file.path.replace(/^\//, "");
-                                        const safeUrl = msg.file.path.startsWith("http")
-                                          ? msg.file.path
-                                          : `${cleanBaseUrl}/${cleanPath}`;
-
-                                        const isImg = msg.file.type === "image" || msg.file.path.match(/\.(jpeg|jpg|gif|png|webp|bmp)$/i);
-                                        const isVid = msg.file.type === "video" || msg.file.path.match(/\.(mp4|webm|ogg|mov)$/i);
-
-                                        if (isImg) {
-                                          return <img src={safeUrl} alt="attachment" className="max-w-full sm:max-w-[250px] rounded-lg mb-2 object-cover border border-white/10" />;
-                                        } else if (isVid) {
-                                          return <video src={safeUrl} controls className="max-w-full sm:max-w-[250px] rounded-lg mb-2 bg-black border border-white/10" />;
-                                        } else {
-                                          return (
-                                            <a href={safeUrl} target="_blank" rel="noreferrer" className="text-[#00ff85] underline text-xs mb-2 block font-bold">
-                                              📂 View Attachment
-                                            </a>
+                                        const cleanBaseUrl =
+                                          API_CONFIG.BASE_URL.replace(
+                                            /\/$/,
+                                            "",
                                           );
-                                        }
-                                      })()
-                                    )}
+                                        const cleanPath = msg.file.path.replace(
+                                          /^\//,
+                                          "",
+                                        );
+                                        const safeUrl =
+                                          msg.file.path.startsWith("http")
+                                            ? msg.file.path
+                                            : `${cleanBaseUrl}/${cleanPath}`;
+                                        const isImg =
+                                          msg.file.type === "image" ||
+                                          msg.file.path.match(
+                                            /\.(jpeg|jpg|gif|png|webp|bmp)$/i,
+                                          );
+                                        const isVid =
+                                          msg.file.type === "video" ||
+                                          msg.file.path.match(
+                                            /\.(mp4|webm|ogg|mov)$/i,
+                                          );
+                                        if (isImg)
+                                          return (
+                                            <img
+                                              src={safeUrl}
+                                              alt="attachment"
+                                              className="max-w-full sm:max-w-[250px] rounded-lg mb-2 object-cover border border-white/10"
+                                            />
+                                          );
+                                        if (isVid)
+                                          return (
+                                            <video
+                                              src={safeUrl}
+                                              controls
+                                              className="max-w-full sm:max-w-[250px] rounded-lg mb-2 bg-black border border-white/10"
+                                            />
+                                          );
+                                        return (
+                                          <a
+                                            href={safeUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="text-[#00ff85] underline text-xs mb-2 block font-bold"
+                                          >
+                                            📂 View Attachment
+                                          </a>
+                                        );
+                                      })()}
                                     {msg.text && (
                                       <p className="whitespace-pre-wrap break-words">
                                         {msg.text}
@@ -1155,66 +1260,91 @@ useEffect(() => {
                         )}
                       </div>
 
-                      <div className="px-4 lg:px-6 pb-4 pt-3 bg-[#0d0f0e] shrink-0">
+                      <div className="px-4 lg:px-6 pb-4 pt-3 bg-white dark:bg-[#0d0f0e] shrink-0">
                         {selectedFile && (
                           <div className="w-full flex mb-2 pl-4">
-                            <div className="bg-[#1a1c1b] border border-[#3b4b3d] rounded-lg px-3 py-1.5 flex items-center gap-2 shadow-lg">
+                            <div className="bg-white dark:bg-[#1a1c1b] border border-[#3b4b3d] rounded-lg px-3 py-1.5 flex items-center gap-2 shadow-lg">
                               <MaterialIcon
-                                name={selectedFile.type === "image" ? "image" : "videocam"}
+                                name={
+                                  selectedFile.type === "image"
+                                    ? "image"
+                                    : "videocam"
+                                }
                                 className="text-[#00ff85] text-[16px]"
                               />
-                              <span className="text-[11px] text-white truncate max-w-[120px] sm:max-w-[200px]">
+                              <span className="text-[11px] text-slate-900 dark:text-white truncate max-w-[120px] sm:max-w-[200px]">
                                 {selectedFile.file.name}
                               </span>
                               <button
                                 onClick={() => setSelectedFile(null)}
                                 className="text-slate-400 hover:text-red-400 ml-1 flex items-center"
                               >
-                                <MaterialIcon name="close" className="text-[14px]" />
+                                <MaterialIcon
+                                  name="close"
+                                  className="text-[14px]"
+                                />
                               </button>
                             </div>
                           </div>
                         )}
 
                         <div className="flex items-center gap-3 lg:gap-4">
-                          <div className="flex-1 flex items-center bg-[#0d0f0e] border border-[#3b4b3d]/50 rounded-[24px] px-4 py-2">
+                          <div className="flex-1 flex items-center bg-white dark:bg-[#0d0f0e] border border-[#3b4b3d]/50 rounded-[24px] px-4 py-2">
                             <div
                               className="relative self-end mb-1 flex items-center mr-2"
                               ref={attachMenuRef}
                             >
                               {showAttachMenu && (
-                                <div className="absolute bottom-full left-0 mb-4 w-40 bg-[#1a1c1b] border border-[#3b4b3d]/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeIn">
+                                <div className="absolute bottom-[45px] left-0 w-40 bg-white dark:bg-[#1a1c1b] border border-[#3b4b3d]/50 rounded-xl shadow-2xl z-[9999] overflow-hidden animate-fadeIn">
                                   <button
+                                    type="button"
                                     onClick={() => {
                                       setShowAttachMenu(false);
-                                      imageAttachRef.current?.click();
+                                      setTimeout(
+                                        () => imageAttachRef.current?.click(),
+                                        0,
+                                      );
                                     }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-[#3b4b3d]/20 hover:text-white transition-all text-sm font-bold"
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-[#3b4b3d]/20 transition-all text-sm font-bold"
                                   >
-                                    <MaterialIcon name="image" className="text-[18px]" />
+                                    <MaterialIcon
+                                      name="image"
+                                      className="text-[18px]"
+                                    />{" "}
                                     Images
                                   </button>
+
                                   <div className="h-px w-full bg-[#3b4b3d]/30"></div>
+
                                   <button
+                                    type="button"
                                     onClick={() => {
                                       setShowAttachMenu(false);
-                                      videoAttachRef.current?.click();
+                                      setTimeout(
+                                        () => videoAttachRef.current?.click(),
+                                        0,
+                                      );
                                     }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-[#3b4b3d]/20 hover:text-white transition-all text-sm font-bold"
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-[#3b4b3d]/20 transition-all text-sm font-bold"
                                   >
-                                    <MaterialIcon name="videocam" className="text-[18px]" />
+                                    <MaterialIcon
+                                      name="videocam"
+                                      className="text-[18px]"
+                                    />{" "}
                                     Videos
                                   </button>
                                 </div>
                               )}
-
-                              <span onClick={() => setShowAttachMenu(!showAttachMenu)}>
+                              <span
+                                onClick={() =>
+                                  setShowAttachMenu(!showAttachMenu)
+                                }
+                              >
                                 <MaterialIcon
                                   name="attach_file"
                                   className="text-slate-500 hover:text-[#00ff85] transition-colors text-lg cursor-pointer block"
                                 />
                               </span>
-
                               <input
                                 type="file"
                                 accept="image/*"
@@ -1234,20 +1364,22 @@ useEffect(() => {
                             <textarea
                               ref={messageInputRef}
                               rows="1"
-                              className="flex-1 bg-transparent text-sm text-white outline-none focus:ring-0 placeholder:text-[#3b4b3d] font-inter resize-none py-1.5 max-h-[120px] overflow-y-auto custom-scrollbar"
+                              className="flex-1 bg-transparent text-sm text-slate-900 dark:text-white outline-none focus:ring-0 placeholder:text-[#3b4b3d] font-inter resize-none py-1.5 max-h-[120px] overflow-y-auto custom-scrollbar"
                               placeholder="Type a message..."
                               value={messageText}
                               onChange={(e) => {
                                 setMessageText(e.target.value);
                                 e.target.style.height = "auto";
-                                const newHeight = Math.min(e.target.scrollHeight, 120);
-                                e.target.style.height = `${newHeight}px`;
+                                e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
                               }}
                               onKeyDown={(e) => {
-                                if (e.key === "Enter" && !e.shiftKey && !e.altKey) {
+                                if (
+                                  e.key === "Enter" &&
+                                  !e.shiftKey &&
+                                  !e.altKey
+                                ) {
                                   e.preventDefault();
                                   handleSendMessage();
-                                  e.target.style.height = "auto";
                                 }
                               }}
                               style={{ border: "none", boxShadow: "none" }}
@@ -1280,39 +1412,55 @@ useEffect(() => {
 
       <style jsx>{`
         @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
-        .animate-fadeIn { animation: fadeIn 0.15s ease-out; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        input, input:focus, input:active {
+        .animate-fadeIn {
+          animation: fadeIn 0.15s ease-out;
+        }
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        input,
+        input:focus,
+        input:active {
           outline: none !important;
           box-shadow: none !important;
           border: none !important;
         }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #3b4b3d; border-radius: 10px; }
-        .custom-scrollbar { scrollbar-width: thin; scrollbar-color: #3b4b3d transparent; }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #3b4b3d;
+          border-radius: 10px;
+        }
+        .custom-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: #3b4b3d transparent;
+        }
       `}</style>
       <style jsx global>{`
-  /* Chrome, Safari aur Opera ke liye */
-  ::-webkit-scrollbar {
-    display: none;
-    width: 0;
-    height: 0;
-  }
-
-  /* Firefox ke liye */
-  * {
-    scrollbar-width: none;
-  }
-
-  /* IE aur Edge ke liye */
-  * {
-    -ms-overflow-style: none;
-  }
-`}</style>
+        ::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
+        }
+        * {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+      `}</style>
     </DashboardLayout>
   );
 };

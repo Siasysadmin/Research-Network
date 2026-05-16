@@ -57,12 +57,16 @@ const MainContent = () => {
   const [chatMessages, setChatMessages] = useState({});
   const pollingRef = useRef(null);
   const feedDataRef = useRef([]);
-
+const [blockedUserIds, setBlockedUserIds] = useState(null);
   const currentPlayingVideo = useRef(null);
   const videoRefs = useRef({});
   const observerRef = useRef(null);
 
   const [chats, setChats] = useState([]);
+  const [isInstituteApprovalPending, setIsInstituteApprovalPending] =
+    useState(false);
+
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
 
   const getAuthToken = () => {
     return (
@@ -73,6 +77,9 @@ const MainContent = () => {
       null
     );
   };
+
+  const textRefs = useRef({});
+  const [showReadMore, setShowReadMore] = useState({});
 
   const getCurrentUserId = () => {
     try {
@@ -86,7 +93,6 @@ const MainContent = () => {
       }
       return null;
     } catch (e) {
-      console.error("Error getting user ID:", e);
       return null;
     }
   };
@@ -116,7 +122,6 @@ const MainContent = () => {
 
       return `${API_CONFIG.BASE_URL}/${profileImg}`;
     } catch (e) {
-      console.error("Error getting user avatar:", e);
       return null;
     }
   };
@@ -141,8 +146,43 @@ const MainContent = () => {
 
       return "User";
     } catch (e) {
-      console.error("Error getting user name:", e);
       return "User";
+    }
+  };
+
+  const checkInstituteApprovalPending = () => {
+    try {
+      const userStr = localStorage.getItem("user");
+      if (!userStr) return false;
+
+      const parsedUser = JSON.parse(userStr);
+      const user = Array.isArray(parsedUser) ? parsedUser[0] : parsedUser;
+
+      const userType = String(user.user_type || "").toLowerCase();
+
+      const approvalStatus =
+        user.approval_status ||
+        user.admin_approval_status ||
+        user.institute_approval_status ||
+        user.is_approved ||
+        user.status ||
+        user.profile_institute_details?.approval_status ||
+        user.profile_institute_details?.admin_approval_status ||
+        user.institute_details?.approval_status ||
+        user.institute_details?.admin_approval_status;
+
+      const status = String(approvalStatus || "").toLowerCase();
+
+      const isApproved =
+        status === "approved" ||
+        status === "approve" ||
+        status === "1" ||
+        status === "true" ||
+        status === "active";
+
+      return userType === "institute" && !isApproved;
+    } catch (error) {
+      return false;
     }
   };
 
@@ -163,11 +203,9 @@ const MainContent = () => {
   const formatDate = (timestamp) => {
     if (!timestamp) return "Published";
 
-    let dateStr = String(timestamp).replace(" ", "T");
-
-    if (!dateStr.endsWith("Z") && !dateStr.includes("+")) {
-      dateStr += "Z";
-    }
+    // MySQL datetime: "2026-05-11 13:03:27"
+    // Isko local browser time ki tarah parse karna hai, UTC nahi.
+    const dateStr = String(timestamp).replace(" ", "T");
 
     const date = new Date(dateStr);
     const now = new Date();
@@ -175,6 +213,10 @@ const MainContent = () => {
     if (isNaN(date.getTime())) return "Recent";
 
     const diffMs = now - date;
+
+    // Agar date future me chali gayi ho, to bhi Just now dikha do
+    if (diffMs < 0) return "Just now";
+
     const diffSecs = Math.floor(diffMs / 1000);
     const diffMins = Math.floor(diffSecs / 60);
     const diffHours = Math.floor(diffMins / 60);
@@ -255,7 +297,6 @@ const MainContent = () => {
   };
 
   const handleOpenUserProfile = (postData, isMockPost = false) => {
-    console.log("Opening Profile for Data: ", postData);
 
     if (isMockPost) {
       setSelectedProfileUser({
@@ -279,10 +320,32 @@ const MainContent = () => {
   const toggleConnect = async (postUserId, e) => {
     e.stopPropagation();
 
-    const currentStatus = connectedUsers[postUserId];
+    const userKey = String(postUserId);
+    const currentStatus = connectedUsers[userKey] || connectedUsers[postUserId];
+
     if (currentStatus === 1) return;
 
     const token = getAuthToken();
+
+    if (!token) {
+      toast.error("Please login again.");
+      return;
+    }
+
+    const nextStatus = currentStatus === 2 ? 3 : 1;
+
+    // ✅ Click hote hi instant UI update
+    setConnectedUsers((prev) => ({
+      ...prev,
+      [userKey]: nextStatus,
+      [postUserId]: nextStatus,
+    }));
+
+    window.dispatchEvent(
+      new CustomEvent("connectionStatusUpdated", {
+        detail: { userId: userKey, status: nextStatus },
+      }),
+    );
 
     try {
       if (currentStatus === 2) {
@@ -294,17 +357,19 @@ const MainContent = () => {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ connected_user_id: String(postUserId) }),
+            body: JSON.stringify({ connected_user_id: userKey }),
           },
         );
+
         const result = await response.json();
-        if (result.status) {
-          setConnectedUsers((prev) => ({ ...prev, [postUserId]: 3 }));
-          window.dispatchEvent(
-            new CustomEvent("connectionStatusUpdated", {
-              detail: { userId: String(postUserId), status: 3 },
-            }),
-          );
+
+        if (!result.status) {
+          setConnectedUsers((prev) => ({
+            ...prev,
+            [userKey]: 2,
+            [postUserId]: 2,
+          }));
+          toast.error(result.message || "Disconnect failed");
         }
       } else {
         const response = await fetch(
@@ -315,24 +380,30 @@ const MainContent = () => {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ connected_user_id: String(postUserId) }),
+            body: JSON.stringify({ connected_user_id: userKey }),
           },
         );
+
         const result = await response.json();
-        if (result.status) {
-          setConnectedUsers((prev) => ({ ...prev, [postUserId]: 1 }));
-          window.dispatchEvent(
-            new CustomEvent("connectionStatusUpdated", {
-              detail: { userId: String(postUserId), status: 1 },
-            }),
-          );
+
+        if (!result.status) {
+          setConnectedUsers((prev) => ({
+            ...prev,
+            [userKey]: 3,
+            [postUserId]: 3,
+          }));
+          toast.error(result.message || "Connect request failed");
         }
       }
     } catch (err) {
-      console.error("Connection toggle error:", err);
+      setConnectedUsers((prev) => ({
+        ...prev,
+        [userKey]: currentStatus || 3,
+        [postUserId]: currentStatus || 3,
+      }));
+      toast.error("Connection error. Please try again.");
     }
   };
-
   const fetchConnectedUsersList = async () => {
     try {
       const token = getAuthToken();
@@ -354,7 +425,10 @@ const MainContent = () => {
         result.data.forEach((user) => {
           statusMap[user.id] = 2;
         });
-        setConnectedUsers(statusMap);
+        setConnectedUsers((prev) => ({
+          ...prev,
+          ...statusMap,
+        }));
       }
     } catch (err) {
       console.error("Error fetching connections:", err);
@@ -405,7 +479,9 @@ const MainContent = () => {
       setConnectedUsers((prev) => {
         const merged = { ...prev };
         Object.keys(statusMap).forEach((uid) => {
-          merged[uid] = statusMap[uid];
+          if (prev[uid] !== 2) {
+            merged[uid] = statusMap[uid];
+          }
         });
         return merged;
       });
@@ -413,6 +489,37 @@ const MainContent = () => {
       console.error("Error fetching pending statuses:", err);
     }
   };
+
+  const fetchBlockedUserIds = async () => {
+  try {
+    const token = getAuthToken();
+
+    const res = await fetch(
+      `${API_CONFIG.BASE_URL}/account/get-blocked-users`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data = await res.json();
+
+    if (data.status && Array.isArray(data.data)) {
+      setBlockedUserIds(data.data.map((u) => String(u.id)));
+    }
+  } catch (err) {
+    console.error("Blocked users fetch error:", err);
+  }
+};
+
+  useEffect(() => {
+    if (!loadingFeed && feedData.length > 0) {
+      fetchPendingStatuses();
+    }
+  }, [loadingFeed, feedData]);
 
   const getInitials = (name) => {
     const parts = String(name || "")
@@ -799,7 +906,6 @@ const MainContent = () => {
         toast.error("Failed to update profile image");
       }
     } catch (err) {
-      console.error("Profile image upload error:", err);
       toast.error("Network error while uploading image.");
     }
   };
@@ -828,13 +934,15 @@ const MainContent = () => {
       const data = await response.json();
       const userList =
         data.data || data.users || (Array.isArray(data) ? data : []);
-
+const visibleUserList = userList.filter(
+  (user) => !blockedUserIds.includes(String(user.id))
+);
       const savedTimestamps = JSON.parse(
         localStorage.getItem("floatingChatTimestamps") || "{}",
       );
       const currentUserId = getCurrentUserId();
 
-      const formattedUsers = userList.map((user) => {
+      const formattedUsers = visibleUserList.map((user) => {
         const userId = String(user.id);
         const name =
           user.user_type === "institute"
@@ -907,12 +1015,27 @@ const MainContent = () => {
       }
     };
   }, [feedData]);
+  useEffect(() => {
+    const newShowReadMore = {};
+
+    Object.keys(textRefs.current).forEach((id) => {
+      const el = textRefs.current[id];
+      if (el) {
+        newShowReadMore[id] = el.scrollHeight > el.clientHeight;
+      }
+    });
+
+    setShowReadMore(newShowReadMore);
+  }, [feedData]); // ✅ sirf feedData
 
   useEffect(() => {
     const currentUserId = getCurrentUserId();
     setUserId(currentUserId);
     setUserAvatar(getCurrentUserAvatar());
     setUserName(getCurrentUserName());
+
+    const pendingApproval = checkInstituteApprovalPending();
+    setIsInstituteApprovalPending(pendingApproval);
 
     try {
       const storedSavedPosts = localStorage.getItem("savedPosts");
@@ -967,9 +1090,9 @@ const MainContent = () => {
               post_text: research.abstract || "Published Research",
               type: "research",
               created_at:
+                research.updated_at ||
                 research.published_at ||
                 research.created_at ||
-                research.updated_at ||
                 new Date().toISOString(),
             }));
           }
@@ -1062,9 +1185,22 @@ const MainContent = () => {
     };
 
     fetchFeed();
-    fetchChatUsers();
-    fetchConnectedUsersList();
+    // fetchChatUsers();
+   if (!pendingApproval) {
+  fetchChatUsers();
+}
+fetchConnectedUsersList();
+fetchBlockedUserIds();
+   
   }, []);
+useEffect(() => {
+  if (
+    !isInstituteApprovalPending &&
+    blockedUserIds !== null
+  ) {
+    fetchChatUsers();
+  }
+}, [blockedUserIds, isInstituteApprovalPending]);
 
   useEffect(() => {
     localStorage.setItem("videoMuteStates", JSON.stringify(videoMutedState));
@@ -1106,6 +1242,12 @@ const MainContent = () => {
   };
 
   useEffect(() => {
+    if (isInstituteApprovalPending) {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+      setActiveChatId(null);
+      return;
+    }
+
     if (!activeChatId) {
       if (pollingRef.current) clearInterval(pollingRef.current);
       return;
@@ -1183,11 +1325,12 @@ const MainContent = () => {
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
-  }, [activeChatId]);
+  }, [activeChatId, isInstituteApprovalPending]);
 
   const bgPollingRef = useRef(null);
 
   useEffect(() => {
+    if (isInstituteApprovalPending) return;
     if (chats.length === 0) return;
 
     const pollBackground = async () => {
@@ -1305,7 +1448,7 @@ const MainContent = () => {
     return () => {
       if (bgPollingRef.current) clearInterval(bgPollingRef.current);
     };
-  }, [chats.length]);
+  }, [chats.length, isInstituteApprovalPending]);
 
   const toggleLike = async (postId) => {
     const token = getAuthToken();
@@ -1385,68 +1528,95 @@ const MainContent = () => {
   };
 
   const toggleSave = async (postId) => {
-    const token = getAuthToken();
+  const token = getAuthToken();
 
-    const post = feedData.find((p) => {
-      if (p.isResearchPost) return p.researche_id === postId || p.id === postId;
-      return p.id === postId;
+  const post = feedData.find((p) => {
+    if (p.isResearchPost) return p.researche_id === postId || p.id === postId;
+    return p.id === postId;
+  });
+
+  if (!post) return;
+
+  const isMockPost = post.author !== undefined;
+  const isResearchPost = post.isResearchPost === true;
+  const isCurrentlySaved = !!savedPosts[postId];
+
+  // ✅ Pehle UI + localStorage instantly update
+  setSavedPosts((prev) => {
+    const newSavedPosts = {
+      ...prev,
+      [postId]: !isCurrentlySaved,
+    };
+
+    localStorage.setItem("savedPosts", JSON.stringify(newSavedPosts));
+    return newSavedPosts;
+  });
+
+  // ✅ Toast bhi instantly show hoga
+  toast.success(
+    isCurrentlySaved
+      ? "Post removed from saved"
+      : "Post saved successfully"
+  );
+
+  // ✅ Agar unsave hua hai to saved page ko bhi notify karo
+  if (isCurrentlySaved) {
+    window.dispatchEvent(
+      new CustomEvent("postUnsaved", {
+        detail: { postId },
+      })
+    );
+  }
+
+  if (isMockPost) return;
+
+  try {
+    const actualId = isResearchPost ? post.researche_id || post.id : post.id;
+
+    const endpoint = isResearchPost
+      ? `${API_CONFIG.BASE_URL}/research/research-save/${actualId}`
+      : `${API_CONFIG.BASE_URL}/post/save-post/${actualId}`;
+
+    const res = await fetch(endpoint, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
     });
 
-    if (!post) return;
+    const result = await res.json();
 
-    const isMockPost = post.author !== undefined;
-    const isResearchPost = post.isResearchPost === true;
-    const isCurrentlySaved = savedPosts[postId] || false;
+    if (!result.status) {
+      // ❌ API fail ho to old state wapas
+      setSavedPosts((prev) => {
+        const rollback = {
+          ...prev,
+          [postId]: isCurrentlySaved,
+        };
+
+        localStorage.setItem("savedPosts", JSON.stringify(rollback));
+        return rollback;
+      });
+
+      toast.error(result.message || "Failed to update save status");
+    }
+  } catch (err) {
+    console.error("Save API error:", err);
 
     setSavedPosts((prev) => {
-      const newSavedPosts = { ...prev, [postId]: !isCurrentlySaved };
-      localStorage.setItem("savedPosts", JSON.stringify(newSavedPosts));
-      return newSavedPosts;
+      const rollback = {
+        ...prev,
+        [postId]: isCurrentlySaved,
+      };
+
+      localStorage.setItem("savedPosts", JSON.stringify(rollback));
+      return rollback;
     });
 
-    if (isMockPost) {
-      toast.success(isCurrentlySaved ? "Post unsaved" : "Post saved");
-      return;
-    }
-
-    try {
-      const actualId = isResearchPost ? post.researche_id || post.id : post.id;
-      const endpoint = isResearchPost
-        ? `${API_CONFIG.BASE_URL}/research/research-save/${actualId}`
-        : `${API_CONFIG.BASE_URL}/post/save-post/${actualId}`;
-
-      const res = await fetch(endpoint, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const result = await res.json();
-
-      if (result.status) {
-        toast.success(
-          result.msg || (isCurrentlySaved ? "Post unsaved" : "Post saved"),
-        );
-      } else {
-        toast.error(result.message || "Failed to update save status");
-        setSavedPosts((prev) => {
-          const newSavedPosts = { ...prev, [postId]: isCurrentlySaved };
-          localStorage.setItem("savedPosts", JSON.stringify(newSavedPosts));
-          return newSavedPosts;
-        });
-      }
-    } catch (err) {
-      console.error("Save API error:", err);
-      toast.error("Network error while saving.");
-      setSavedPosts((prev) => {
-        const newSavedPosts = { ...prev, [postId]: isCurrentlySaved };
-        localStorage.setItem("savedPosts", JSON.stringify(newSavedPosts));
-        return newSavedPosts;
-      });
-    }
-  };
+    toast.error("Network error while saving.");
+  }
+};
 
   const fetchComments = async (postId, post) => {
     const token = getAuthToken();
@@ -1508,29 +1678,26 @@ const MainContent = () => {
     if (isCurrentlyOpen) {
       setCommentsState((prev) => ({
         ...prev,
-        [postId]: {
-          ...prev[postId],
-          isOpen: false,
-        },
+        [postId]: { ...prev[postId], isOpen: false },
       }));
       return;
     }
 
-    if (isMockPost) {
-      setCommentsState((prev) => ({
-        ...prev,
-        [postId]: {
-          ...prev[postId],
-          isOpen: true,
-          list: prev[postId]?.list || [],
-        },
-      }));
-      return;
-    }
+    // ✅ Pehle instantly open karo (purani list ke saath)
+    setCommentsState((prev) => ({
+      ...prev,
+      [postId]: {
+        ...prev[postId],
+        isOpen: true,
+        list: prev[postId]?.list || [],
+      },
+    }));
 
-    await fetchComments(postId, post);
+    if (isMockPost) return;
+
+    // ✅ Background me fetch — UI block nahi hoga
+    fetchComments(postId, post); // await hata diya
   };
-
   const addComment = async (postId, commentText) => {
     if (!commentText.trim()) return;
 
@@ -1540,45 +1707,10 @@ const MainContent = () => {
 
     const isMockPost = post?.author !== undefined;
     const isResearchPost = post?.isResearchPost === true;
-
     const cleanComment = commentText.trim();
 
-    if (isMockPost) {
-      const fallbackAvatar =
-        userAvatar ||
-        getCurrentUserAvatar() ||
-        `https://ui-avatars.com/api/?name=${encodeURIComponent(
-          userName || "User",
-        )}&background=random&color=fff`;
-
-      const newLocalComment = {
-        id: `temp_${Date.now()}`,
-        text: cleanComment,
-        author: userName,
-        authorId: userId,
-        authorAvatar: fallbackAvatar,
-        timestamp: new Date().toISOString(),
-      };
-
-      setCommentsState((prev) => {
-        const newState = {
-          ...prev,
-          [postId]: {
-            ...prev[postId],
-            isOpen: true,
-            list: [newLocalComment, ...(prev[postId]?.list || [])],
-          },
-        };
-
-        localStorage.setItem("postComments", JSON.stringify(newState));
-        return newState;
-      });
-
-      setNewCommentText((prev) => ({ ...prev, [postId]: "" }));
-      return;
-    }
-
-    const _newLocalComment = {
+    // ✅ Instant local add — API ka wait nahi
+    const tempComment = {
       id: `temp_${Date.now()}`,
       text: cleanComment,
       author: userName,
@@ -1586,7 +1718,18 @@ const MainContent = () => {
       authorAvatar: userAvatar || getCurrentUserAvatar() || null,
       timestamp: new Date().toISOString(),
     };
+
+    setCommentsState((prev) => ({
+      ...prev,
+      [postId]: {
+        ...prev[postId],
+        isOpen: true,
+        list: [tempComment, ...(prev[postId]?.list || [])],
+      },
+    }));
     setNewCommentText((prev) => ({ ...prev, [postId]: "" }));
+
+    if (isMockPost) return;
 
     const token = getAuthToken();
 
@@ -1608,8 +1751,8 @@ const MainContent = () => {
       const result = await res.json();
 
       if (result.status) {
+        // ✅ Real comments se replace karo (temp hata ke)
         await fetchComments(postId, post);
-
         setFeedData((prevFeed) =>
           prevFeed.map((p) => {
             if (p.id === postId || p.researche_id === postId) {
@@ -1622,10 +1765,25 @@ const MainContent = () => {
           }),
         );
       } else {
+        // ✅ Fail hone par temp comment hatao
+        setCommentsState((prev) => ({
+          ...prev,
+          [postId]: {
+            ...prev[postId],
+            list: prev[postId].list.filter((c) => c.id !== tempComment.id),
+          },
+        }));
         toast.error(result.message || "Failed to add comment");
       }
     } catch (err) {
-      console.error("Add comment error:", err);
+      // ✅ Error par bhi temp hatao
+      setCommentsState((prev) => ({
+        ...prev,
+        [postId]: {
+          ...prev[postId],
+          list: prev[postId].list.filter((c) => c.id !== tempComment.id),
+        },
+      }));
       toast.error("Network error while adding comment");
     }
   };
@@ -1778,7 +1936,6 @@ const MainContent = () => {
         }
       }
     } catch (error) {
-      console.error("Error deleting post:", error);
       toast.error("Error deleting. Please try again.");
     } finally {
       setDeletingPost(null);
@@ -1819,7 +1976,6 @@ const MainContent = () => {
         toast.error(result.message || "Failed to report post");
       }
     } catch (error) {
-      console.error("Error reporting post:", error);
       toast.error("Error reporting post. Please try again.");
     } finally {
       setIsReportingLoading(false);
@@ -1857,7 +2013,6 @@ const MainContent = () => {
         toast.error(result.message || "Failed to block user");
       }
     } catch (error) {
-      console.error("Error blocking user:", error);
       toast.error("Error blocking user. Please try again.");
     } finally {
       setShowBlockPopup(false);
@@ -1896,6 +2051,11 @@ const MainContent = () => {
   };
 
   const handleChatSend = async () => {
+    if (isInstituteApprovalPending) {
+      openApprovalModal();
+      return;
+    }
+
     if (!chatInput.trim() || !activeChatId) return;
 
     const messageText = chatInput.trim();
@@ -1954,6 +2114,10 @@ const MainContent = () => {
 
   const activeChatData = chats.find((c) => c.id === activeChatId);
 
+  const openApprovalModal = () => {
+    setShowApprovalModal(true);
+  };
+
   const getPostProfileSrc = (post) => {
     if (post.profile_image) {
       return `${API_CONFIG.BASE_URL}/${post.profile_image}`;
@@ -1963,26 +2127,51 @@ const MainContent = () => {
 
   return (
     <DashboardLayout>
-      <div className="w-full min-h-screen overflow-x-hidden px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 md:py-6 lg:py-8 max-w-full">
+      <div className=" w-full min-h-screen overflow-x-hidden  px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 md:py-6 lg:py-8 max-w-full bg-slate-100 text-slate-800 dark:bg-[#0b0f0d] dark:text-slate-900 dark:text-white">
+        {" "}
         <div className="mb-3 sm:mb-4 md:mb-6 lg:mb-8 flex justify-center w-full">
-          <div className="relative w-full max-w-5xl rounded-xl sm:rounded-2xl border border-[#1f2a25] bg-gradient-to-r from-[#020b08] via-[#03130e] to-[#020b08] px-3 sm:px-4 md:px-6 lg:px-8 xl:px-10 py-4 sm:py-5 md:py-6 lg:py-8 flex flex-col sm:flex-row items-start sm:items-center justify-between overflow-hidden gap-3 sm:gap-4 md:gap-6">
+          <div
+            className="
+            relative w-full max-w-5xl
+           rounded-xl sm:rounded-2xl
+
+            border border-slate-200
+           bg-white
+
+          dark:border-[#1f2a25]
+         dark:bg-gradient-to-r
+         dark:from-[#020b08]
+         dark:via-[#03130e]
+         dark:to-[#020b08]
+
+         shadow-sm  px-3 sm:px-4 md:px-6 lg:px-8 xl:px-10 py-4 sm:py-5 md:py-6 lg:py-8 flex flex-col sm:flex-row items-start sm:items-center justify-between overflow-hidden gap-3 sm:gap-4 md:gap-6"
+          >
             <div className="flex items-start sm:items-center gap-3 sm:gap-4 md:gap-6 z-10 w-full">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-lg sm:rounded-2xl bg-[#031a11] border border-[#00ff88]/20 flex items-center justify-center shadow-[0_0_40px_rgba(0,255,136,0.15)] shrink-0">
-                <span className="material-symbols-outlined text-[#00ff88] text-2xl sm:text-3xl md:text-4xl">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-lg sm:rounded-2xl bg-emerald-100 dark:bg-[#031a11] border border-[#00ff88]/20 flex items-center justify-center shadow-[0_0_40px_rgba(0,255,136,0.15)] shrink-0">
+                <span className="material-symbols-outlined text-emerald-600 dark:text-[#00ff88] text-2xl sm:text-3xl md:text-4xl">
                   verified_user
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-semibold text-white tracking-tight leading-tight">
+                <h1
+                  className="
+                        text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl
+                       font-semibold tracking-tight leading-tight
+
+                       text-slate-900
+                       dark:text-slate-900 dark:text-white
+                     "
+                >
+                  {" "}
                   Welcome back, <br className="hidden" />
                   <span className="break-words">{userName}!</span>
                 </h1>
-                <p className="text-slate-400 mt-1.5 sm:mt-2 md:mt-3 text-xs sm:text-sm md:text-base max-w-2xl leading-relaxed">
+                <p className="text-slate-600 dark:text-slate-400 mt-1.5 sm:mt-2 md:mt-3 text-xs sm:text-sm md:text-base max-w-2xl leading-relaxed">
                   <span className="block">
-                    Your research network is active. Reviewing today's
+                    Your research network is active. Tracking collaborations
                   </span>
                   <span className="block sm:inline">
-                    network data throughput and peer-reviewed updates.
+                    research activity, and latest updates.{" "}
                   </span>
                 </p>
               </div>
@@ -1990,13 +2179,12 @@ const MainContent = () => {
             <div className="hidden sm:block absolute right-0 top-0 w-[200px] h-[200px] sm:w-[250px] sm:h-[250px] lg:w-[300px] lg:h-[300px] bg-[#00ff88]/10 blur-[80px] sm:blur-[100px] lg:blur-[140px]"></div>
           </div>
         </div>
-
         <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 lg:gap-8 auto-rows-max lg:auto-rows-auto">
           <div className="lg:col-span-2 w-full space-y-4 sm:space-y-5 md:space-y-6 lg:space-y-8">
             <section className="w-full">
               <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-5 lg:mb-6 gap-2 flex-wrap">
                 <h3 className="text-base sm:text-lg md:text-xl font-bold flex items-center gap-2 whitespace-nowrap">
-                  <span className="material-symbols-outlined text-[#00ff88] text-lg sm:text-xl">
+                  <span className="material-symbols-outlined text-emerald-600 dark:text-[#00ff88] text-lg sm:text-xl">
                     rss_feed
                   </span>
                   <span className="hidden sm:inline">Network Feed</span>
@@ -2026,7 +2214,9 @@ const MainContent = () => {
                         poll.user_type === "institute"
                           ? poll.name || "Institute"
                           : poll.name || "User";
-                      const pollTime = formatDate(poll.created_at);
+                      const pollTime = formatDate(
+                        `${poll.created_at.replace(" ", "T")}+05:30`,
+                      );
                       const isCurrentUserPoll =
                         String(userId) === String(pollUserId);
                       const isBusy = Boolean(pollActionLoading[pollId]);
@@ -2039,14 +2229,14 @@ const MainContent = () => {
                       return (
                         <article
                           key={`poll-${pollId}-${index}`}
-                          className="bg-[#020f0a] rounded-lg sm:rounded-xl border border-white/5 shadow-sm overflow-hidden relative w-full"
+                          className=" bg-white dark:bg-[#020f0a] rounded-lg sm:rounded-xl border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden relative w-full"
                         >
                           <div className="p-3 sm:p-4 md:p-5">
                             <div className="flex items-start justify-between gap-2 sm:gap-3">
                               <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                                 <button
                                   type="button"
-                                  className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-2xl bg-[#031a11] border border-[#00ff88]/20 flex items-center justify-center shadow-[0_0_30px_rgba(0,255,136,0.12)] shrink-0 hover:opacity-90 transition-opacity"
+                                  className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-2xl bg-emerald-100 dark:bg-[#031a11] border border-[#00ff88]/20 flex items-center justify-center shadow-[0_0_30px_rgba(0,255,136,0.12)] shrink-0 hover:opacity-90 transition-opacity"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleOpenUserProfile(
@@ -2080,7 +2270,7 @@ const MainContent = () => {
 
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-wrap">
-                                    <h4 className="text-white font-bold truncate text-xs sm:text-sm">
+                                    <h4 className="text-slate-900 dark:text-white font-bold truncate text-xs sm:text-sm">
                                       {pollName}
                                     </h4>
                                   </div>
@@ -2097,27 +2287,29 @@ const MainContent = () => {
 
                               <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                                 {!isCurrentUserPoll && (
-                                  <button
-                                    onClick={(e) =>
-                                      toggleConnect(pollUserId, e)
-                                    }
-                                    className={`px-2 sm:px-3 py-0.5 sm:py-1 sm:px-4 sm:py-1.5 rounded-md text-[8px] sm:text-xs font-bold transition-all tracking-wider whitespace-nowrap ${
-                                      connectedUsers[pollUserId]
-                                        ? "bg-transparent text-slate-400 border border-slate-600 hover:bg-white/10 hover:text-white"
-                                        : "bg-transparent text-[#00ff88] hover:bg-[#00ff88] hover:text-black border border-transparent"
-                                    }`}
-                                  >
-                                    {connectedUsers[pollUserId] === 2
-                                      ? "✓ CONNECTED"
-                                      : connectedUsers[pollUserId] === 1
-                                        ? "⏳ PENDING"
-                                        : "+ CONNECT"}
-                                  </button>
-                                )}
+                               
+  <button
+    onClick={(e) => toggleConnect(pollUserId, e)}
+    disabled={connectedUsers[pollUserId] === 1}
+    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap border ${
+      connectedUsers[pollUserId] === 2
+        ? "bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-[#00ff88]/10 dark:text-[#00ff88] dark:border-[#00ff88]/40"
+        : connectedUsers[pollUserId] === 1
+          ? "bg-yellow-50 text-yellow-600 border-yellow-300 cursor-not-allowed dark:bg-yellow-500/10 dark:text-yellow-400 dark:border-yellow-500/40"
+          : "bg-[#00ff88] text-black border-[#00ff88] hover:bg-[#00dd77]"
+    }`}
+  >
+    {connectedUsers[pollUserId] === 2
+      ? "✓ CONNECTED"
+      : connectedUsers[pollUserId] === 1
+        ? "⏳ PENDING"
+        : "+ CONNECT"}
+  </button>
+)}
                                 <button
                                   type="button"
                                   disabled={isDeletingPoll}
-                                  className="text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/5 transition-all duration-200"
+                                  className="text-slate-400 hover:text-slate-900 dark:text-white p-1 rounded-full hover:bg-white/5 transition-all duration-200"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setShowOptionsId(
@@ -2142,7 +2334,8 @@ const MainContent = () => {
                                         setShowOptionsId(null);
                                       }}
                                     ></div>
-                                    <div className="absolute right-4 top-[68px] w-40 sm:w-48 bg-[#1e293b] rounded-lg shadow-xl border border-white/10 overflow-hidden z-20 animate-fadeInScale">
+                                    <div className="absolute right-4 top-[68px] w-40 sm:w-48 bg-white dark:bg-[#1e293b] rounded-lg shadow-xl border border-slate-200 dark:border-white/10 overflow-hidden z-20 animate-fadeInScale">
+                                      {" "}
                                       {isCurrentUserPoll ? (
                                         <button
                                           onClick={(e) => {
@@ -2183,7 +2376,7 @@ const MainContent = () => {
                                               setShowReportPopup(true);
                                               setShowOptionsId(null);
                                             }}
-                                            className="w-full text-left px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm text-yellow-400 hover:bg-yellow-500/10 flex items-center gap-2 sm:gap-3 transition-all duration-200 group border-b border-white/10"
+                                            className="w-full text-left px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm text-yellow-400 hover:bg-yellow-500/10 flex items-center gap-2 sm:gap-3 transition-all duration-200 group border-b border-slate-200 dark:border-white/10"
                                           >
                                             <span className="material-symbols-outlined text-xs sm:text-sm group-hover:scale-110 transition-transform">
                                               flag
@@ -2218,7 +2411,7 @@ const MainContent = () => {
                               </div>
                             </div>
 
-                            <h3 className="mt-3 sm:mt-4 md:mt-5 text-base sm:text-lg md:text-xl lg:text-2xl font-extrabold text-white leading-snug break-words">
+                            <h3 className="mt-3 sm:mt-4 md:mt-5 text-base sm:text-lg md:text-xl lg:text-2xl font-extrabold text-slate-900 dark:text-white leading-snug break-words">
                               {poll.question}
                             </h3>
 
@@ -2240,10 +2433,10 @@ const MainContent = () => {
                                     onClick={(e) =>
                                       handlePollOptionClick(e, poll, opt.id)
                                     }
-                                    className={`relative w-full rounded-lg sm:rounded-xl border bg-[#000302] overflow-hidden transition-all text-left min-h-[40px] sm:min-h-[48px] ${
+                                    className={`relative w-full rounded-xl border bg-white dark:bg-[#000302] overflow-hidden transition-all text-left min-h-[44px] sm:min-h-[52px] shadow-sm ${
                                       isSelected
-                                        ? "border-[#00ff88]/35"
-                                        : "border-white/10 hover:border-white/15 hover:bg-white/5"
+                                        ? "border-emerald-400 bg-emerald-50 dark:border-[#00ff88]/35 dark:bg-[#000302]"
+                                        : "border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50 dark:border-white/10 dark:hover:border-white/15 dark:hover:bg-white/5"
                                     } ${isBusy ? "opacity-70 cursor-wait" : ""}`}
                                   >
                                     <div
@@ -2256,10 +2449,10 @@ const MainContent = () => {
                                     />
                                     <div className="relative z-10 flex items-center justify-between gap-2 sm:gap-3 px-3 sm:px-4 md:px-5 py-2.5 sm:py-3 md:py-3.5">
                                       <span
-                                        className={`text-xs sm:text-sm font-bold pr-1 sm:pr-2 break-words flex-1 ${
+                                        className={`text-xs sm:text-sm font-semibold pr-1 sm:pr-2 break-words flex-1 ${
                                           isSelected
-                                            ? "text-white"
-                                            : "text-slate-200"
+                                            ? "text-emerald-700 dark:text-white"
+                                            : "text-slate-700 dark:text-slate-200"
                                         }`}
                                       >
                                         {opt.option_text}
@@ -2268,7 +2461,7 @@ const MainContent = () => {
                                         {isSelected && (
                                           <MaterialIcon
                                             name="check_circle"
-                                            className={`text-[#00ff88] text-base sm:text-lg ${
+                                            className={`text-emerald-600 dark:text-[#00ff88] text-base sm:text-lg ${
                                               isSelected ? "scale-110" : ""
                                             }`}
                                           />
@@ -2276,7 +2469,7 @@ const MainContent = () => {
                                         <span
                                           className={`text-xs sm:text-sm font-black tabular-nums ${
                                             isSelected
-                                              ? "text-[#00ff88]"
+                                              ? "text-emerald-600 dark:text-[#00ff88]"
                                               : "text-slate-500"
                                           }`}
                                         >
@@ -2298,7 +2491,7 @@ const MainContent = () => {
                                   type="button"
                                   disabled={isBusy}
                                   onClick={(e) => handlePollUndo(e, poll)}
-                                  className="text-[#00ff88] hover:text-[#00ff88]/80 transition-colors disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
+                                  className="text-emerald-600 dark:text-[#00ff88] hover:text-emerald-600 dark:text-[#00ff88]/80 transition-colors disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
                                 >
                                   Undo vote
                                 </button>
@@ -2370,7 +2563,7 @@ const MainContent = () => {
                       return (
                         <article
                           key={`res-${postId}-${index}`}
-                          className="bg-[#020f0a] rounded-lg sm:rounded-xl border border-white/5 shadow-sm overflow-visible relative w-full"
+                          className="bg-white dark:bg-[#020f0a] rounded-lg sm:rounded-xl border border-white/5 shadow-sm overflow-visible relative w-full"
                         >
                           <div className="p-3 sm:p-4 md:p-5">
                             <div className="flex items-start gap-2 sm:gap-3 md:gap-4 mt-1 sm:mt-2 md:mt-4 mb-3 sm:mb-4 md:mb-5">
@@ -2390,7 +2583,7 @@ const MainContent = () => {
                                 <div className="flex items-center justify-between gap-2">
                                   <div className="min-w-0">
                                     <h4
-                                      className="font-bold text-white hover:text-[#00ff88] cursor-pointer transition-colors capitalize truncate text-xs sm:text-sm"
+                                      className="font-bold text-slate-900 dark:text-white hover:text-emerald-600 dark:text-[#00ff88] cursor-pointer transition-colors capitalize truncate text-xs sm:text-sm"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         handleOpenUserProfile(post, isMockPost);
@@ -2410,17 +2603,22 @@ const MainContent = () => {
                                         onClick={(e) =>
                                           toggleConnect(postUserId, e)
                                         }
-                                        className={`px-2 sm:px-3 py-0.5 sm:py-1 sm:px-4 sm:py-1.5 rounded-md text-[8px] sm:text-xs font-bold transition-all tracking-wider whitespace-nowrap ${
-                                          connectedUsers[postUserId]
-                                            ? "bg-transparent text-slate-400 border border-slate-600 hover:bg-white/10 hover:text-white"
-                                            : "bg-transparent text-[#00ff88] hover:bg-[#00ff88] hover:text-black border border-transparent"
+                                        disabled={
+                                          connectedUsers[postUserId] === 1
+                                        }
+                                        className={`min-w-[115px] h-8 px-3 sm:px-4 rounded-lg text-[9px] sm:text-xs font-bold transition-all duration-200 tracking-wide whitespace-nowrap flex items-center justify-center border ${
+                                          connectedUsers[postUserId] === 2
+                                            ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100 dark:bg-[#092016] dark:text-[#00ff88] dark:border-[#00ff88]/40 dark:hover:bg-[#00ff88]/10"
+                                            : connectedUsers[postUserId] === 1
+                                              ? "bg-yellow-50 text-yellow-700 border-yellow-300 cursor-not-allowed dark:bg-yellow-500/10 dark:text-yellow-400 dark:border-yellow-500/40"
+                                              : "bg-[#00ff88] text-[#001f12] border-[#00ff88] hover:bg-[#00dd77] hover:scale-[1.02] shadow-[0_0_10px_rgba(0,255,136,0.25)]"
                                         }`}
                                       >
                                         {connectedUsers[postUserId] === 2
                                           ? "✓ CONNECTED"
                                           : connectedUsers[postUserId] === 1
                                             ? "⏳ PENDING"
-                                            : "+ CONNECT"}{" "}
+                                            : "+ CONNECT"}
                                       </button>
                                     )}
                                     <div className="relative">
@@ -2434,7 +2632,7 @@ const MainContent = () => {
                                           );
                                         }}
                                         disabled={isDeleting}
-                                        className="text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/5 transition-all duration-200"
+                                        className="text-slate-400 hover:text-slate-900 dark:text-white p-1 rounded-full hover:bg-white/5 transition-all duration-200"
                                       >
                                         <span className="material-symbols-outlined text-lg sm:text-xl">
                                           more_horiz
@@ -2450,7 +2648,7 @@ const MainContent = () => {
                                               setShowOptionsId(null);
                                             }}
                                           ></div>
-                                          <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-[#1e293b] rounded-lg shadow-xl border border-white/10 overflow-hidden z-20 animate-fadeInScale">
+                                          <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white dark:bg-[#1e293b] rounded-lg shadow-xl border border-slate-200 dark:border-white/10 overflow-hidden z-20 animate-fadeInScale">
                                             {isCurrentUserPost && (
                                               <button
                                                 onClick={(e) => {
@@ -2492,7 +2690,7 @@ const MainContent = () => {
                                                     setShowReportPopup(true);
                                                     setShowOptionsId(null);
                                                   }}
-                                                  className="w-full text-left px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm text-yellow-400 hover:bg-yellow-500/10 flex items-center gap-2 sm:gap-3 transition-all duration-200 group border-b border-white/10"
+                                                  className="w-full text-left px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm text-yellow-400 hover:bg-yellow-500/10 flex items-center gap-2 sm:gap-3 transition-all duration-200 group border-b border-slate-200 dark:border-white/10"
                                                 >
                                                   <span className="material-symbols-outlined text-xs sm:text-sm group-hover:scale-110 transition-transform">
                                                     flag
@@ -2531,37 +2729,41 @@ const MainContent = () => {
                             </div>
 
                             <div className="mb-2 sm:mb-3 md:mb-4">
-                              <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-white leading-snug break-words">
+                              <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-slate-900 dark:text-white leading-snug break-words">
                                 {post.research_title || "Published Research"}
                               </h3>
                             </div>
 
                             <div className="mb-3 sm:mb-4 md:mb-5">
-                              <p className="text-slate-300 text-xs sm:text-sm leading-relaxed break-words">
+                              <p className="text-slate-700 dark:text-slate-200 text-xs sm:text-sm leading-relaxed break-words">
                                 {postContent}
                               </p>
                             </div>
 
-{Array.isArray(post.hash_tag) && post.hash_tag.length > 0 && (
-  <div className="flex flex-wrap gap-1.5 mb-2 sm:mb-3">
-    {post.hash_tag.map((tag, i) => (
-      <span key={i} className="text-[10px] sm:text-xs font-semibold text-[#00ff88] bg-[#00ff88]/10 border border-[#00ff88]/20 px-2 py-0.5 rounded-full">
-        {tag}
-      </span>
-    ))}
-  </div>
-)}
+                            {Array.isArray(post.hash_tag) &&
+                              post.hash_tag.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5 mb-2 sm:mb-3">
+                                  {post.hash_tag.map((tag, i) => (
+                                    <span
+                                      key={i}
+                                      className="text-[10px] sm:text-xs font-semibold text-emerald-600 dark:text-[#00ff88] bg-[#00ff88]/10 border border-[#00ff88]/20 px-2 py-0.5 rounded-full"
+                                    >
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                             {post.research_file && (
                               <div className="mb-3 sm:mb-4 md:mb-5">
-                                <div className="bg-[#0e0f10] border border-white/10 rounded-lg sm:rounded-xl p-2.5 sm:p-3 md:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between hover:border-white/20 transition-all gap-2 sm:gap-3">
+                                <div className="bg-slate-100 dark:bg-[#0e0f10] border border-slate-200 dark:border-white/10 rounded-lg sm:rounded-xl p-2.5 sm:p-3 md:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between hover:border-white/20 transition-all gap-2 sm:gap-3">
                                   <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
-                                    <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-lg bg-[#0f172a] border border-[#00ff88]/20 flex items-center justify-center shrink-0">
-                                      <span className="material-symbols-outlined text-[#00ff88] text-lg sm:text-xl md:text-2xl">
+                                    <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-lg bg-slate-200 dark:bg-[#0f172a] border border-emerald-200 dark:border-[#00ff88]/20 flex items-center justify-center shrink-0">
+                                      <span className="material-symbols-outlined text-emerald-600 dark:text-[#00ff88] text-lg sm:text-xl md:text-2xl">
                                         description
                                       </span>
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                      <p className="text-xs sm:text-sm font-semibold text-white truncate">
+                                      <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white truncate">
                                         {fileInfo.name}
                                       </p>
                                       <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5">
@@ -2578,7 +2780,7 @@ const MainContent = () => {
                                     <span className="material-symbols-outlined text-xs sm:text-sm">
                                       open_in_new
                                     </span>
-                                    <span>View on Library</span>
+                                    <span>View</span>
                                   </a>
                                 </div>
                               </div>
@@ -2589,7 +2791,7 @@ const MainContent = () => {
                             <div className="flex items-center gap-2 sm:gap-3 md:gap-4 lg:gap-6 pt-2 sm:pt-3 md:pt-4 border-t border-white/5 flex-wrap w-full">
                               <button
                                 onClick={() => toggleLike(postId)}
-                                className={`flex items-center gap-0.5 sm:gap-1 transition-colors text-xs sm:text-sm ${isLiked ? "text-[#00ff88]" : "text-slate-500 hover:text-[#00ff88]"}`}
+                                className={`flex items-center gap-0.5 sm:gap-1 transition-colors text-xs sm:text-sm ${isLiked ? "text-emerald-600 dark:text-[#00ff88]" : "text-slate-500 hover:text-emerald-600 dark:text-[#00ff88]"}`}
                               >
                                 <span
                                   className="material-symbols-outlined text-base sm:text-lg"
@@ -2614,7 +2816,7 @@ const MainContent = () => {
                               </button>
                               <button
                                 onClick={() => toggleComments(postId)}
-                                className={`flex items-center gap-0.5 sm:gap-1 transition-colors text-xs sm:text-sm ${postComments.isOpen ? "text-[#00ff88]" : "text-slate-500 hover:text-[#00ff88]"}`}
+                                className={`flex items-center gap-0.5 sm:gap-1 transition-colors text-xs sm:text-sm ${postComments.isOpen ? "text-emerald-600 dark:text-[#00ff88]" : "text-slate-500 hover:text-emerald-600 dark:text-[#00ff88]"}`}
                               >
                                 <span className="material-symbols-outlined text-base sm:text-lg">
                                   chat_bubble
@@ -2632,7 +2834,7 @@ const MainContent = () => {
                                 onClick={() =>
                                   handleShare(post.research_title, postContent)
                                 }
-                                className="flex items-center gap-0.5 sm:gap-1 text-slate-500 hover:text-[#00ff88] transition-colors text-xs sm:text-sm"
+                                className="flex items-center gap-0.5 sm:gap-1 text-slate-500 hover:text-emerald-600 dark:text-[#00ff88] transition-colors text-xs sm:text-sm"
                               >
                                 <span className="material-symbols-outlined text-base sm:text-lg">
                                   share
@@ -2643,7 +2845,7 @@ const MainContent = () => {
                               </button>
                               <button
                                 onClick={() => toggleSave(postId)}
-                                className={`ml-auto flex items-center gap-0.5 sm:gap-1 transition-colors text-xs sm:text-sm ${isSaved ? "text-[#00ff88]" : "text-slate-500 hover:text-[#00ff88]"}`}
+                                className={`ml-auto flex items-center gap-0.5 sm:gap-1 transition-colors text-xs sm:text-sm ${isSaved ? "text-emerald-600 dark:text-[#00ff88]" : "text-slate-500 hover:text-emerald-600 dark:text-[#00ff88]"}`}
                               >
                                 <span
                                   className="material-symbols-outlined text-base sm:text-lg"
@@ -2683,7 +2885,7 @@ const MainContent = () => {
                                         }
                                       }}
                                       placeholder="Add a comment..."
-                                      className="w-full bg-[#1e293b] border border-white/10 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm focus:outline-none focus:border-[#00ff88]/50 transition-colors pr-10 text-white"
+                                      className="w-full bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/10 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm focus:outline-none focus:border-emerald-400 dark:focus:border-[#00ff88]/50 transition-colors pr-10 text-slate-800 dark:text-white placeholder:text-slate-400"
                                       style={{
                                         outline: "none",
                                         boxShadow: "none",
@@ -2696,7 +2898,7 @@ const MainContent = () => {
                                           newCommentText[postId] || "",
                                         )
                                       }
-                                      className="absolute right-2 sm:right-3 top-2 sm:top-2.5 text-[#00ff88] hover:text-[#00ff88]/80 transition-colors"
+                                      className="absolute right-2 sm:right-3 top-2 sm:top-2.5 text-emerald-600 dark:text-[#00ff88] hover:text-emerald-600 dark:text-[#00ff88]/80 transition-colors"
                                     >
                                       <span className="material-symbols-outlined text-sm">
                                         send
@@ -2714,7 +2916,7 @@ const MainContent = () => {
                                       >
                                         <img
                                           alt={comment.author}
-                                          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-white/10 object-cover shrink-0 cursor-pointer"
+                                          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-200 dark:border-white/10 object-cover shrink-0 cursor-pointer"
                                           src={comment.authorAvatar || avatar}
                                           onError={(e) => {
                                             e.target.src = avatar;
@@ -2733,7 +2935,7 @@ const MainContent = () => {
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-center justify-between">
                                             <span
-                                              className="text-[10px] sm:text-xs font-bold text-white truncate pr-2 cursor-pointer hover:text-[#00ff88]"
+                                              className="text-[10px] sm:text-xs font-bold text-slate-900 dark:text-white truncate pr-2 cursor-pointer hover:text-emerald-600 dark:text-[#00ff88]"
                                               onClick={(e) => {
                                                 e.stopPropagation();
                                                 handleOpenUserProfile(
@@ -2771,7 +2973,7 @@ const MainContent = () => {
                                             </div>
                                           </div>
                                           <p
-                                            className={`text-[10px] sm:text-xs text-slate-300 mt-1 leading-relaxed ${expandedComments[comment.id] ? "" : "line-clamp-3"}`}
+                                            className={`text-[10px] sm:text-xs text-slate-700 dark:text-slate-300 mt-1 leading-relaxed ${expandedComments[comment.id] ? "" : "line-clamp-3"}`}
                                           >
                                             {comment.text}
                                           </p>
@@ -2780,14 +2982,14 @@ const MainContent = () => {
                                               onClick={() =>
                                                 toggleReadMore(comment.id)
                                               }
-                                              className="text-[9px] sm:text-[10px] text-[#00ff88] mt-1 hover:underline"
+                                              className="text-[9px] sm:text-[10px] text-emerald-600 dark:text-[#00ff88] mt-1 hover:underline"
                                             >
                                               {expandedComments[comment.id]
                                                 ? "Show less"
                                                 : "Read more"}
                                             </button>
                                           )}
-                                          <div className="border-b border-white/10 mt-2 sm:mt-3"></div>
+                                          <div className="border-b border-slate-200 dark:border-white/10 mt-2 sm:mt-3"></div>
                                         </div>
                                       </div>
                                     ))
@@ -2810,7 +3012,7 @@ const MainContent = () => {
                     return (
                       <article
                         key={`post-${postId}-${index}`}
-                        className="bg-[#020f0a] rounded-lg sm:rounded-xl border border-white/5 shadow-sm overflow-visible relative w-full"
+                        className="bg-white dark:bg-[#020f0a] rounded-lg sm:rounded-xl border border-white/5 shadow-sm overflow-visible relative w-full"
                       >
                         <div className="p-3 sm:p-4 md:p-5">
                           <div className="flex items-start gap-2 sm:gap-3 md:gap-4 mt-1 sm:mt-2 md:mt-3 mb-2 sm:mb-3 md:mb-4">
@@ -2830,7 +3032,7 @@ const MainContent = () => {
                               <div className="flex items-center justify-between gap-2">
                                 <div className="min-w-0">
                                   <h4
-                                    className="font-bold text-white hover:text-[#00ff88] cursor-pointer transition-colors capitalize truncate text-xs sm:text-sm"
+                                    className="font-bold text-slate-900 dark:text-white hover:text-emerald-600 dark:text-[#00ff88] cursor-pointer transition-colors capitalize truncate text-xs sm:text-sm"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleOpenUserProfile(post, isMockPost);
@@ -2850,12 +3052,15 @@ const MainContent = () => {
                                       onClick={(e) =>
                                         toggleConnect(postUserId, e)
                                       }
-                                      className={`px-2 sm:px-3 py-0.5 sm:py-1 sm:px-4 sm:py-1.5 rounded-md text-[8px] sm:text-xs font-bold transition-all tracking-wider whitespace-nowrap ${
+                                      disabled={
+                                        connectedUsers[postUserId] === 1
+                                      }
+                                      className={`min-w-[115px] h-8 px-3 sm:px-4 rounded-lg text-[9px] sm:text-xs font-bold transition-all duration-200 tracking-wide whitespace-nowrap flex items-center justify-center border ${
                                         connectedUsers[postUserId] === 2
-                                          ? "bg-transparent text-slate-400 border border-slate-600 hover:bg-white/10 hover:text-white"
+                                          ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100 dark:bg-[#092016] dark:text-[#00ff88] dark:border-[#00ff88]/40 dark:hover:bg-[#00ff88]/10"
                                           : connectedUsers[postUserId] === 1
-                                            ? "bg-transparent text-yellow-400 border border-yellow-600 cursor-not-allowed"
-                                            : "bg-transparent text-[#00ff88] hover:bg-[#00ff88] hover:text-black border border-transparent"
+                                            ? "bg-yellow-50 text-yellow-700 border-yellow-300 cursor-not-allowed dark:bg-yellow-500/10 dark:text-yellow-400 dark:border-yellow-500/40"
+                                            : "bg-[#00ff88] text-[#001f12] border-[#00ff88] hover:bg-[#00dd77] hover:scale-[1.02] shadow-[0_0_10px_rgba(0,255,136,0.25)]"
                                       }`}
                                     >
                                       {connectedUsers[postUserId] === 2
@@ -2876,7 +3081,7 @@ const MainContent = () => {
                                         );
                                       }}
                                       disabled={isDeleting}
-                                      className="text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/5 transition-all duration-200"
+                                      className="text-slate-400 hover:text-slate-900 dark:text-white p-1 rounded-full hover:bg-white/5 transition-all duration-200"
                                     >
                                       <span className="material-symbols-outlined text-lg sm:text-xl">
                                         more_horiz
@@ -2891,7 +3096,8 @@ const MainContent = () => {
                                             setShowOptionsId(null);
                                           }}
                                         ></div>
-                                        <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-[#1e293b] rounded-lg shadow-xl border border-white/10 overflow-hidden z-20 animate-fadeInScale">
+                                        <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white dark:bg-[#1e293b] rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.12)] dark:shadow-xl border border-slate-200 dark:border-white/10 overflow-hidden z-20 animate-fadeInScale">
+                                          {" "}
                                           {isCurrentUserPost ? (
                                             <button
                                               onClick={(e) => {
@@ -2931,7 +3137,7 @@ const MainContent = () => {
                                                   setShowReportPopup(true);
                                                   setShowOptionsId(null);
                                                 }}
-                                                className="w-full text-left px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm text-yellow-400 hover:bg-yellow-500/10 flex items-center gap-2 sm:gap-3 transition-all duration-200 group border-b border-white/10"
+                                                className="w-full text-left px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm text-yellow-400 hover:bg-yellow-500/10 flex items-center gap-2 sm:gap-3 transition-all duration-200 group border-b border-slate-200 dark:border-white/10"
                                               >
                                                 <span className="material-symbols-outlined text-xs sm:text-sm group-hover:scale-110 transition-transform">
                                                   flag
@@ -2970,40 +3176,65 @@ const MainContent = () => {
                           </div>
 
                           {isTextOnly ? (
-                            <div className="mt-1.5 sm:mt-2 md:mt-3 mb-2 sm:mb-3 md:mb-4 max-w-full">
-                              <div
-                                className={`bg-[#000302] border border-white/10 rounded-lg sm:rounded-xl px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3 text-xs sm:text-sm text-slate-200 leading-relaxed shadow-sm break-words ${expandedPosts[postId] ? "" : "line-clamp-10"}`}
+                            <div className="mb-2 sm:mb-3 md:mb-4 w-full">
+                              <p
+                                ref={(el) => {
+                                  if (el) textRefs.current[postId] = el;
+                                }}
+                                className={`text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed break-words ${
+                                  expandedPosts[postId] ? "" : "line-clamp-10"
+                                }`}
                               >
                                 {postContent}
-                                {postContent?.length > 300 && (
-                                  <span
-                                    onClick={() => toggleReadMorePost(postId)}
-                                    className="text-[#00ff88] cursor-pointer ml-1 text-[9px] sm:text-xs hover:underline block"
-                                  >
-                                    {expandedPosts[postId]
-                                      ? "Show less"
-                                      : "... Read more"}
-                                  </span>
-                                )}
-                              </div>
+                              </p>
+
+                              {/* 👇 yahi add karna hai */}
+                              {showReadMore[postId] && (
+                                <button
+                                  onClick={() => toggleReadMorePost(postId)}
+                                  className="text-emerald-600 dark:text-[#00ff88] text-[10px] sm:text-xs hover:underline mt-2 block font-semibold"
+                                >
+                                  {expandedPosts[postId]
+                                    ? " Show less"
+                                    : "... Read more"}
+                                </button>
+                              )}
                             </div>
                           ) : (
-                            <div className="text-xs sm:text-sm leading-relaxed text-slate-300 break-words whitespace-pre-wrap mb-2 sm:mb-3 md:mb-4">
-                              {postContent}
+                            <div className="mb-2 sm:mb-3 md:mb-4">
+                              <div
+                                className={`text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-slate-300 break-words whitespace-pre-wrap ${expandedPosts[postId] ? "" : "line-clamp-4"}`}
+                              >
+                                {postContent}
+                              </div>
+                              {postContent?.length > 150 && (
+                                <span
+                                  onClick={() => toggleReadMorePost(postId)}
+                                  className="text-emerald-600 dark:text-[#00ff88] cursor-pointer text-[9px] sm:text-xs hover:underline block mt-1"
+                                >
+                                  {expandedPosts[postId]
+                                    ? "Show less"
+                                    : "... Read more"}
+                                </span>
+                              )}
                             </div>
                           )}
 
-{Array.isArray(post.hash_tag) && post.hash_tag.length > 0 && (
-  <div className="flex flex-wrap gap-1.5 mb-2 sm:mb-3">
-    {post.hash_tag.map((tag, i) => (
-      <span key={i} className="text-[10px] sm:text-xs font-semibold text-[#00ff88] bg-[#00ff88]/10 border border-[#00ff88]/20 px-2 py-0.5 rounded-full">
-        {tag}
-      </span>
-    ))}
-  </div>
-)}
+                          {Array.isArray(post.hash_tag) &&
+                            post.hash_tag.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 mb-2 sm:mb-3">
+                                {post.hash_tag.map((tag, i) => (
+                                  <span
+                                    key={i}
+                                    className="text-[10px] sm:text-xs font-semibold text-emerald-600 dark:text-[#00ff88] bg-[#00ff88]/10 border border-[#00ff88]/20 px-2 py-0.5 rounded-full"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           {isMockPost && post.media && (
-                            <div className="mt-2 sm:mt-3 md:mt-4 rounded-lg sm:rounded-xl overflow-hidden border border-white/10 bg-black flex justify-center max-h-[200px] sm:max-h-[350px] md:max-h-[500px] relative w-full">
+                            <div className="mt-2 sm:mt-3 md:mt-4 rounded-lg sm:rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#000302] flex justify-center max-h-[200px] sm:max-h-[350px] md:max-h-[500px] relative w-full">
                               {post.mediaType === "image" ? (
                                 <img
                                   src={post.media}
@@ -3026,7 +3257,7 @@ const MainContent = () => {
                                     src={post.media}
                                     muted={isVideoMuted}
                                     playsInline
-                                    className="max-h-[200px] sm:max-h-[350px] md:max-h-[500px] w-full bg-black cursor-pointer"
+                                    className="max-h-[200px] sm:max-h-[350px] md:max-h-[500px] w-full bg-slate-100 dark:bg-[#000302] cursor-pointer"
                                     loop={false}
                                     onClick={(e) =>
                                       toggleVideoPlayPause(postId, e)
@@ -3034,7 +3265,7 @@ const MainContent = () => {
                                   />
                                   <button
                                     onClick={(e) => toggleVideoSound(postId, e)}
-                                    className="absolute bottom-2 sm:bottom-3 md:bottom-4 right-2 sm:right-3 md:right-4 bg-black/70 hover:bg-black/90 text-white rounded-full p-1 sm:p-1.5 md:p-2 transition-all z-10"
+                                    className="absolute bottom-2 sm:bottom-3 md:bottom-4 right-2 sm:right-3 md:right-4 bg-slate-100 dark:bg-[#000302]/70 hover:bg-slate-100 dark:bg-[#000302]/90 text-slate-900 dark:text-white rounded-full p-1 sm:p-1.5 md:p-2 transition-all z-10"
                                   >
                                     <span className="material-symbols-outlined text-base sm:text-lg">
                                       {isVideoMuted
@@ -3048,7 +3279,7 @@ const MainContent = () => {
                           )}
 
                           {!isMockPost && (hasImage || hasVideo) && (
-                            <div className="mt-2 sm:mt-3 md:mt-4 rounded-lg sm:rounded-xl overflow-hidden border border-white/10 bg-black flex justify-center max-h-[200px] sm:max-h-[350px] md:max-h-[500px] relative w-full">
+                            <div className="mt-2 sm:mt-3 md:mt-4 rounded-lg sm:rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#000302] flex justify-center max-h-[200px] sm:max-h-[350px] md:max-h-[500px] relative w-full">
                               {hasImage && (
                                 <img
                                   src={`${API_CONFIG.BASE_URL}/${post.image}`}
@@ -3080,7 +3311,7 @@ const MainContent = () => {
                                     src={videoUrl}
                                     muted={isVideoMuted}
                                     playsInline
-                                    className="max-h-[200px] sm:max-h-[350px] md:max-h-[500px] w-full bg-black"
+                                    className="max-h-[200px] sm:max-h-[350px] md:max-h-[500px] w-full bg-slate-100 dark:bg-[#000302]"
                                     loop={false}
                                     onClick={(e) =>
                                       toggleVideoPlayPause(postId, e)
@@ -3106,9 +3337,9 @@ const MainContent = () => {
                                     }
                                   />
                                   {pausedVideos[postId] && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
-                                      <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 bg-[#00ff88]/80 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(0,255,136,0.3)] animate-fadeInScale">
-                                        <span className="material-symbols-outlined text-black text-2xl sm:text-3xl md:text-4xl fill-current">
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 dark:bg-black/25 pointer-events-none">
+                                      <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 bg-[#00ff88]/90 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(0,255,136,0.35)] animate-fadeInScale">
+                                        <span className="material-symbols-outlined text-black text-2xl sm:text-3xl md:text-4xl">
                                           play_arrow
                                         </span>
                                       </div>
@@ -3116,7 +3347,7 @@ const MainContent = () => {
                                   )}
                                   <button
                                     onClick={(e) => toggleVideoSound(postId, e)}
-                                    className="absolute bottom-2 sm:bottom-3 md:bottom-4 right-2 sm:right-3 md:right-4 bg-black/70 hover:bg-black/90 text-white rounded-full p-1 sm:p-1.5 md:p-2 transition-all z-10"
+                                    className="absolute bottom-2 sm:bottom-3 md:bottom-4 right-2 sm:right-3 md:right-4 bg-slate-100 dark:bg-[#000302]/70 hover:bg-slate-100 dark:bg-[#000302]/90 text-slate-900 dark:text-white rounded-full p-1 sm:p-1.5 md:p-2 transition-all z-10"
                                   >
                                     <span className="material-symbols-outlined text-base sm:text-lg">
                                       {isVideoMuted
@@ -3134,7 +3365,7 @@ const MainContent = () => {
                           <div className="flex items-center gap-2 sm:gap-3 md:gap-4 lg:gap-6 pt-2 sm:pt-3 md:pt-4 border-t border-white/5 flex-wrap w-full">
                             <button
                               onClick={() => toggleLike(postId)}
-                              className={`flex items-center gap-0.5 sm:gap-1 transition-colors text-xs sm:text-sm ${isLiked ? "text-[#00ff88]" : "text-slate-500 hover:text-[#00ff88]"}`}
+                              className={`flex items-center gap-0.5 sm:gap-1 transition-colors text-xs sm:text-sm ${isLiked ? "text-emerald-600 dark:text-[#00ff88]" : "text-slate-500 hover:text-emerald-600 dark:text-[#00ff88]"}`}
                             >
                               <span
                                 className="material-symbols-outlined text-base sm:text-lg"
@@ -3159,7 +3390,7 @@ const MainContent = () => {
                             </button>
                             <button
                               onClick={() => toggleComments(postId)}
-                              className={`flex items-center gap-0.5 sm:gap-1 transition-colors text-xs sm:text-sm ${postComments.isOpen ? "text-[#00ff88]" : "text-slate-500 hover:text-[#00ff88]"}`}
+                              className={`flex items-center gap-0.5 sm:gap-1 transition-colors text-xs sm:text-sm ${postComments.isOpen ? "text-emerald-600 dark:text-[#00ff88]" : "text-slate-500 hover:text-emerald-600 dark:text-[#00ff88]"}`}
                             >
                               <span className="material-symbols-outlined text-base sm:text-lg">
                                 chat_bubble
@@ -3175,7 +3406,7 @@ const MainContent = () => {
                             </button>
                             <button
                               onClick={() => handleShare(postName, postContent)}
-                              className="flex items-center gap-0.5 sm:gap-1 text-slate-500 hover:text-[#00ff88] transition-colors text-xs sm:text-sm"
+                              className="flex items-center gap-0.5 sm:gap-1 text-slate-500 hover:text-emerald-600 dark:text-[#00ff88] transition-colors text-xs sm:text-sm"
                             >
                               <span className="material-symbols-outlined text-base sm:text-lg">
                                 share
@@ -3186,7 +3417,7 @@ const MainContent = () => {
                             </button>
                             <button
                               onClick={() => toggleSave(postId)}
-                              className={`ml-auto flex items-center gap-0.5 sm:gap-1 transition-colors text-xs sm:text-sm ${isSaved ? "text-[#00ff88]" : "text-slate-500 hover:text-[#00ff88]"}`}
+                              className={`ml-auto flex items-center gap-0.5 sm:gap-1 transition-colors text-xs sm:text-sm ${isSaved ? "text-emerald-600 dark:text-[#00ff88]" : "text-slate-500 hover:text-emerald-600 dark:text-[#00ff88]"}`}
                             >
                               <span
                                 className="material-symbols-outlined text-base sm:text-lg"
@@ -3226,7 +3457,7 @@ const MainContent = () => {
                                       }
                                     }}
                                     placeholder="Add a comment..."
-                                    className="w-full bg-[#1e293b] border border-white/10 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm focus:outline-none focus:border-[#00ff88]/50 transition-colors pr-10 text-white"
+                                    className="w-full bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/10 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm focus:outline-none focus:border-emerald-400 dark:focus:border-[#00ff88]/50 transition-colors pr-10 text-slate-800 dark:text-white placeholder:text-slate-400"
                                     style={{
                                       outline: "none",
                                       boxShadow: "none",
@@ -3239,7 +3470,7 @@ const MainContent = () => {
                                         newCommentText[postId] || "",
                                       )
                                     }
-                                    className="absolute right-2 sm:right-3 top-2 sm:top-2.5 text-[#00ff88] hover:text-[#00ff88]/80 transition-colors"
+                                    className="absolute right-2 sm:right-3 top-2 sm:top-2.5 text-emerald-600 dark:text-[#00ff88] hover:text-emerald-600 dark:text-[#00ff88]/80 transition-colors"
                                   >
                                     <span className="material-symbols-outlined text-sm">
                                       send
@@ -3257,7 +3488,7 @@ const MainContent = () => {
                                     >
                                       <img
                                         alt={comment.author}
-                                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-white/10 object-cover shrink-0 cursor-pointer"
+                                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-200 dark:border-white/10 object-cover shrink-0 cursor-pointer"
                                         src={comment.authorAvatar || avatar}
                                         onError={(e) => {
                                           e.target.src = avatar;
@@ -3276,7 +3507,7 @@ const MainContent = () => {
                                       <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between">
                                           <span
-                                            className="text-[10px] sm:text-xs font-bold text-white pr-2 truncate cursor-pointer hover:text-[#00ff88]"
+                                            className="text-[10px] sm:text-xs font-bold text-slate-900 dark:text-white pr-2 truncate cursor-pointer hover:text-emerald-600 dark:text-[#00ff88]"
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               handleOpenUserProfile(
@@ -3312,7 +3543,7 @@ const MainContent = () => {
                                           </div>
                                         </div>
                                         <p
-                                          className={`text-[10px] sm:text-xs text-slate-300 mt-1 leading-relaxed ${expandedComments[comment.id] ? "" : "line-clamp-3"}`}
+                                          className={`text-[10px] sm:text-xs text-slate-700 dark:text-slate-300 mt-1 leading-relaxed ${expandedComments[comment.id] ? "" : "line-clamp-3"}`}
                                         >
                                           {comment.text}
                                         </p>
@@ -3321,14 +3552,14 @@ const MainContent = () => {
                                             onClick={() =>
                                               toggleReadMore(comment.id)
                                             }
-                                            className="text-[9px] sm:text-[10px] text-[#00ff88] mt-1 hover:underline"
+                                            className="text-[9px] sm:text-[10px] text-emerald-600 dark:text-[#00ff88] mt-1 hover:underline"
                                           >
                                             {expandedComments[comment.id]
                                               ? "Show less"
                                               : "Read more"}
                                           </button>
                                         )}
-                                        <div className="border-b border-white/10 mt-2 sm:mt-3"></div>
+                                        <div className="border-b border-slate-200 dark:border-white/10 mt-2 sm:mt-3"></div>
                                       </div>
                                     </div>
                                   ))
@@ -3369,17 +3600,27 @@ const MainContent = () => {
       {/* Popups */}
       {showDeletePopup && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-2 sm:px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-100 dark:bg-[#000302]/60 backdrop-blur-sm px-2 sm:px-4"
           onClick={closeDeletePopup}
         >
           <div
-            className="bg-[#1e293b] rounded-lg sm:rounded-2xl p-4 sm:p-5 md:p-6 w-full max-w-[350px] border border-white/10 shadow-xl animate-fadeInScale"
+            className="
+    bg-white dark:bg-[#1e293b]
+    rounded-lg sm:rounded-2xl
+    p-4 sm:p-5 md:p-6
+    w-full max-w-[350px]
+    border border-slate-200 dark:border-white/10
+    shadow-[0_10px_40px_rgba(0,0,0,0.08)]
+    dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)]
+    animate-fadeInScale
+  "
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-sm sm:text-base md:text-lg font-bold text-white mb-2 sm:mb-3">
+            <h2 className="text-sm sm:text-base md:text-lg font-bold text-slate-900 dark:text-white mb-2 sm:mb-3">
               {selectedPost?.isPollPost ? "Delete Poll" : "Delete Post"}
             </h2>
-            <p className="text-xs sm:text-sm text-slate-400 mb-4 sm:mb-5 md:mb-6 break-words">
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mb-4 sm:mb-5 md:mb-6 break-words">
+              {" "}
               {selectedPost?.isPollPost
                 ? "Are you sure you want to delete this poll?"
                 : "Are you sure you want to delete this post?"}
@@ -3387,13 +3628,24 @@ const MainContent = () => {
             <div className="flex justify-end gap-2 sm:gap-3">
               <button
                 onClick={closeDeletePopup}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm bg-white/5 text-slate-300 hover:bg-white/10 transition-colors"
+                className="
+  px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm
+  bg-slate-100 dark:bg-white/5
+  text-slate-700 dark:text-slate-300
+  hover:bg-slate-200 dark:hover:bg-white/10
+  transition-colors
+"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm bg-red-500 text-white hover:bg-red-600 transition-colors"
+                className="
+  px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm
+  bg-red-500 text-white
+  hover:bg-red-600
+  transition-colors
+"
               >
                 Delete
               </button>
@@ -3404,11 +3656,11 @@ const MainContent = () => {
 
       {showReportPopup && (
         <div
-          className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-md px-4"
+          className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-slate-100 dark:bg-[#000302]/80 backdrop-blur-md px-4"
           onClick={closeReportPopup}
         >
           <div
-            className="bg-[#0d0f0e] rounded-t-[25px] sm:rounded-2xl w-full max-w-[450px] overflow-hidden animate-fadeInScale border border-[#00ff88]/20 shadow-[0_0_50px_rgba(0,255,136,0.1)]"
+            className="bg-slate-100 dark:bg-[#0d0f0e] rounded-t-[25px] sm:rounded-2xl w-full max-w-[450px] overflow-hidden animate-fadeInScale border border-[#00ff88]/20 shadow-[0_0_50px_rgba(0,255,136,0.1)]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Mobile Handle Bar */}
@@ -3417,22 +3669,22 @@ const MainContent = () => {
             {reportStep === 1 ? (
               <div className="p-5 sm:p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[#00ff88]">
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span className="material-symbols-outlined text-emerald-600 dark:text-[#00ff88]">
                       flag
                     </span>
                     Report Content
                   </h2>
                   <button
                     onClick={closeReportPopup}
-                    className="text-slate-400 hover:text-white"
+                    className="text-slate-400 hover:text-slate-900 dark:text-white"
                   >
                     <span className="material-symbols-outlined">close</span>
                   </button>
                 </div>
 
                 <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-[#00ff88] mb-2">
+                  <h3 className="text-sm font-semibold text-emerald-600 dark:text-[#00ff88] mb-2">
                     Why are you reporting this?
                   </h3>
                   <p className="text-xs text-slate-400 leading-relaxed">
@@ -3449,10 +3701,11 @@ const MainContent = () => {
                       disabled={isReportingLoading}
                       className="w-full flex items-center justify-between px-3 py-4 hover:bg-[#00ff88]/5 border-b border-white/5 last:border-0 group transition-all rounded-lg"
                     >
-                      <span className="text-sm text-slate-300 group-hover:text-white">
+                      <span className="text-sm text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+                        {" "}
                         {reason}
                       </span>
-                      <span className="material-symbols-outlined text-[#00ff88]/40 group-hover:text-[#00ff88] group-hover:translate-x-1 transition-all">
+                      <span className="material-symbols-outlined text-emerald-600 dark:text-[#00ff88]/40 group-hover:text-emerald-600 dark:text-[#00ff88] group-hover:translate-x-1 transition-all">
                         chevron_right
                       </span>
                     </button>
@@ -3460,7 +3713,7 @@ const MainContent = () => {
                 </div>
 
                 {isReportingLoading && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm">
+                  <div className="absolute inset-0 bg-slate-100 dark:bg-[#000302]/50 flex items-center justify-center backdrop-blur-sm">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00ff88]"></div>
                   </div>
                 )}
@@ -3468,12 +3721,12 @@ const MainContent = () => {
             ) : (
               /* Step 2: Success Screen */
               <div className="p-8 text-center flex flex-col items-center">
-                <div className="w-20 h-20 rounded-full bg-[#031a11] border border-[#00ff88]/20 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(0,255,136,0.2)]">
-                  <span className="material-symbols-outlined text-[#00ff88] text-4xl">
+                <div className="w-20 h-20 rounded-full bg-emerald-100 dark:bg-[#031a11] border border-[#00ff88]/20 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(0,255,136,0.2)]">
+                  <span className="material-symbols-outlined text-emerald-600 dark:text-[#00ff88] text-4xl">
                     check_circle
                   </span>
                 </div>
-                <h2 className="text-xl font-bold text-white mb-3">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
                   Feedback Received
                 </h2>
                 <p className="text-sm text-slate-400 mb-8 leading-relaxed max-w-[280px]">
@@ -3494,30 +3747,51 @@ const MainContent = () => {
 
       {showBlockPopup && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-2 sm:px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-100 dark:bg-[#000302]/60 backdrop-blur-sm px-2 sm:px-4"
           onClick={closeBlockPopup}
         >
           <div
-            className="bg-[#1e293b] rounded-lg sm:rounded-2xl p-4 sm:p-5 md:p-6 w-full max-w-[350px] border border-white/10 shadow-xl animate-fadeInScale"
+            className="
+  bg-white dark:bg-[#1e293b]
+  rounded-lg sm:rounded-2xl
+  p-4 sm:p-5 md:p-6
+  w-full max-w-[350px]
+  border border-slate-200 dark:border-white/10
+  shadow-[0_10px_40px_rgba(0,0,0,0.08)]
+  dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)]
+  animate-fadeInScale
+"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-sm sm:text-base md:text-lg font-bold text-white mb-2 sm:mb-3">
+            <h2 className="text-sm sm:text-base md:text-lg font-bold text-slate-900 dark:text-white mb-2 sm:mb-3">
               Block User
             </h2>
-            <p className="text-xs sm:text-sm text-slate-400 mb-4 sm:mb-5 md:mb-6 break-words">
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mb-4 sm:mb-5 md:mb-6 break-words">
+              {" "}
               Are you sure you want to block this user? You won't see their
               posts anymore.
             </p>
             <div className="flex justify-end gap-2 sm:gap-3">
               <button
                 onClick={closeBlockPopup}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm bg-white/5 text-slate-300 hover:bg-white/10 transition-colors"
+                className="
+  px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm
+  bg-slate-100 dark:bg-white/5
+  text-slate-700 dark:text-slate-300
+  hover:bg-slate-200 dark:hover:bg-white/10
+  transition-colors
+"
               >
                 Cancel
               </button>
               <button
                 onClick={handleBlockUser}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+                className="
+  px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm
+  bg-orange-500 text-white
+  hover:bg-orange-600
+  transition-colors
+"
               >
                 Block
               </button>
@@ -3529,12 +3803,12 @@ const MainContent = () => {
       {/* User Profile Modal */}
       {selectedProfileUser && (
         <div
-          className="fixed inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-6 md:p-8"
+          className="fixed inset-0 flex items-center justify-center bg-slate-100 dark:bg-[#000302]/80 backdrop-blur-sm p-2 sm:p-6 md:p-8"
           style={{ zIndex: 9999 }}
           onClick={() => setSelectedProfileUser(null)}
         >
           <div
-            className="w-full max-w-5xl h-[95vh] sm:h-[85vh] bg-[#0d0f0e] rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,255,136,0.1)] border border-[#00ff88]/20 animate-fadeInScale relative"
+            className="w-full max-w-5xl h-[95vh] sm:h-[85vh] bg-slate-100 dark:bg-[#0d0f0e] rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,255,136,0.1)] border border-[#00ff88]/20 animate-fadeInScale relative"
             onClick={(e) => e.stopPropagation()}
           >
             <UserProfile
@@ -3549,15 +3823,16 @@ const MainContent = () => {
       )}
 
       {/* Chat Floating Widget */}
+
       <div
         className="hidden sm:flex fixed bottom-2 right-2 sm:bottom-4 sm:right-4 md:bottom-6 md:right-6 items-end gap-3 sm:gap-4 pointer-events-none"
         style={{ zIndex: 60 }}
       >
         {/* Active Chat Window */}
         {activeChatId && isChatListOpen && (
-          <div className="pointer-events-auto bg-[#161817] border border-[#3b4b3d]/30 rounded-lg sm:rounded-xl w-[calc(100vw-1rem)] sm:w-[280px] md:w-[320px] max-w-[350px] h-[60vh] sm:h-[400px] md:h-[450px] max-h-[500px] shadow-2xl flex flex-col overflow-hidden animate-fadeInScale absolute bottom-full right-0 sm:relative sm:bottom-auto sm:right-auto mb-2">
+          <div className="pointer-events-auto bg-white dark:bg-[#161817] border border-[#3b4b3d]/30 rounded-lg sm:rounded-xl w-[calc(100vw-1rem)] sm:w-[280px] md:w-[320px] max-w-[350px] h-[60vh] sm:h-[400px] md:h-[450px] max-h-[500px] shadow-2xl flex flex-col overflow-hidden animate-fadeInScale absolute bottom-full right-0 sm:relative sm:bottom-auto sm:right-auto mb-2">
             {/* Header */}
-            <div className="p-2.5 sm:p-3 md:p-4 border-b border-[#3b4b3d]/30 flex items-center justify-between bg-[#1a1c1b] shrink-0">
+            <div className="p-2.5 sm:p-3 md:p-4 border-b border-[#3b4b3d]/30 flex items-center justify-between bg-slate-50 dark:bg-[#1a1c1b] shrink-0">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                 <div className="flex items-center shrink-0 relative">
                   {activeChatData?.isGroup ? (
@@ -3582,7 +3857,7 @@ const MainContent = () => {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h4 className="text-white font-bold text-xs sm:text-sm truncate max-w-[100px] sm:max-w-[150px]">
+                  <h4 className="text-slate-900 dark:text-white font-bold text-xs sm:text-sm truncate max-w-[100px] sm:max-w-[150px]">
                     {activeChatData?.name}
                   </h4>
 
@@ -3595,7 +3870,7 @@ const MainContent = () => {
               </div>
               <button
                 onClick={() => setActiveChatId(null)}
-                className="text-slate-400 hover:text-white transition-colors p-0.5 shrink-0"
+                className="text-slate-400 hover:text-slate-900 dark:text-white transition-colors p-0.5 shrink-0"
               >
                 <span className="material-symbols-outlined text-base sm:text-lg">
                   close
@@ -3604,7 +3879,7 @@ const MainContent = () => {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-2 sm:p-3 md:p-4 space-y-3 sm:space-y-4 hide-scrollbar bg-[#121413]">
+            <div className="flex-1 overflow-y-auto p-2 sm:p-3 md:p-4 space-y-3 sm:space-y-4 hide-scrollbar bg-slate-50 dark:bg-[#121413]">
               {(chatMessages[activeChatId] || []).length === 0 ? (
                 <p className="text-[10px] text-slate-500 text-center mt-4 italic">
                   No messages yet. Say hi! 👋
@@ -3624,7 +3899,7 @@ const MainContent = () => {
                           You
                         </span>
                       </div>
-                      <div className="bg-[#0d0f0e] px-3 py-2.5 rounded-2xl rounded-tr-none text-xs sm:text-sm text-white leading-relaxed border border-[#00ff85]/30 text-left w-full break-words">
+                      <div className="bg-slate-100 dark:bg-[#0d0f0e] px-3 py-2.5 rounded-2xl rounded-tr-none text-xs sm:text-sm text-slate-900 dark:text-white leading-relaxed border border-[#00ff85]/30 text-left w-full break-words">
                         {m.file?.path &&
                           (() => {
                             const base = API_CONFIG.BASE_URL.replace(/\/$/, "");
@@ -3636,13 +3911,13 @@ const MainContent = () => {
                               <video
                                 src={url}
                                 controls
-                                className="max-w-full rounded-lg mb-1 bg-black border border-white/10"
+                                className="max-w-full rounded-lg mb-1 bg-slate-100 dark:bg-[#000302] border border-slate-200 dark:border-white/10"
                               />
                             ) : (
                               <img
                                 src={url}
                                 alt="attachment"
-                                className="max-w-full rounded-lg mb-1 object-cover border border-white/10"
+                                className="max-w-full rounded-lg mb-1 object-cover border border-slate-200 dark:border-white/10"
                               />
                             );
                           })()}
@@ -3661,14 +3936,18 @@ const MainContent = () => {
                       />
                       <div className="min-w-0 w-full">
                         <div className="flex items-baseline gap-2 mb-1">
-                          <span className="text-[9px] sm:text-[10px] font-bold text-white uppercase tracking-wider truncate">
+                          <span className="text-[9px] sm:text-[10px] font-bold text-slate-900 dark:text-white uppercase tracking-wider truncate">
                             {activeChatData?.name}
                           </span>
                           <span className="text-[8px] sm:text-[9px] text-slate-500 font-mono shrink-0">
                             {m.created_at?.slice(11, 16)}
                           </span>
                         </div>
-                        <div className="bg-[#1e201f] text-[#e2e3e0] text-xs sm:text-sm p-2.5 sm:p-3 rounded-2xl rounded-tl-none border border-white/5 relative break-words">
+                        <div
+                          className="bg-slate-100 dark:bg-[#1e201f] 
+text-slate-900 dark:text-[#e2e3e0]
+border border-slate-200 dark:border-white/5 text-xs sm:text-sm p-2.5 sm:p-3 rounded-2xl rounded-tl-none border border-white/5 relative break-words"
+                        >
                           {m.file?.path &&
                             (() => {
                               const base = API_CONFIG.BASE_URL.replace(
@@ -3683,13 +3962,13 @@ const MainContent = () => {
                                 <video
                                   src={url}
                                   controls
-                                  className="max-w-full rounded-lg mb-1 bg-black border border-white/10"
+                                  className="max-w-full rounded-lg mb-1 bg-slate-100 dark:bg-[#000302] border border-slate-200 dark:border-white/10"
                                 />
                               ) : (
                                 <img
                                   src={url}
                                   alt="attachment"
-                                  className="max-w-full rounded-lg mb-1 object-cover border border-white/10"
+                                  className="max-w-full rounded-lg mb-1 object-cover border border-slate-200 dark:border-white/10"
                                 />
                               );
                             })()}
@@ -3703,9 +3982,9 @@ const MainContent = () => {
             </div>
 
             {/* Input */}
-            <div className="p-1.5 sm:p-2 md:p-3 bg-[#121413] shrink-0">
+            <div className="p-1.5 sm:p-2 md:p-3 bg-slate-50 dark:bg-[#121413] shrink-0">
               <div className="relative flex items-center gap-1 sm:gap-2">
-                <div className="flex-1 flex items-center bg-[#0d0f0e] border border-[#3b4b3d]/50 rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 focus-within:border-[#00ff85]/50 transition-colors min-w-0">
+                <div className="flex-1 flex items-center bg-slate-100 dark:bg-[#0d0f0e]  border border-[#3b4b3d]/50 rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 focus-within:border-[#00ff85]/50 transition-colors min-w-0">
                   <input
                     type="text"
                     value={chatInput}
@@ -3714,7 +3993,7 @@ const MainContent = () => {
                       if (e.key === "Enter") handleChatSend();
                     }}
                     placeholder="Type message..."
-                    className="w-full bg-transparent border-none text-xs sm:text-sm text-white focus:outline-none focus:ring-0 placeholder:text-[#3b4b3d]"
+                    className="w-full bg-transparent border-none text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-0 placeholder:text-[#3b4b3d]"
                   />
                 </div>
                 <button
@@ -3737,8 +4016,8 @@ const MainContent = () => {
         <div className="pointer-events-auto flex flex-col items-end gap-2 relative">
           {/* Chat List Popup */}
           {isChatListOpen && (
-            <div className="bg-[#161817] border border-[#3b4b3d]/30 rounded-lg sm:rounded-xl w-[calc(100vw-1rem)] sm:w-[280px] md:w-[300px] max-w-[350px] shadow-2xl overflow-hidden animate-fadeInScale mb-2 absolute bottom-full right-0 sm:relative sm:bottom-auto sm:right-auto">
-              <div className="p-2.5 sm:p-3 md:p-4 border-b border-[#3b4b3d]/30 bg-[#1a1c1b] flex items-center justify-between">
+            <div className="bg-white dark:bg-[#161817] border border-[#3b4b3d]/30 rounded-lg sm:rounded-xl w-[calc(100vw-1rem)] sm:w-[280px] md:w-[300px] max-w-[350px] shadow-2xl overflow-hidden animate-fadeInScale mb-2 absolute bottom-full right-0 sm:relative sm:bottom-auto sm:right-auto">
+              <div className="p-2.5 sm:p-3 md:p-4 border-b border-[#3b4b3d]/30 bg-slate-50 dark:bg-[#1a1c1b] flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[#fce4d6] flex items-center justify-center relative">
                     <span className="material-symbols-outlined text-[#cf9c7b] text-xs">
@@ -3746,11 +4025,13 @@ const MainContent = () => {
                     </span>
                     <div className="absolute bottom-0 right-0 w-1.5 h-1.5 bg-[#00ff88] rounded-full border border-[#161817]"></div>
                   </div>
-                  <h3 className="text-white font-bold text-xs sm:text-sm">Messages</h3>
+                  <h3 className="text-slate-900 dark:text-white font-bold text-xs sm:text-sm">
+                    Messages
+                  </h3>
                 </div>
                 <button
                   onClick={() => setIsChatListOpen(false)}
-                  className="text-slate-400 hover:text-white transition-colors p-0.5"
+                  className="text-slate-400 hover:text-slate-900 dark:text-white transition-colors p-0.5"
                 >
                   <span className="material-symbols-outlined text-base sm:text-lg">
                     keyboard_arrow_down
@@ -3761,18 +4042,16 @@ const MainContent = () => {
                 {chats.map((chat) => (
                   <div
                     key={chat.id}
+                    // ✅ SAHI — ye karo
                     onClick={() => {
-                      setActiveChatId(chat.id);
-                      setChats((prev) =>
-                        prev.map((c) =>
-                          c.id === chat.id ? { ...c, unreadCount: 0 } : c,
-                        ),
-                      );
-                      if (window.innerWidth < 640) {
-                        setIsChatListOpen(false);
+                      if (isInstituteApprovalPending) {
+                        openApprovalModal();
+                        return;
                       }
+                      setActiveChatId(chat.id); // ← yeh add karo
+                      setIsChatListOpen(true);
                     }}
-                    className={`flex items-center justify-between p-2 sm:p-2.5 rounded-lg cursor-pointer transition-colors gap-2 ${activeChatId === chat.id ? "bg-[#1e201f] border-l-2 border-[#00ff85]" : "hover:bg-[#1e201f]"}`}
+                    className={`flex items-center justify-between p-2 sm:p-2.5 rounded-lg cursor-pointer transition-colors gap-2 ${activeChatId === chat.id ? "bg-slate-50 dark:bg-[#1e201f] border-l-2 border-[#00ff85]" : "hover:bg-slate-100 dark:hover:bg-[#2a2d2b] dark:bg-[#1e201f]"}`}
                   >
                     <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
                       <div className="relative flex items-center shrink-0">
@@ -3798,10 +4077,10 @@ const MainContent = () => {
                         )}
                       </div>
                       <div className="min-w-0 pr-1.5">
-                        <h5 className="text-white font-bold text-xs sm:text-sm truncate max-w-[90px] sm:max-w-[100px] flex items-center gap-1">
+                        <h5 className="text-slate-900 dark:text-white font-bold text-xs sm:text-sm truncate max-w-[90px] sm:max-w-[100px] flex items-center gap-1">
                           <span className="truncate">{chat.name}</span>
                           {chat.isYou && (
-                            <span className="shrink-0 text-[7px] font-mono px-1 py-0.5 rounded-full bg-[#00ff88]/10 text-[#00ff88] border border-[#00ff88]/30">
+                            <span className="shrink-0 text-[7px] font-mono px-1 py-0.5 rounded-full bg-[#00ff88]/10 text-emerald-600 dark:text-[#00ff88] border border-[#00ff88]/30">
                               You
                             </span>
                           )}
@@ -3824,19 +4103,27 @@ const MainContent = () => {
                   </div>
                 ))}
               </div>
-              <div className="p-1.5 sm:p-2 md:p-3 border-t border-[#3b4b3d]/30 bg-[#1a1c1b]">
-                <button className="w-full bg-[#00ff88]/10 text-[#00ff88] font-bold text-[9px] sm:text-xs py-1.5 sm:py-2 rounded-lg hover:bg-[#00ff88]/20 transition-colors uppercase tracking-wider">
+              {/* <div className="p-1.5 sm:p-2 md:p-3 border-t border-[#3b4b3d]/30 bg-slate-50 dark:bg-[#1a1c1b]">
+                <button className="w-full bg-[#00ff88]/10 text-emerald-600 dark:text-[#00ff88] font-bold text-[9px] sm:text-xs py-1.5 sm:py-2 rounded-lg hover:bg-[#00ff88]/20 transition-colors uppercase tracking-wider">
                   View All Messages
                 </button>
-              </div>
+              </div> */}
             </div>
           )}
 
           {/* Minimized Toggle Button */}
           {!isChatListOpen && (
             <div
-              className="bg-[#161817] border border-[#3b4b3d]/30 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between cursor-pointer w-[calc(100vw-1rem)] max-w-[280px] sm:max-w-[300px] shadow-lg hover:bg-[#1e201f] transition-all gap-2"
-              onClick={() => setIsChatListOpen(true)}
+              className="bg-white dark:bg-[#161817] border border-[#3b4b3d]/30 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between cursor-pointer w-[calc(100vw-1rem)] max-w-[280px] sm:max-w-[300px] shadow-lg hover:bg-slate-100 dark:hover:bg-[#2a2d2b] dark:bg-[#1e201f] transition-all gap-2"
+              // ✅ SAHI — ye karo
+              onClick={() => {
+                if (isInstituteApprovalPending) {
+                  openApprovalModal();
+                  return;
+                }
+               // ← yeh add karo
+                setIsChatListOpen(true);
+              }}
             >
               <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                 <div className="relative">
@@ -3847,7 +4134,9 @@ const MainContent = () => {
                   </div>
                   <div className="absolute bottom-0 right-0 w-1.5 h-1.5 bg-[#00ff88] rounded-full border border-[#161817]"></div>
                 </div>
-                <span className="font-bold text-white text-xs sm:text-sm">Messages</span>
+                <span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">
+                  Messages
+                </span>
               </div>
               <span className="material-symbols-outlined text-slate-400 text-lg shrink-0">
                 expand_less
@@ -3856,6 +4145,90 @@ const MainContent = () => {
           )}
         </div>
       </div>
+
+      {showApprovalModal && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm px-4"
+          onClick={() => setShowApprovalModal(false)}
+        >
+          <div
+            className="
+        bg-white text-slate-800
+        dark:bg-[#0d1f16] dark:text-white
+        border border-slate-200
+        dark:border-[#00ff88]/20
+        rounded-2xl p-6 sm:p-8 w-full max-w-[420px] shadow-2xl text-center
+      "
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="
+          w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5
+          bg-yellow-100 border border-yellow-300
+          dark:bg-yellow-500/10 dark:border-yellow-500/30
+        "
+            >
+              <span className="material-symbols-outlined text-yellow-600 dark:text-yellow-400 text-3xl">
+                hourglass_top
+              </span>
+            </div>
+
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+              Approval Pending
+            </h2>
+
+            <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-2">
+              Your institute account is currently under review by our admin
+              team.
+            </p>
+
+            <p className="text-slate-500 dark:text-slate-500 text-xs leading-relaxed mb-5">
+              Once approved, you'll be able to{" "}
+              <span className="text-slate-900 dark:text-white font-medium">
+                create posts
+              </span>
+              ,{" "}
+              <span className="text-slate-900 dark:text-white font-medium">
+                upload research
+              </span>
+              , and{" "}
+              <span className="text-slate-900 dark:text-white font-medium">
+                chat
+              </span>{" "}
+              with other users.
+            </p>
+
+            <div
+              className="
+          rounded-xl px-4 py-3 mb-6 flex items-center justify-center gap-2
+          bg-yellow-50 border border-yellow-200
+          dark:bg-yellow-500/10 dark:border-yellow-500/20
+        "
+            >
+              <span className="material-symbols-outlined text-yellow-600 dark:text-yellow-400 text-sm">
+                schedule
+              </span>
+
+              <span className="text-yellow-700 dark:text-yellow-400 text-xs font-bold uppercase tracking-wider">
+                Status: Awaiting Admin Approval
+              </span>
+            </div>
+
+            <button
+              onClick={() => setShowApprovalModal(false)}
+              className="
+          w-full py-3 rounded-xl font-bold text-sm transition-all
+          bg-slate-100 text-slate-800 border border-slate-300
+          hover:bg-slate-200
+          dark:bg-[#1a2f22] dark:border-[#00ff88]/20 dark:text-[#00ff88]
+          dark:hover:bg-[#00ff88]/10
+        "
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         @keyframes fadeInScale {
@@ -3878,6 +4251,7 @@ const MainContent = () => {
           overflow: hidden;
           text-overflow: ellipsis;
         }
+
         .line-clamp-10 {
           display: -webkit-box;
           -webkit-line-clamp: 10;

@@ -14,8 +14,10 @@ const PendingResearchRequestsTable = ({
 
   if (!requests.length) {
     return (
-      <div className="flex items-center justify-center h-64 bg-[#13231a] border border-[#1e3a2c] rounded-xl">
-        <p className="text-slate-500">No pending research requests</p>
+      <div className="flex items-center justify-center h-64 bg-white dark:bg-[#13231a] border border-gray-200 dark:border-[#1e3a2c] rounded-xl transition-colors duration-300">
+        <p className="text-gray-500 dark:text-slate-500">
+          No pending research requests
+        </p>
       </div>
     );
   }
@@ -52,42 +54,18 @@ const PendingResearchRequestsTable = ({
 
   // Generate page numbers for pagination
   const getPageNumbers = () => {
-    const pageNumbers = [];
-    const maxVisiblePages = 5;
-    
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        pageNumbers.push(i);
-      }
-    } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= 5; i++) {
-          pageNumbers.push(i);
-        }
-      } else if (currentPage >= totalPages - 2) {
-        for (let i = totalPages - 4; i <= totalPages; i++) {
-          pageNumbers.push(i);
-        }
-      } else {
-        for (let i = currentPage - 2; i <= currentPage + 2; i++) {
-          pageNumbers.push(i);
-        }
-      }
-    }
-    
-    return pageNumbers;
-  };
+  if (!totalPages || totalPages < 1) return [];
+  return Array.from({ length: totalPages }, (_, i) => i + 1);
+};
 
-  const startItem = (currentPage - 1) * itemsPerPage + 1;
-  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="bg-[#13231a] border border-[#1e3a2c] rounded-xl overflow-hidden flex flex-col h-full">
+    <div className="bg-white dark:bg-[#13231a] border border-gray-200 dark:border-[#1e3a2c] rounded-xl overflow-hidden flex flex-col h-full transition-colors duration-300">
       {/* Table with Fixed Header */}
       <div className="overflow-auto flex-1" style={{ maxHeight: '550px' }}>
         <table className="w-full table-fixed">
-          <thead className="sticky top-0 z-20 bg-[#0e1a14]">
-            <tr className="text-slate-400 text-xs uppercase">
+          <thead className="sticky top-0 z-20 bg-gray-100 dark:bg-[#0e1a14]">
+            <tr className="bg-gray-100 dark:bg-[#0e1a14] text-gray-500 dark:text-slate-400 text-xs uppercase">
               <th className="py-4 px-4 text-left w-[130px]">REGISTRATION ID</th>
               <th className="py-4 px-4 text-left w-[150px]">USERNAME</th>
               <th className="py-4 px-4 text-left w-[100px]">USER TYPE</th>
@@ -97,7 +75,7 @@ const PendingResearchRequestsTable = ({
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-[#1e3a2c]">
+          <tbody className="divide-y divide-gray-100 dark:divide-[#1e3a2c]">
             {requests.map((request, index) => {
               const id = request.id || request._id || request.requestId || index;
               const registrationId = request.primary_author_id || 
@@ -124,11 +102,14 @@ const PendingResearchRequestsTable = ({
               const status = request.status || "1";
 
               return (
-                <tr key={id} className="hover:bg-[#1e3a2c]/30">
-                  <td className="py-4 px-4 font-mono text-slate-400 truncate" title={registrationId}>
+                <tr
+                  key={id}
+                  className="hover:bg-gray-50 dark:hover:bg-[#1e3a2c]/30 transition-colors"
+                >
+                  <td className="py-4 px-4 font-mono text-gray-500 dark:text-slate-400 truncate" title={registrationId}>
                     {registrationId}
                   </td>
-                  <td className="py-4 px-4 text-white truncate" title={username}>
+                  <td className="py-4 px-4 text-gray-900 dark:text-white truncate" title={username}>
                     {username}
                   </td>
                   <td className="py-4 px-4">
@@ -136,7 +117,7 @@ const PendingResearchRequestsTable = ({
                       {userType ? (userType.charAt(0).toUpperCase() + userType.slice(1).toLowerCase()) : "Researcher"}
                     </span>
                   </td>
-                  <td className="py-4 px-4 text-slate-300 truncate" title={paperTitle}>
+                  <td className="py-4 px-4 text-gray-700 dark:text-slate-300 truncate" title={paperTitle}>
                     {paperTitle}
                   </td>
                   <td className="py-4 px-4 relative">
@@ -154,7 +135,7 @@ const PendingResearchRequestsTable = ({
                       onViewDetails(request.researche_id || request.id)
                         }
                       }}
-                      className="px-3 py-1 bg-[#00ff88]/10 hover:bg-[#00ff88] text-[#00ff88] hover:text-black text-xs rounded transition-colors"
+                      className="px-3 py-1 bg-green-100 dark:bg-[#00ff88]/10 hover:bg-green-500 dark:hover:bg-[#00ff88] text-green-700 dark:text-[#00ff88] hover:text-white dark:hover:text-black text-xs rounded transition-colors"
                     >
                       VIEW DETAILS
                     </button>
@@ -167,54 +148,47 @@ const PendingResearchRequestsTable = ({
       </div>
 
       {/* Pagination Section */}
-      <div className="bg-[#0e1a14] border-t border-[#1e3a2c] px-6 py-4 flex items-center justify-between">
-        {/* Showing results info */}
-        <div className="text-xs text-slate-500">
-          Showing {startItem} to {endItem} of {totalItems} results
-        </div>
+<div className="bg-gray-100 dark:bg-[#0e1a14] border-t border-gray-200 dark:border-[#1e3a2c] px-6 py-4 flex items-center justify-end transition-colors duration-300">
 
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="flex items-center gap-2">
-            {/* Previous Button */}
-            <button
-              onClick={() => onPageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="p-2 rounded-lg bg-[#13231a] border border-[#1e3a2c] text-slate-400 hover:text-[#00ff88] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              aria-label="Previous page"
-            >
-              <MaterialIcon name="west" className="text-lg" />
-            </button>
+  <div className="flex items-center gap-2">
 
-            {/* Page Numbers */}
-            <div className="flex gap-1">
-              {getPageNumbers().map((pageNum) => (
-                <button
-                  key={pageNum}
-                  onClick={() => onPageChange(pageNum)}
-                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
-                    currentPage === pageNum
-                      ? "bg-[#00ff88] text-[#0a0f0c] shadow-[0_0_10px_rgba(0,255,136,0.3)]"
-                      : "text-slate-500 hover:bg-[#1e3a2c]"
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              ))}
-            </div>
+    {/* Previous Button */}
+    <button
+      onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
+      disabled={currentPage === 1}
+      className="p-2 rounded-lg bg-white dark:bg-[#13231a] border border-gray-200 dark:border-[#1e3a2c] text-gray-500 dark:text-slate-400 hover:text-[#00ff88] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+    >
+      <MaterialIcon name="west" className="text-lg" />
+    </button>
 
-            {/* Next Button */}
-            <button
-              onClick={() => onPageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="p-2 rounded-lg bg-[#13231a] border border-[#1e3a2c] text-slate-400 hover:text-[#00ff88] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              aria-label="Next page"
-            >
-              <MaterialIcon name="east" className="text-lg" />
-            </button>
-          </div>
-        )}
-      </div>
+    {/* Page Numbers */}
+    <div className="flex gap-1">
+      {getPageNumbers().map((pageNum) => (
+        <button
+          key={pageNum}
+          onClick={() => onPageChange(pageNum)}
+          className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
+            currentPage === pageNum
+              ? "bg-[#00ff88] text-[#0a0f0c]"
+              : "text-gray-500 dark:text-slate-500 hover:bg-gray-200 dark:hover:bg-[#1e3a2c]"
+          }`}
+        >
+          {pageNum}
+        </button>
+      ))}
+    </div>
+
+    {/* Next Button */}
+    <button
+      onClick={() => currentPage < totalPages && onPageChange(currentPage + 1)}
+      disabled={currentPage === totalPages}
+      className="p-2 rounded-lg bg-white dark:bg-[#13231a] border border-gray-200 dark:border-[#1e3a2c] text-gray-500 dark:text-slate-400 hover:text-[#00ff88] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+    >
+      <MaterialIcon name="east" className="text-lg" />
+    </button>
+
+  </div>
+</div>
     </div>
   );
 };

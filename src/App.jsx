@@ -26,10 +26,10 @@ import ResearchUploadRequests from "./Admin/Research-Upload/ResearchUploadReques
 import BoardMembers from "./Admin/BoardMemberCard";
 import ViewResearchApplication from "./Admin/Research-Upload/ViewResearchApplication";
 import CreateEvent from "./Admin/CreateEvent/CreateEvent";
-import AdminChat from './Admin/chat/AdminChat';
-import AdminCreateGroup from './Admin/chat/AdminCreateGroup';
-import AdminEvents from './Admin/Events/AdminEvents';
-import EventApprovals from './Admin/Events/EventApprovals';
+import AdminChat from "./Admin/chat/AdminChat";
+import AdminCreateGroup from "./Admin/chat/AdminCreateGroup";
+import AdminEvents from "./Admin/Events/AdminEvents";
+import EventApprovals from "./Admin/Events/EventApprovals";
 //Dashboard
 import MainContent from "./dashboard/MainContent";
 import RightSection from "./dashboard/RightSection";
@@ -51,16 +51,18 @@ import GroupDetails from "./dashboard/GroupDetails";
 import BoardMember from "./dashboard/BoardMember/BoardMember";
 import Event from "./dashboard/Event/Event";
 import MyEvents from "./dashboard/Event/MyEvents";
+import NotificationPopup from "./dashboard/NotificationPopup";
 
 // settings
 import Settings from "./settings/setting";
 import TermsConditions from "./Legals/TermsConditions";
 import PrivacyPolicy from "./Legals/PrivacyPolicy";
 import AdminSavedPosts from "./Admin/save/AdminSavedPosts";
+import { ThemeProvider } from "./context/ThemeContext";
 
 const App = () => {
   return (
-    <>
+    <ThemeProvider>
       <Routes>
         {/* Home */}
         <Route path="/" element={<Home />} />
@@ -86,10 +88,10 @@ const App = () => {
           path="/organization-onboarding/:step"
           element={<OrgOnboardingFlow />}
         />
-        <Route
+        {/* <Route
           path="/organization-onboarding"
           element={<Navigate to="/organization-onboarding/1" />}
-        />
+        /> */}
 
         <Route path="/profileorg" element={<OrgProfile />} />
         <Route path="/welcome" element={<SustainbilityWelcome />} />
@@ -112,10 +114,10 @@ const App = () => {
         />
         <Route path="/admin/create-event" element={<CreateEvent />} />
 
-        <Route path="/admin/chat" element ={<AdminChat/>}/>
-        <Route path="/admin/CreateGroup" element ={<AdminCreateGroup/>}/>
-        <Route path="/admin/save" element ={<AdminSavedPosts/>}/>
-        <Route path="/admin/events" element={<AdminEvents />}/>
+        <Route path="/admin/chat" element={<AdminChat />} />
+        <Route path="/admin/CreateGroup" element={<AdminCreateGroup />} />
+        <Route path="/admin/save" element={<AdminSavedPosts />} />
+        <Route path="/admin/events" element={<AdminEvents />} />
         <Route path="/admin/event-approvals" element={<EventApprovals />} />
 
         {/* Dashboard */}
@@ -157,6 +159,10 @@ const App = () => {
         <Route path="/group" element={<GroupDetails />} />
         <Route path="/dashboard/create-event" element={<Event />} />
         <Route path="/dashboard/my-event" element={<MyEvents />} />
+        <Route
+          path="/dashboard/notifications"
+          element={<NotificationPopup />}
+        />
 
         {/* Settings */}
         <Route path="/settings" element={<Settings />} />
@@ -165,6 +171,9 @@ const App = () => {
       </Routes>
 
       <ToastContainer
+        key={
+          document.documentElement.classList.contains("dark") ? "dark" : "light"
+        }
         position="top-right" // Laptop ke liye default
         autoClose={2000}
         hideProgressBar={false}
@@ -173,10 +182,12 @@ const App = () => {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="dark" // Aapke dark theme UI ke liye perfect hai
+        theme={
+          document.documentElement.classList.contains("dark") ? "dark" : "light"
+        }
         limit={3} // Mobile par screen na bhar jaye isliye limit set karein
       />
-    </>
+    </ThemeProvider>
   );
 };
 

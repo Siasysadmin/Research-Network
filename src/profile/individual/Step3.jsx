@@ -40,18 +40,30 @@ const Step3 = ({ progress, onNext, onBack }) => {
 };
 
   return (
-    <div className="min-h-screen bg-[#10221a] font-display flex flex-col">
-      <main className="flex-1 flex justify-center py-8 md:py-12 px-4">
+<div className="
+min-h-screen font-display flex flex-col
+
+bg-white text-slate-900
+dark:bg-[#10221a] dark:text-white
+">      <main className="flex-1 flex justify-center py-8 md:py-12 px-4">
         <div className="max-w-[640px] w-full flex flex-col gap-10">
           
           {/* Header */}
           <div className="flex justify-between items-center">
             <div className="flex flex-col gap-1.5">
-              <p className="text-white text-[13px] uppercase tracking-[0.2em] font-semibold">
-                Step 3 of 6
+<p className="
+text-[13px] uppercase tracking-[0.2em] font-semibold
+
+text-gray-600
+dark:text-white
+">                Step 3 of 6
               </p>
-              <div className="rounded-full bg-white/10 h-1 overflow-hidden w-28">
-                <div
+<div className="
+rounded-full h-1 overflow-hidden w-28
+
+bg-gray-200
+dark:bg-white/10
+">                <div
                   className="h-full rounded-full bg-[#0df287] transition-all duration-300"
                   style={{ width: `${progress}%` }}
                 ></div>
@@ -59,19 +71,31 @@ const Step3 = ({ progress, onNext, onBack }) => {
             </div>
             <button 
               onClick={handleNext}
-              className="flex items-center gap-1 px-0 py-0 border-none bg-transparent hover:text-white text-white/60 text-xs font-semibold tracking-wider transition-all">
-              Skip 
+className="
+flex items-center gap-1 text-xs font-semibold tracking-wider transition-all
+
+text-gray-500 hover:text-black
+dark:text-white/60 dark:hover:text-white
+">              Skip 
               <span className="material-symbols-outlined text-sm">chevron_right</span>
             </button>
           </div>
 
           {/* Title Section */}
           <div className="text-center">
-            <h1 className="text-white tracking-tight text-2xl sm:text-3xl md:text-4xl font-bold leading-tight pb-4 px-2">
-              What is your current research level?
+<h1 className="
+tracking-tight text-2xl sm:text-3xl md:text-4xl font-bold leading-tight pb-4 px-2
+
+text-slate-900
+dark:text-white
+">              What is your current research level?
             </h1>
-            <p className="text-gray-300 text-sm sm:text-base max-w-lg mx-auto px-4">
-              This helps us tailor your network experience and connect you with the right peers in the environment and sustainability sector.
+<p className="
+text-sm sm:text-base max-w-lg mx-auto px-4
+
+text-gray-500
+dark:text-gray-300
+">              This helps us tailor your network experience and connect you with the right peers in the environment and sustainability sector.
             </p>
           </div>
 
@@ -84,7 +108,10 @@ const Step3 = ({ progress, onNext, onBack }) => {
                 <label 
                   key={level.id}
                   className={`group flex items-center gap-4 rounded-xl border-2 p-4 sm:p-5 cursor-pointer transition-all flex-row-reverse
-                    ${isSelected ? 'border-[#0df287] bg-[#1a2e25]' : 'border-[#31684e] bg-[#1a2e25]/50 hover:border-[#0df287]/50'}`}
+                    ${isSelected
+  ? "border-[#0df287] bg-green-50 dark:bg-[#1a2e25]"
+  : "border-gray-200 bg-white hover:border-[#0df287]/50 dark:border-[#31684e] dark:bg-[#1a2e25]/50"
+}`}
                 >
                   <input 
                     type="radio"
@@ -95,11 +122,19 @@ const Step3 = ({ progress, onNext, onBack }) => {
                       checked:after:content-[''] checked:after:absolute checked:after:top-1/2 checked:after:left-1/2 checked:after:-translate-x-1/2 checked:after:-translate-y-1/2 checked:after:w-2 checked:after:h-2 checked:after:rounded-full checked:after:bg-[#0df287]"
                   />
                   <div className="flex grow flex-col">
-                    <p className="text-white text-sm sm:text-base font-semibold leading-normal">
-                      {level.title}
+<p className="
+text-sm sm:text-base font-semibold
+
+text-slate-900
+dark:text-white
+">                      {level.title}
                     </p>
-                    <p className="text-[#90cbaf] text-xs sm:text-sm font-normal leading-normal">
-                      {level.description}
+<p className="
+text-xs sm:text-sm
+
+text-gray-500
+dark:text-[#90cbaf]
+">                      {level.description}
                     </p>
                   </div>
                 </label>
@@ -108,7 +143,8 @@ const Step3 = ({ progress, onNext, onBack }) => {
           </div>
 
           {/* Navigation Buttons */}
-          <div className="flex items-center justify-between gap-3 p-4 mt-8 border-t border-[#214a37]">
+          <div className="flex items-center justify-between gap-3 p-4 mt-8 border-t border-gray-200
+dark:border-[#214a37]">
             <button
               onClick={onBack}
               className="px-8 sm:px-10 py-3 rounded-[10px] border-2 border-[#06f988]/30 text-[#06f988] font-bold hover:bg-[#06f988]/5 flex items-center justify-center gap-2 transition-all active:scale-95"

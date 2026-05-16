@@ -71,23 +71,23 @@ const CreateGroup = () => {
                     user.name ||
                     "Unknown Institute"
                   : user.name || "Unknown Individual";
-            return {
-  id: String(user.id || user.user_id || Math.random()),
-  name,
-  registerId: user.registration_id || user.id || "N/A",
-  avatar: (() => {
-    // Institute ya individual dono ke liye profile image check karo
-    const profileImg =
-      user.user_type === "institute"
-        ? user.profile_institute_details?.profile_image
-        : user.profile_individual_details?.profile_image;
+              return {
+                id: String(user.id || user.user_id || Math.random()),
+                name,
+                registerId: user.registration_id || user.id || "N/A",
+                avatar: (() => {
+                  const profileImg =
+                    user.user_type === "institute"
+                      ? user.profile_institute_details?.profile_image
+                      : user.profile_individual_details?.profile_image;
 
-    if (profileImg) {
-      return `${API_CONFIG.BASE_URL}/${profileImg}`;
-    }
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1a1c1b&color=00ff85`;
-  })(),
-};
+                  if (profileImg) {
+                    return `${API_CONFIG.BASE_URL}/${profileImg}`;
+                  }
+
+                  return defaultAvatar;
+                })(),
+              };
             })
             .filter((u) => u.id !== currentUserId);
 
@@ -234,7 +234,6 @@ const CreateGroup = () => {
         toast.error(result.message || "Failed to create group");
       }
     } catch (error) {
-      console.error("Error creating group:", error);
       toast.error("An error occurred while creating the group");
     } finally {
       setCreating(false);
@@ -275,7 +274,6 @@ const CreateGroup = () => {
         toast.error(result.message || "Update failed");
       }
     } catch (error) {
-      console.error("Update Error:", error);
       toast.error("An error occurred");
     } finally {
       setCreating(false);
@@ -292,9 +290,13 @@ const CreateGroup = () => {
         .cyber-glow { box-shadow: 0 0 20px rgba(0, 255, 133, 0.15); }
         .cyber-glow-strong { box-shadow: 0 0 30px rgba(0, 255, 133, 0.4); }
         .glass-panel {
-          background: linear-gradient(145deg, rgba(13, 15, 14, 0.9) 0%, rgba(18, 20, 19, 0.95) 100%);
-          backdrop-filter: blur(12px);
-        }
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(12px);
+}
+
+.dark .glass-panel {
+  background: linear-gradient(145deg, rgba(13, 15, 14, 0.9) 0%, rgba(18, 20, 19, 0.95) 100%);
+}
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #3b4b3d; border-radius: 10px; }
@@ -313,31 +315,31 @@ const CreateGroup = () => {
         .animate-fadeInDown { animation: fadeInDown 0.15s ease-out; }
       `}</style>
 
-      <div className="flex-1 flex flex-col h-[calc(100vh-80px)] overflow-hidden w-full font-inter bg-[#0d0f0e] p-4 lg:p-6 box-border">
-        {/* Header */}
-        <div className="mb-3 glass-panel rounded-2xl h-14 lg:h-16 px-4 lg:px-8 flex items-center border border-[#3b4b3d]/30 shrink-0 max-w-[1200px] mx-auto w-full">
-          <button
+<div className="flex-1 flex flex-col min-h-[100dvh] lg:min-h-0 lg:h-[calc(100vh-80px)] overflow-y-auto lg:overflow-hidden w-full font-inter bg-gray-100 dark:bg-[#0d0f0e] p-3 sm:p-4 lg:p-6 box-border">         {/* Header */}
+<div className="mb-3 glass-panel rounded-2xl min-h-14 lg:h-16 px-3 sm:px-4 lg:px-8 flex items-center border border-gray-300 dark:border-[#3b4b3d]/30 shrink-0 max-w-[1200px] mx-auto w-full"> 
+         <button
             onClick={handleBack}
             className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-[#e2e3e0] transition-all mr-4 lg:mr-6"
           >
-            <MaterialIcon name="arrow_back" className="text-[24px] lg:text-[28px]" />
+            <MaterialIcon
+              name="arrow_back"
+              className="text-[24px] lg:text-[28px]"
+            />
           </button>
           <div className="flex flex-col">
-            <h3 className="text-lg lg:text-xl font-extrabold text-white leading-none tracking-tight">
+            <h3 className="text-lg lg:text-xl font-extrabold text-slate-900 dark:text-white leading-none tracking-tight">
               {isEditMode ? "Edit Group" : "Create New Group"}
             </h3>
-            <p className="text-[9px] lg:text-[10px] font-mono text-[#94a3b8] uppercase tracking-widest mt-1.5">
+            <p className="text-[9px] lg:text-[10px] font-inter text-slate-500 dark:text-[#94a3b8] uppercase tracking-widest mt-1.5">
               {isEditMode
                 ? "Update group information"
                 : "Initiate encrypted communication hub"}
             </p>
           </div>
         </div>
-
         {/* Main Content */}
-        <div className="flex-1 glass-panel rounded-2xl overflow-hidden flex flex-col border border-[#3b4b3d]/30 bg-[#0d0f0e]/50 max-w-[1200px] mx-auto w-full">
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-10">
-            <div className="max-w-2xl mx-auto space-y-8 lg:space-y-10">
+<div className="flex-1 glass-panel rounded-2xl overflow-hidden flex flex-col border border-gray-300 dark:border-[#3b4b3d]/30 bg-white dark:bg-[#0d0f0e]/50 max-w-[1200px] mx-auto w-full min-h-0">   
+<div className="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-5 lg:p-10">            <div className="max-w-2xl mx-auto space-y-8 lg:space-y-10">
               {/* Image Upload */}
               <div className="flex flex-col items-center">
                 <label className="relative group cursor-pointer">
@@ -347,7 +349,7 @@ const CreateGroup = () => {
                     className="hidden"
                     onChange={handleImageChange}
                   />
-                  <div className="w-28 h-28 lg:w-32 lg:h-32 rounded-full border-2 border-dashed border-[#00FF85]/30 bg-[#121413]/40 flex flex-col items-center justify-center transition-all group-hover:border-[#00FF85] group-hover:bg-[#00FF85]/5 overflow-hidden">
+                  <div className="w-28 h-28 lg:w-32 lg:h-32 rounded-full border-2 border-dashed border-[#00FF85]/30 bg-gray-100 dark:bg-[#121413]/40 flex flex-col items-center justify-center transition-all group-hover:border-[#00FF85] group-hover:bg-[#00FF85]/5 overflow-hidden">
                     {groupImagePreview ? (
                       <img
                         src={groupImagePreview}
@@ -373,7 +375,7 @@ const CreateGroup = () => {
                     />
                   </div>
                 </label>
-                <p className="text-[9px] lg:text-[10px] font-mono text-[#94a3b8] uppercase mt-4">
+                <p className="text-[9px] lg:text-[10px] font-inter text-[#94a3b8] uppercase mt-4">
                   Group Identification Image
                 </p>
               </div>
@@ -381,14 +383,14 @@ const CreateGroup = () => {
               {/* Inputs */}
               <div className="space-y-5 lg:space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[9px] lg:text-[10px] font-mono text-[#00FF85] uppercase tracking-widest pl-1">
+                  <label className="text-[9px] lg:text-[10px] font-inter text-[#00FF85] uppercase tracking-widest pl-1">
                     Group Name
                   </label>
                   <input
                     type="text"
                     value={groupName}
                     onChange={(e) => setGroupName(e.target.value)}
-                    className="cg-input w-full bg-[#121413]/80 border border-[#3b4b3d]/50 rounded-xl px-4 py-3 lg:px-5 lg:py-3.5 text-sm text-white transition-all placeholder:text-[#94a3b8]/30 font-inter"
+                    className="cg-input w-full bg-white dark:bg-[#121413]/80 border border-gray-300 dark:border-[#3b4b3d]/50 rounded-xl px-4 py-3 lg:px-5 lg:py-3.5 text-sm text-slate-900 dark:text-white transition-all placeholder:text-[#94a3b8]/30 font-inter"
                     placeholder="e.g. Research_Division_X"
                   />
                 </div>
@@ -398,16 +400,16 @@ const CreateGroup = () => {
               {!isEditMode && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <label className="text-[9px] lg:text-[10px] font-mono text-[#00FF85] uppercase tracking-widest pl-1">
+                    <label className="text-[9px] lg:text-[10px] font-inter text-[#00FF85] uppercase tracking-widest pl-1">
                       Add Members
                     </label>
-                    <span className="text-[9px] lg:text-[10px] font-mono text-[#94a3b8]/60 uppercase">
+                    <span className="text-[9px] lg:text-[10px] font-inter text-[#94a3b8]/60 uppercase">
                       {members.length} selected
                     </span>
                   </div>
 
                   <div className="relative">
-                    <div className="flex items-center gap-3 p-2 bg-[#121413]/50 border border-[#3b4b3d]/30 rounded-xl min-h-[44px]">
+                    <div className="flex items-center gap-3 p-2 bg-white dark:bg-[#121413]/50 border border-gray-300 dark:border-[#3b4b3d]/30 rounded-xl min-h-[44px]">
                       <div className="flex flex-wrap gap-2 flex-1">
                         {members.map((member) => (
                           <div
@@ -429,13 +431,16 @@ const CreateGroup = () => {
                               onClick={() => removeMember(member.id)}
                               className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-[#00FF85]/20 text-[#00FF85]"
                             >
-                              <MaterialIcon name="close" className="text-[14px]" />
+                              <MaterialIcon
+                                name="close"
+                                className="text-[14px]"
+                              />
                             </button>
                           </div>
                         ))}
 
                         {members.length === 0 && (
-                          <div className="text-xs text-slate-500 py-1 px-2 italic font-mono">
+                          <div className="text-xs text-slate-500 py-1 px-2  font-inter">
                             No members selected
                           </div>
                         )}
@@ -448,42 +453,59 @@ const CreateGroup = () => {
                           setSearchQuery(searchQuery === "" ? " " : "")
                         }
                       >
-                        <MaterialIcon name="add" className="text-[20px] font-bold" />
+                        <MaterialIcon
+                          name="add"
+                          className="text-[20px] font-bold"
+                        />
                       </button>
                     </div>
 
                     {searchQuery !== "" && filteredUsers.length > 0 && (
-                      <div className="absolute z-50 w-full mt-2 bg-[#121413] border border-[#3b4b3d]/50 rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto custom-scrollbar animate-fadeInDown">
+                      <div className="absolute z-50 w-full mt-2 bg-white dark:bg-[#121413] border border-gray-300 dark:border-[#3b4b3d]/50 rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto custom-scrollbar animate-fadeInDown">
                         {filteredUsers.map((user) => {
-                          const isSelected = members.find((m) => m.id === user.id);
+                          const isSelected = members.find(
+                            (m) => m.id === user.id,
+                          );
                           return (
                             <div
                               key={user.id}
                               onClick={() => toggleMember(user)}
                               className={`flex items-center gap-3 px-4 py-3 cursor-pointer border-b border-[#3b4b3d]/10 last:border-0 transition-all ${
-                                isSelected ? "bg-[#00FF85]/15" : "hover:bg-[#00FF85]/10"
+                                isSelected
+                                  ? "bg-[#00FF85]/15"
+                                  : "hover:bg-[#00FF85]/10"
                               }`}
                             >
                               <img
                                 src={user.avatar}
                                 className={`w-10 h-10 rounded-full object-cover border ${
-                                  isSelected ? "border-[#00FF85]" : "border-[#00FF85]/20"
+                                  isSelected
+                                    ? "border-[#00FF85]"
+                                    : "border-[#00FF85]/20"
                                 }`}
                                 alt={user.name}
                               />
                               <div className="flex flex-col flex-1">
-                                <span className={`text-sm font-bold ${isSelected ? "text-[#00FF85]" : "text-white"}`}>
+                                <span
+                                  className={`text-sm font-bold ${isSelected ? "text-[#00FF85]" : "text-slate-900 dark:text-white"}`}
+                                >
                                   {user.name}
                                 </span>
-                                <span className="text-[10px] font-mono text-[#94a3b8] mt-0.5">
+                                <span className="text-[10px] font-inter text-[#94a3b8] mt-0.5">
                                   REG_ID: {user.registerId || user.id}
                                 </span>
                               </div>
                               <div className="ml-auto">
                                 {isSelected ? (
-                                  <MaterialIcon name="check_circle" className="text-[#00FF85]" />
+                                  <MaterialIcon
+                                    name="check_circle"
+                                    className="text-[#00FF85]"
+                                  />
                                 ) : (
-                                  <MaterialIcon name="add_circle" className="text-[#00FF85]/30" />
+                                  <MaterialIcon
+                                    name="add_circle"
+                                    className="text-[#00FF85]/30"
+                                  />
                                 )}
                               </div>
                             </div>
@@ -498,7 +520,7 @@ const CreateGroup = () => {
           </div>
 
           {/* Footer Button */}
-          <div className="p-4 lg:p-6 border-t border-[#3b4b3d]/30 bg-[#0d0f0e] backdrop-blur-md flex justify-center shrink-0">
+          <div className="p-4 lg:p-6 border-t border-gray-300 dark:border-[#3b4b3d]/30 bg-white dark:bg-[#0d0f0e] backdrop-blur-md flex justify-center shrink-0">
             <button
               onClick={isEditMode ? handleUpdateGroup : handleCreateGroup}
               disabled={creating}
@@ -521,8 +543,33 @@ const CreateGroup = () => {
       </div>
 
       <style>{`
-        html, body { overflow: hidden; height: 100%; margin: 0; }
-        .flex-1 { min-height: 0; }
+  html, body, #root {
+    margin: 0;
+    min-height: 100%;
+    background: #f3f4f6;
+  }
+
+  .dark html,
+  .dark body,
+  .dark #root {
+    background: #0d0f0e;
+  }
+
+  .flex-1 {
+    min-height: 0;
+  }
+`}</style>
+ <style jsx global>{`
+        ::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
+        }
+        * {
+        font-family: Inter, sans-serif;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
       `}</style>
     </DashboardLayout>
   );

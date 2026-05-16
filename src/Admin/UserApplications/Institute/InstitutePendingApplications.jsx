@@ -111,7 +111,7 @@ const InstitutePendingApplications = () => {
   });
 
   return (
-    <div className="flex-1 p-8 h-full flex flex-col">
+    <div className="flex-1 min-h-0 p-4 sm:p-6 lg:p-8 flex flex-col bg-white dark:bg-[#0a0f0c]">
       <InstitutePendingTable
         applications={filteredApplications}
         handleApprove={handleApprove}

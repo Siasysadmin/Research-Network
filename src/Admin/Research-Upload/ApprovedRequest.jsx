@@ -7,7 +7,15 @@ const ApprovedRequests = ({ searchQuery, onViewDetails }) => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  
+
+  const [currentPage, setCurrentPage] = useState(1);
+
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+
   useEffect(() => {
     fetchApprovedResearch();
   }, []);
@@ -41,13 +49,15 @@ const ApprovedRequests = ({ searchQuery, onViewDetails }) => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64 text-slate-400">
+ if (loading) {
+  return (
+    <div className="flex items-center justify-center h-64 bg-white dark:bg-[#13231a] border border-gray-200 dark:border-[#1e3a2c] rounded-xl transition-colors duration-300">
+      <p className="text-gray-500 dark:text-slate-400">
         Loading approved requests...
-      </div>
-    );
-  }
+      </p>
+    </div>
+  );
+}
 
   // Map display name
   const mappedRequests = requests.map((req) => ({
@@ -58,25 +68,39 @@ const ApprovedRequests = ({ searchQuery, onViewDetails }) => {
         : req.institute_name || "N/A",
   }));
 
+  const filteredRequests = mappedRequests.filter((request) => {
+  return (
+    searchQuery === "" ||
+    Object.values(request).some(
+      (val) =>
+        val &&
+        String(val).toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  );
+});
+
+
+  const itemsPerPage = 10;
+
+  const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+
+  const currentRequests = filteredRequests.slice(startIndex, endIndex);
+
   const handleViewDetails = (id) => {
     navigate("/admin/view-research", { state: { id } });
   };
 
-  // Search filter
-  const filteredRequests = mappedRequests.filter((request) => {
-    return (
-      searchQuery === "" ||
-      Object.values(request).some(
-        (val) =>
-          val &&
-          String(val).toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    );
-  });
+  
 
   return (
     <ApprovedRequestsTable
-      requests={filteredRequests}
+      requests={currentRequests}
+      currentPage={currentPage}
+      totalPages={totalPages}
+      onPageChange={setCurrentPage}
       onViewDetails={handleViewDetails}
     />
   );

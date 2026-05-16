@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import {useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import DashboardLayout from "./DashboardLayout";
+import defaultAvatar from "../assets/images/avatar.jpg";
 import API_CONFIG from "../config/api.config"; // Apna sahi path yahan dalein
 
 // Helper for Icons
@@ -9,8 +10,8 @@ const MaterialIcon = ({ name, className = "" }) => (
 );
 
 const ResearchPage = () => {
-const location = useLocation();
-const id = location.state?.id;
+  const location = useLocation();
+  const id = location.state?.id;
   const navigate = useNavigate();
 
   const [researchData, setResearchData] = useState(null);
@@ -65,7 +66,7 @@ const id = location.state?.id;
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex flex-col items-center justify-center h-[60vh] text-white">
+        <div className="flex flex-col items-center justify-center h-[60vh] text-slate-900 dark:text-slate-900 dark:text-white">
           <div className="w-12 h-12 border-4 border-[#32ff99] border-t-transparent rounded-full animate-spin mb-4"></div>
           <p className="text-slate-400 font-medium">
             Loading Research Details...
@@ -79,12 +80,13 @@ const id = location.state?.id;
   if (error || !researchData) {
     return (
       <DashboardLayout>
-        <div className="flex flex-col items-center justify-center h-[60vh] text-white gap-4">
+        <div className="flex flex-col items-center justify-center h-[60vh] text-slate-800 dark:text-slate-900 dark:text-slate-900 dark:text-white">
+          {" "}
           <MaterialIcon name="error" className="text-5xl text-red-500" />
           <p className="text-xl font-bold">{error || "Data not found"}</p>
           <button
             onClick={() => navigate(-1)}
-            className="px-6 py-2 bg-white/10 rounded-xl hover:bg-white/20 transition-all"
+            className="px-6 py-2 bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-900 dark:text-slate-900 dark:text-white rounded-xl hover:bg-slate-200 dark:hover:bg-white/20 transition-all"
           >
             Go Back
           </button>
@@ -94,8 +96,7 @@ const id = location.state?.id;
   }
 
   // PDF Path Construction
-  const pdfUrl = `https://sasedge.org/research-network/back-end/${researchData.research_file}`;
-
+  const pdfUrl = `${API_CONFIG.BASE_URL}/${researchData.research_file}`;
   return (
     <DashboardLayout>
       <div className="max-w-[1400px] mx-auto w-full px-4 lg:px-0">
@@ -103,7 +104,7 @@ const id = location.state?.id;
         <div className="mb-10 flex items-center gap-4">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors font-medium text-sm"
+            className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors font-medium text-sm"
           >
             <MaterialIcon name="arrow_back" className="text-lg" />
             Back to Library
@@ -114,12 +115,12 @@ const id = location.state?.id;
           {/* LEFT SIDE: MAIN CONTENT */}
           <div className="lg:col-span-9 flex flex-col gap-10 ">
             <section>
-              <h1 className="text-4xl lg:text-5xl font-extrabold text-white leading-tight mb-6 capitalize">
+              <h1 className="text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-slate-900 dark:text-white leading-tight mb-6 capitalize">
                 {researchData.research_title}
               </h1>
 
               <div className="flex flex-col gap-8 mb-10">
-                <p className="text-lg font-semibold text-slate-200">
+                <p className="text-lg font-semibold text-slate-600 dark:text-slate-300">
                   {new Date(researchData.created_at).toLocaleDateString(
                     "en-US",
                     {
@@ -132,37 +133,43 @@ const id = location.state?.id;
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* Primary Author */}
-                 <div className="flex items-center gap-3">
-  <img
-    src={
-      researchData.profile_image
-        ? `${API_CONFIG.BASE_URL}/${researchData.profile_image}`
-        : `https://ui-avatars.com/api/?name=${encodeURIComponent(researchData.name)}&background=1e293b&color=32ff99`
-    }
-    alt={researchData.name}
-    className="w-10 h-10 rounded-full object-cover border border-[#32ff99]/30 shrink-0"
-    onError={(e) => {
-      e.target.onerror = null;
-      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(researchData.name)}&background=1e293b&color=32ff99`;
-    }}
-  />
-  <div>
-    <p className="text-sm font-bold text-white leading-tight">
-      {researchData.name}
-    </p>
-    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-      ID: {researchData.registration_id}
-    </p>
-  </div>
-</div>
+                  <div>
+                    <h2 className="text-xs font-bold text-slate-500 uppercase tracking-[0.1em] mb-4">
+                      Author Information
+                    </h2>
 
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={
+                          researchData.profile_image
+                            ? `${API_CONFIG.BASE_URL}/${researchData.profile_image}`
+                            : defaultAvatar
+                        }
+                        alt={researchData.name}
+                        className="w-10 h-10 rounded-full object-cover border border-[#32ff99]/30 shrink-0"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = defaultAvatar;
+                        }}
+                      />
+
+                      <div>
+                        <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                          {researchData.name}
+                        </p>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                          ID: {researchData.registration_id}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                   {/* Co-Author Logic */}
                   <div>
-                    <h2 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">
+                    <h2 className="text-xs font-bold text-slate-500 uppercase tracking-[0.1em] mb-4">
                       Co-Author Information
                     </h2>
                     <div className="flex items-center gap-3">
-                      <p className="text-sm font-bold text-white leading-tight">
+                      <p className="text-sm font-bold text-slate-900 dark:text-slate-900 dark:text-white leading-tight">
                         {researchData.co_author_name || "No Co-Author listed"}
                       </p>
                     </div>
@@ -172,18 +179,18 @@ const id = location.state?.id;
                 {/* Meta Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-white/5 pt-8">
                   <div>
-                    <h2 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">
+                    <h2 className="text-xs font-bold text-slate-500 uppercase tracking-[0.1em] mb-4">
                       Type of Research
                     </h2>
-                    <p className="text-sm font-bold text-white leading-tight">
+                    <p className="text-sm font-bold text-slate-900 dark:text-slate-900 dark:text-white leading-tight">
                       {researchData.research_type}
                     </p>
                   </div>
                   <div>
-                    <h2 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">
+                    <h2 className="text-xs font-bold text-slate-500 uppercase tracking-[0.1em] mb-4">
                       Language
                     </h2>
-                    <p className="text-sm font-bold text-white leading-tight capitalize">
+                    <p className="text-sm font-bold text-slate-900 dark:text-slate-900 dark:text-white leading-tight capitalize">
                       {researchData.research_language}
                     </p>
                   </div>
@@ -191,7 +198,7 @@ const id = location.state?.id;
 
                 {/* Keywords */}
                 <div>
-                  <h2 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">
+                  <h2 className="text-xs font-bold text-slate-500 uppercase tracking-[0.1em] mb-4">
                     Keywords
                   </h2>
                   <div className="flex flex-wrap gap-2">
@@ -199,7 +206,11 @@ const id = location.state?.id;
                       researchData.keywords.map((tag) => (
                         <span
                           key={tag}
-                          className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs font-medium text-slate-300"
+                          className="px-3 py-1.5 
+bg-slate-100 dark:bg-white/5 
+border border-slate-300 dark:border-white/10 
+rounded-lg text-xs font-medium 
+text-slate-700 dark:text-slate-300"
                         >
                           {tag}
                         </span>
@@ -210,7 +221,7 @@ const id = location.state?.id;
 
               {/* Study Overview Grid */}
               <div className="mb-12">
-                <h2 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-6">
+                <h2 className="text-xs font-bold text-slate-500 uppercase tracking-[0.1em] mb-6">
                   Study Overview
                 </h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
@@ -220,15 +231,17 @@ const id = location.state?.id;
                       val: researchData.research_year,
                     },
                     {
-  label: "Location",
-  val: (() => {
-    const parts = [];
-    if (researchData.district) parts.push(researchData.district);
-    if (researchData.state) parts.push(researchData.state);
-    if (researchData.country) parts.push(researchData.country);
-    return parts.length > 0 ? parts.join(", ") : null;
-  })(),
-},
+                      label: "Location",
+                      val: (() => {
+                        const parts = [];
+                        if (researchData.district)
+                          parts.push(researchData.district);
+                        if (researchData.state) parts.push(researchData.state);
+                        if (researchData.country)
+                          parts.push(researchData.country);
+                        return parts.length > 0 ? parts.join(", ") : null;
+                      })(),
+                    },
                     { label: "Level", val: researchData.level },
                     { label: "Data Type", val: researchData.data_type },
                     { label: "Sample Size", val: researchData.simple_size },
@@ -240,7 +253,7 @@ const id = location.state?.id;
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">
                         {item.label}
                       </span>
-                      <span className="text-xl font-bold text-white capitalize">
+                      <span className="text-xl font-bold text-slate-900 dark:text-slate-900 dark:text-white capitalize">
                         {item.val || "N/A"}
                       </span>
                     </div>
@@ -251,13 +264,12 @@ const id = location.state?.id;
 
             {/* Detailed Parameters */}
             <section className="space-y-6">
-              <h2 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">
+              <h2 className="text-xs font-bold text-slate-700 dark:text-slate-500 uppercase tracking-[0.1em]">
                 Detailed Parameters
               </h2>
-
               {/* SDG Goals */}
-              <div className="bg-white/[0.03] border border-white/[0.08] p-8 rounded-2xl">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-4">
+              <div className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] p-8 rounded-2xl shadow-sm dark:shadow-none">
+                <span className="text-[10px] font-bold text-slate-600 dark:text-slate-500 uppercase tracking-widest block mb-4">
                   Sustainable Goals (SDG)
                 </span>
                 <div className="flex flex-wrap gap-2">
@@ -275,7 +287,7 @@ const id = location.state?.id;
               </div>
 
               {/* Method Type */}
-              <div className="bg-white/[0.03] border border-white/[0.08] p-8 rounded-2xl">
+              <div className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] p-8 rounded-2xl shadow-sm dark:shadow-none">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-4">
                   Method Type
                 </span>
@@ -294,19 +306,21 @@ const id = location.state?.id;
               </div>
 
               {/* Abstract & Declaration */}
-              <div className="bg-white/[0.03] border border-white/[0.08] p-8 rounded-2xl">
-                <div className="prose prose-invert max-w-none">
-                  <h3 className="text-sm font-bold text-slate-300 uppercase mb-2">
+              <div className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] p-8 rounded-2xl shadow-sm dark:shadow-none">
+                <div className="prose max-w-none dark:prose-invert">
+                  <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase mb-2">
                     Abstract
                   </h3>
-                  <p className="text-slate-400 leading-relaxed text-[15px] mb-6">
+
+                  <p className="text-slate-700 dark:text-slate-400 leading-relaxed text-[15px] mb-6">
                     {researchData.abstract}
                   </p>
 
-                  <h3 className="text-sm font-bold text-slate-300 uppercase mb-2">
+                  <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase mb-2">
                     Declaration of Study
                   </h3>
-                  <p className="text-slate-400 leading-relaxed text-[15px]">
+
+                  <p className="text-slate-700 dark:text-slate-400 leading-relaxed text-[15px]">
                     {researchData.declaration_of_study}
                   </p>
                 </div>
@@ -345,12 +359,18 @@ const id = location.state?.id;
                 </div>
 
                 {/* Download Button */}
-                <div className="p-6 bg-[#1a1f2e] border-t border-white/5 text-center">
+                <div
+                  className="p-6 
+bg-slate-50 dark:bg-[#1a1f2e] 
+border-t border-slate-200 dark:border-white/5 
+text-center"
+                >
+                  {" "}
                   <div className="mb-4">
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                       Format
                     </p>
-                    <p className="text-xs text-white font-medium">
+                    <p className="text-xs text-slate-900 dark:text-white font-medium">
                       Research Manuscript (PDF)
                     </p>
                   </div>
@@ -371,24 +391,24 @@ const id = location.state?.id;
         </div>
       </div>
       {/* Isse pure page ka default scrollbar hide ho jayega */}
-<style jsx global>{`
-  /* Chrome, Safari aur Opera ke liye */
-  ::-webkit-scrollbar {
-    display: none;
-    width: 0;
-    height: 0;
-  }
+      <style jsx global>{`
+        /* Chrome, Safari aur Opera ke liye */
+        ::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
+        }
 
-  /* Firefox ke liye */
-  * {
-    scrollbar-width: none;
-  }
+        /* Firefox ke liye */
+        * {
+          scrollbar-width: none;
+        }
 
-  /* IE aur Edge ke liye */
-  * {
-    -ms-overflow-style: none;
-  }
-`}</style>
+        /* IE aur Edge ke liye */
+        * {
+          -ms-overflow-style: none;
+        }
+      `}</style>
     </DashboardLayout>
   );
 };

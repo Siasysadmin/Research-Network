@@ -53,18 +53,30 @@ const Step2 = ({ progress, onNext, onBack }) => {
   const allSelected = selectedSDGs.length === sdgs.length;
 
   return (
-    <div className="min-h-screen bg-[#10221a] flex flex-col font-display overflow-x-hidden">
-      <main className="flex-1 flex flex-col items-center py-8 px-4 md:px-6">
+<div className="
+min-h-screen flex flex-col font-display overflow-x-hidden
+
+bg-white text-slate-900
+dark:bg-[#10221a] dark:text-white
+">      <main className="flex-1 flex flex-col items-center py-8 px-4 md:px-6">
         <div className="w-full max-w-6xl flex flex-col gap-6">
           
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-1.5">
-              <p className="text-white text-[13px] uppercase tracking-[0.2em] font-semibold">
-                Step 2 of 6
+<p className="
+text-[13px] uppercase tracking-[0.2em] font-semibold
+
+text-gray-600
+dark:text-white
+">                Step 2 of 6
               </p>
-              <div className="rounded-full bg-white/10 h-1 overflow-hidden w-28">
-                <div
+<div className="
+rounded-full h-1 overflow-hidden w-28
+
+bg-gray-200
+dark:bg-white/10
+">                <div
                   className="h-full rounded-full bg-[#0df287] transition-all duration-300"
                   style={{ width: `${progress}%` }}
                 ></div>
@@ -72,8 +84,12 @@ const Step2 = ({ progress, onNext, onBack }) => {
             </div>
             <button
               onClick={handleNext}
-              className="flex items-center gap-1 px-0 py-0 border-none bg-transparent hover:text-white text-white/60 text-xs font-semibold tracking-wider transition-all"
-            >
+className="
+flex items-center gap-1 text-xs font-semibold tracking-wider transition-all
+
+text-gray-500 hover:text-black
+dark:text-white/60 dark:hover:text-white
+"            >
               Skip <span className="material-symbols-outlined text-sm">chevron_right</span>
             </button>
           </div>
@@ -81,11 +97,19 @@ const Step2 = ({ progress, onNext, onBack }) => {
           {/* Title Section */}
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
             <div className="space-y-2">
-              <h1 className="text-white tracking-tight text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight">
-                Which Sustainable Development Goals (SDGs) do you work on?
+<h1 className="
+tracking-tight text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight
+
+text-slate-900
+dark:text-white
+">                Which Sustainable Development Goals (SDGs) do you work on?
               </h1>
-              <p className="text-gray-300 text-sm sm:text-base max-w-2xl">
-                Select all that apply. This helps us customize your research network experience.
+<p className="
+text-sm sm:text-base max-w-2xl
+
+text-gray-500
+dark:text-gray-300
+">                Select all that apply. This helps us customize your research network experience.
               </p>
             </div>
 
@@ -95,9 +119,9 @@ const Step2 = ({ progress, onNext, onBack }) => {
               className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all whitespace-nowrap h-fit 
               mt-2 sm:mt-4 lg:mt-12 lg:-ml-28 xl:-ml-32
               ${allSelected
-                ? "bg-[#0df287] border-[#0df287] text-[#10221a] hover:bg-[#0df287]/90"
-                : "border-[#31684e] text-[#0df287] hover:bg-[#0df287]/10 hover:border-[#0df287]"
-              }`}
+  ? "bg-[#0df287] border-[#0df287] text-[#10221a]"
+  : "border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-[#31684e] dark:text-[#0df287] dark:hover:bg-[#0df287]/10"
+}`}
             >
               <span className="material-symbols-outlined text-lg">
                 {allSelected ? "check_box" : "check_box_outline_blank"}
@@ -128,27 +152,37 @@ const Step2 = ({ progress, onNext, onBack }) => {
                   />
                   <div
                     className={`flex flex-col gap-2 p-4 rounded-xl border-2 transition-all duration-300 h-full
-                      ${selected
-                        ? "bg-[#1a2e25] border-[#0df287] shadow-[0_0_20px_rgba(13,242,135,0.15)]"
-                        : "bg-[#1a2e25]/50 border-[#31684e] hover:border-[#0df287]/50"
-                      }`}
+                     ${selected
+  ? "bg-green-50 border-[#0df287] shadow-[0_0_20px_rgba(13,242,135,0.1)] dark:bg-[#1a2e25]"
+  : "bg-white border-gray-200 hover:border-[#0df287]/50 dark:bg-[#1a2e25]/50 dark:border-[#31684e]"
+}`}
                   >
                     <div className="flex justify-between items-start">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 group-hover:scale-110
-                        ${selected ? "bg-[#0df287] text-[#10221a]" : "bg-[#1a3328] text-[#8eccaf]"}`}
+                       ${selected
+  ? "bg-[#0df287] text-[#10221a]"
+  : "bg-gray-100 text-gray-600 dark:bg-[#1a3328] dark:text-[#8eccaf]"
+}`}
                       >
                         <span className="material-symbols-outlined text-lg !leading-none">{sdg.icon}</span>
                       </div>
                       <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all
-                        ${selected ? "bg-[#0df287] border-[#0df287]" : "border-[#31684e]"}`}
+                       ${selected
+  ? "bg-[#0df287] border-[#0df287]"
+  : "border-gray-300 dark:border-[#31684e]"
+}`}
                       >
                         <span className={`material-symbols-outlined text-xs transition-opacity ${selected ? "opacity-100 text-[#10221a]" : "opacity-0"}`}>
                           check
                         </span>
                       </div>
                     </div>
-                    <h3 className="text-white text-xs md:text-sm font-bold leading-tight">
-                      {sdg.title}
+<h3 className="
+text-xs md:text-sm font-bold leading-tight
+
+text-slate-900
+dark:text-white
+">                      {sdg.title}
                     </h3>
                   </div>
                 </label>
@@ -157,7 +191,8 @@ const Step2 = ({ progress, onNext, onBack }) => {
           </div>
 
           {/* Navigation Buttons */}
-          <div className="flex items-center justify-between gap-4 p-4 mt-8 border-t border-[#214a37]">
+          <div className="flex items-center justify-between gap-4 p-4 mt-8 border-t border-gray-200
+dark:border-[#214a37]">
             <button
               onClick={onBack}
               className="px-6 sm:px-10 py-3 rounded-[10px] border-2 border-[#06f988]/30 text-[#06f988] font-bold hover:bg-[#06f988]/5 flex items-center justify-center gap-2 transition-all active:scale-95 text-sm sm:text-base"

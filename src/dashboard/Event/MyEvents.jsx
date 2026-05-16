@@ -8,7 +8,8 @@ const MaterialIcon = ({ name, className = "" }) => (
   <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
-const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=400&q=80";
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=400&q=80";
 
 const STATUS_MAP = {
   1: "PENDING",
@@ -84,49 +85,69 @@ const mapEventToCard = (event) => {
 const getStatusStyles = (status) => {
   switch (status) {
     case "PENDING":
-      return { text: "text-amber-400", border: "border-amber-400/30", bg: "bg-amber-400/10" };
+      return {
+        text: "text-amber-400",
+        border: "border-amber-400/30",
+        bg: "bg-amber-400/10",
+      };
     case "APPROVED":
-      return { text: "text-[#32ff99]", border: "border-[#32ff99]/30", bg: "bg-[#32ff99]/10" };
+      return {
+        text: "text-[#32ff99]",
+        border: "border-[#32ff99]/30",
+        bg: "bg-[#32ff99]/10",
+      };
     case "PUBLISHED":
-      return { text: "text-blue-400", border: "border-blue-400/30", bg: "bg-blue-400/10" };
+      return {
+        text: "text-blue-400",
+        border: "border-blue-400/30",
+        bg: "bg-blue-400/10",
+      };
     case "REJECTED":
-      return { text: "text-red-400", border: "border-red-400/30", bg: "bg-red-400/10" };
+      return {
+        text: "text-red-400",
+        border: "border-red-400/30",
+        bg: "bg-red-400/10",
+      };
     default:
-      return { text: "text-slate-400", border: "border-slate-500/20", bg: "bg-slate-500/5" };
+      return {
+        text: "text-slate-500",
+        border: "border-slate-500/20",
+        bg: "bg-slate-500/5",
+      };
   }
 };
 
 // Dropdown Menu Component
-const DropdownMenu = ({ event, onViewDetails, onDelete, onClose, anchorElement }) => {
+const DropdownMenu = ({
+  event,
+  onViewDetails,
+  onDelete,
+  onClose,
+  anchorElement,
+}) => {
   const dropdownRef = React.useRef(null);
   const [position, setPosition] = React.useState({ top: 0, left: 0 });
 
   useEffect(() => {
     if (anchorElement) {
       const rect = anchorElement.getBoundingClientRect();
-      const scrollTop = window.scrollY || document.documentElement.scrollTop;
-      const scrollLeft = window.scrollX || document.documentElement.scrollLeft;
-      
+
       const dropdownWidth = 176;
-      const dropdownHeight = 160;
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      
-      let top = rect.bottom + scrollTop + 4;
-      let left = rect.right + scrollLeft - dropdownWidth;
-      
-      if (top + dropdownHeight > scrollTop + viewportHeight) {
-        top = rect.top + scrollTop - dropdownHeight - 4;
+      const dropdownHeight = 110;
+      const gap = 8;
+
+      let top = rect.bottom + gap;
+      let left = rect.right - dropdownWidth;
+
+      if (top + dropdownHeight > window.innerHeight - 10) {
+        top = rect.top - dropdownHeight - gap;
       }
-      
-      if (left + dropdownWidth > scrollLeft + viewportWidth) {
-        left = rect.left + scrollLeft - dropdownWidth + 40;
+
+      if (left < 10) left = 10;
+      if (left + dropdownWidth > window.innerWidth - 10) {
+        left = window.innerWidth - dropdownWidth - 10;
       }
-      
-      if (left < 10) {
-        left = 10;
-      }
-      
+
       setPosition({ top, left });
     }
   }, [anchorElement]);
@@ -139,11 +160,11 @@ const DropdownMenu = ({ event, onViewDetails, onDelete, onClose, anchorElement }
     };
     const handleScroll = () => onClose();
     const handleResize = () => onClose();
-    
+
     document.addEventListener("click", handleClickOutside);
     window.addEventListener("scroll", handleScroll);
     window.addEventListener("resize", handleResize);
-    
+
     return () => {
       document.removeEventListener("click", handleClickOutside);
       window.removeEventListener("scroll", handleScroll);
@@ -155,25 +176,32 @@ const DropdownMenu = ({ event, onViewDetails, onDelete, onClose, anchorElement }
     <div
       ref={dropdownRef}
       style={{
-        position: "absolute",
+        position: "fixed",
         top: `${position.top}px`,
         left: `${position.left}px`,
-        zIndex: 999999
+        width: "176px",
+        zIndex: 99999,
       }}
-      className="w-44 bg-[#1a2a1f] border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-fadeInScale"
+      className="bg-white dark:bg-[#1a2a1f] border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden animate-fadeInScale"
       onClick={(e) => e.stopPropagation()}
     >
       <button
-        onClick={() => { onViewDetails(); onClose(); }}
-        className="w-full px-4 py-3 text-left text-sm text-slate-300 hover:bg-white/10 flex items-center gap-2 border-b border-white/5 transition-colors active:bg-white/20"
+        onClick={() => {
+          onViewDetails();
+          onClose();
+        }}
+        className="w-full px-4 py-3 text-left text-sm text-gray-700 dark:text-slate-600 hover:bg-gray-100 dark:hover:bg-white/10 flex items-center gap-2 border-b border-gray-200 dark:border-white/5 transition-colors"
       >
         <MaterialIcon name="visibility" className="!text-base" />
         View Details
       </button>
-      
+
       <button
-        onClick={() => { onDelete(event.id); onClose(); }}
-        className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-red-400/10 flex items-center gap-2 transition-colors active:bg-red-400/20"
+        onClick={() => {
+          onDelete(event.id);
+          onClose();
+        }}
+        className="w-full px-4 py-3 text-left text-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-400/10 flex items-center gap-2 transition-colors"
       >
         <MaterialIcon name="delete" className="!text-base" />
         Delete Event
@@ -207,7 +235,11 @@ const MyEvents = () => {
         setLoading(true);
         setError(null);
         const data = await fetchEvents();
-        const events = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+        const events = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.data)
+            ? data.data
+            : [];
         setEventList(events.map(mapEventToCard));
       } catch (err) {
         setError(err.message);
@@ -221,18 +253,15 @@ const MyEvents = () => {
   const toggleDropdown = (e, eventId) => {
     e.stopPropagation();
     e.preventDefault();
-    
+
     if (openDropdownId === eventId) {
       setOpenDropdownId(null);
       setAnchorElement(null);
       return;
     }
-    
-    const btn = dropdownBtnRefs.current[eventId];
-    if (btn) {
-      setAnchorElement(btn);
-      setOpenDropdownId(eventId);
-    }
+
+    setOpenDropdownId(eventId);
+    setAnchorElement(e.currentTarget);
   };
 
   const handleViewDetails = (event) => {
@@ -275,19 +304,29 @@ const MyEvents = () => {
       setPublishError(null);
       const token = getAuthToken();
       if (!token) throw new Error("No authentication token found");
-      const response = await fetch(`${API_CONFIG.BASE_URL}/user-event/publish-event`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ event_id: selectedEventId }),
-      });
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}/user-event/publish-event`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ event_id: selectedEventId }),
+        },
+      );
       const data = await response.json();
       if (data.status) {
         setEventList((prev) =>
           prev.map((e) =>
             e.id === selectedEventId
-              ? { ...e, status: "PUBLISHED", dateSubtext: `Published on ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}` }
-              : e
-          )
+              ? {
+                  ...e,
+                  status: "PUBLISHED",
+                  dateSubtext: `Published on ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
+                }
+              : e,
+          ),
         );
         closeModal();
         toast.success(data.message || "Event published successfully!");
@@ -297,7 +336,11 @@ const MyEvents = () => {
     } catch (err) {
       setPublishError(`An error occurred: ${err.message}`);
     } finally {
-      setProcessingEvents((prev) => { const s = new Set(prev); s.delete(selectedEventId); return s; });
+      setProcessingEvents((prev) => {
+        const s = new Set(prev);
+        s.delete(selectedEventId);
+        return s;
+      });
     }
   };
 
@@ -308,11 +351,17 @@ const MyEvents = () => {
       setDeleteError(null);
       const token = getAuthToken();
       if (!token) throw new Error("No authentication token found");
-      const response = await fetch(`${API_CONFIG.BASE_URL}/user-event/delete-user-event`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ event_id: selectedEventId }),
-      });
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}/user-event/delete-user-event`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ event_id: selectedEventId }),
+        },
+      );
       const data = await response.json();
       if (data.status) {
         setEventList((prev) => prev.filter((e) => e.id !== selectedEventId));
@@ -324,7 +373,11 @@ const MyEvents = () => {
     } catch (err) {
       setDeleteError(`An error occurred: ${err.message}`);
     } finally {
-      setProcessingEvents((prev) => { const s = new Set(prev); s.delete(selectedEventId); return s; });
+      setProcessingEvents((prev) => {
+        const s = new Set(prev);
+        s.delete(selectedEventId);
+        return s;
+      });
     }
   };
 
@@ -335,10 +388,10 @@ const MyEvents = () => {
           {/* HEADER */}
           <div className="mb-6 sm:mb-8 md:mb-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-1 truncate">
+              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white mb-1 truncate">
                 My Events
               </h1>
-              <p className="text-xs sm:text-sm text-slate-400">
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
                 Track your event submissions
               </p>
             </div>
@@ -353,22 +406,28 @@ const MyEvents = () => {
 
           {/* STATES */}
           {loading && (
-            <div className="flex justify-center items-center py-16 sm:py-20 md:py-24 text-slate-400 text-xs sm:text-sm gap-2">
+            <div className="flex justify-center items-center py-16 sm:py-20 md:py-24 text-slate-500 text-xs sm:text-sm gap-2">
               <MaterialIcon name="hourglass_empty" className="animate-spin" />
               Loading events...
             </div>
           )}
-          
+
           {error && !loading && (
             <div className="flex flex-col items-center justify-center py-16 sm:py-20 md:py-24 text-red-400 text-xs sm:text-sm gap-3">
-              <MaterialIcon name="error_outline" className="text-3xl sm:text-4xl" />
+              <MaterialIcon
+                name="error_outline"
+                className="text-3xl sm:text-4xl"
+              />
               <p>Failed to load: {error}</p>
             </div>
           )}
-          
+
           {!loading && !error && eventList.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 sm:py-20 md:py-24 text-slate-500 text-xs sm:text-sm gap-3">
-              <MaterialIcon name="event_busy" className="text-3xl sm:text-4xl" />
+              <MaterialIcon
+                name="event_busy"
+                className="text-3xl sm:text-4xl"
+              />
               <p>No events found. Create your first event!</p>
             </div>
           )}
@@ -383,42 +442,54 @@ const MyEvents = () => {
                 return (
                   <div
                     key={event.id}
-                    className="bg-[#0d1a12] border border-white/5 hover:border-white/10 transition-all rounded-xl sm:rounded-2xl overflow-hidden"
+                    className="bg-white dark:bg-[#0d1a12] border border-slate-200 dark:border-white/5 hover:border-[#00ff88]/30 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all rounded-2xl overflow-hidden"
                   >
                     {/* DESKTOP/TABLET LAYOUT - Hidden on mobile */}
-                    <div className="hidden sm:flex items-center gap-3 md:gap-4 lg:gap-5 p-3 md:p-4 lg:p-5">
+                    <div className="hidden sm:flex items-center gap-3 md:gap-4 lg:gap-5 p-4 md:p-5 lg:p-6">
                       {/* Date Badge */}
                       <div className="flex flex-col items-center justify-center w-12 md:w-14 shrink-0">
-                        <span className={`text-[9px] md:text-[10px] font-semibold tracking-widest ${styles.text}`}>
+                        <span
+                          className={`text-[9px] md:text-[10px] font-semibold tracking-widest ${styles.text}`}
+                        >
                           {event.month}
                         </span>
-                        <span className={`text-xl md:text-2xl font-bold leading-tight ${styles.text}`}>
+                        <span
+                          className={`text-xl md:text-2xl font-bold leading-tight ${styles.text}`}
+                        >
                           {event.day}
                         </span>
                       </div>
 
                       {/* Event Image */}
-                      <div className="w-16 md:w-20 h-16 md:h-20 shrink-0 rounded-lg overflow-hidden bg-[#0a120e]">
+                      <div className="w-16 md:w-20 h-16 md:h-20 shrink-0 rounded-lg overflow-hidden bg-[#f8fafc]">
                         <img
                           src={event.image}
                           alt={event.title}
-                          onError={(e) => { e.currentTarget.src = FALLBACK_IMAGE; }}
+                          onError={(e) => {
+                            e.currentTarget.src = FALLBACK_IMAGE;
+                          }}
                           className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
                         />
                       </div>
 
                       {/* Event Details */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-sm md:text-base lg:text-lg font-bold text-white mb-1 truncate">
+                        <h3 className="text-sm md:text-base lg:text-lg font-bold text-slate-900 dark:text-white mb-1 truncate">
                           {event.title}
                         </h3>
-                        <div className="flex flex-col gap-0.5 text-xs md:text-sm text-slate-400">
+                        <div className="flex flex-col gap-0.5 text-xs md:text-sm text-slate-500 dark:text-slate-400">
                           <div className="flex items-center gap-1.5 truncate">
-                            <MaterialIcon name="schedule" className="!text-sm md:!text-base shrink-0" />
+                            <MaterialIcon
+                              name="schedule"
+                              className="!text-sm md:!text-base shrink-0"
+                            />
                             <span className="truncate">{event.time}</span>
                           </div>
                           <div className="flex items-center gap-1.5 truncate">
-                            <MaterialIcon name="location_on" className="!text-sm md:!text-base shrink-0" />
+                            <MaterialIcon
+                              name="location_on"
+                              className="!text-sm md:!text-base shrink-0"
+                            />
                             <span className="truncate">{event.location}</span>
                           </div>
                         </div>
@@ -426,7 +497,9 @@ const MyEvents = () => {
 
                       {/* Status & Actions */}
                       <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span className={`px-2 md:px-3 py-1 rounded-full border ${styles.border} ${styles.bg} ${styles.text} text-[9px] md:text-[10px] lg:text-[11px] font-bold tracking-wider whitespace-nowrap`}>
+                        <span
+                          className={`px-2 md:px-3 py-1 rounded-full border ${styles.border} ${styles.bg} ${styles.text} text-[9px] md:text-[10px] lg:text-[11px] font-bold tracking-wider whitespace-nowrap`}
+                        >
                           {event.status}
                         </span>
                         <span className="text-[8px] md:text-[9px] lg:text-[10px] text-slate-500 whitespace-nowrap">
@@ -446,12 +519,29 @@ const MyEvents = () => {
                       {/* Three Dots Menu */}
                       <div className="relative shrink-0">
                         <button
-                          ref={(el) => { dropdownBtnRefs.current[event.id] = el; }}
+                          ref={(el) => {
+                            dropdownBtnRefs.current[event.id] = el;
+                          }}
                           onClick={(e) => toggleDropdown(e, event.id)}
-                          className="text-slate-500 hover:text-white p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+                          className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 border border-slate-200 dark:border-white/10 transition-colors"
                         >
-                          <MaterialIcon name="more_horiz" className="text-lg md:text-xl" />
+                          <MaterialIcon
+                            name="more_horiz"
+                            className="text-lg md:text-xl"
+                          />
                         </button>
+                        {openDropdownId === event.id && (
+                          <DropdownMenu
+                            event={event}
+                            onViewDetails={() => handleViewDetails(event)}
+                            onDelete={openDeleteModal}
+                            onClose={() => {
+                              setOpenDropdownId(null);
+                              setAnchorElement(null);
+                            }}
+                            anchorElement={anchorElement}
+                          />
+                        )}
                       </div>
                     </div>
 
@@ -459,52 +549,79 @@ const MyEvents = () => {
                     <div className="block sm:hidden">
                       <div className="flex">
                         {/* Image */}
-                        <div className="w-28 shrink-0 overflow-hidden">
+                        <div className="w-28 shrink-0 rounded-l-xl overflow-hidden">
                           <img
                             src={event.image}
                             alt={event.title}
-                            onError={(e) => { e.currentTarget.src = FALLBACK_IMAGE; }}
+                            onError={(e) => {
+                              e.currentTarget.src = FALLBACK_IMAGE;
+                            }}
                             className="w-full h-full object-cover"
                             style={{ minHeight: "120px" }}
                           />
                         </div>
-                        
+
                         {/* Content */}
                         <div className="flex-1 p-3 flex flex-col gap-2 min-w-0">
                           <div className="flex items-start justify-between gap-1">
-                            <h3 className="text-sm font-bold text-white leading-snug line-clamp-2 flex-1">
+                            <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2 flex-1">
                               {event.title}
                             </h3>
-                            
+
                             {/* Three Dots Button */}
                             <div className="relative shrink-0">
                               <button
-                                ref={(el) => { dropdownBtnRefs.current[event.id] = el; }}
+                                ref={(el) => {
+                                  dropdownBtnRefs.current[event.id] = el;
+                                }}
                                 onClick={(e) => toggleDropdown(e, event.id)}
-                                className="text-slate-500 hover:text-white p-1 transition-colors active:bg-white/10 rounded-lg"
+                                className="text-slate-500 hover:text-slate-900 p-1 transition-colors active:bg-white/10 rounded-lg"
                               >
-                                <MaterialIcon name="more_vert" className="text-lg" />
+                                <MaterialIcon
+                                  name="more_vert"
+                                  className="text-lg"
+                                />
                               </button>
+                              {openDropdownId === event.id && (
+                                <DropdownMenu
+                                  event={event}
+                                  onViewDetails={() => handleViewDetails(event)}
+                                  onDelete={openDeleteModal}
+                                  onClose={() => {
+                                    setOpenDropdownId(null);
+                                    setAnchorElement(null);
+                                  }}
+                                  anchorElement={anchorElement}
+                                />
+                              )}
                             </div>
                           </div>
-                          
+
                           {/* Status Badge */}
-                          <span className={`self-start px-2 py-0.5 rounded-full border ${styles.border} ${styles.bg} ${styles.text} text-[9px] font-bold tracking-wider`}>
+                          <span
+                            className={`self-start px-2 py-0.5 rounded-full border ${styles.border} ${styles.bg} ${styles.text} text-[9px] font-bold tracking-wider`}
+                          >
                             {event.status}
                           </span>
-                          
+
                           {/* Time */}
                           <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                            <MaterialIcon name="schedule" className="!text-sm shrink-0" />
+                            <MaterialIcon
+                              name="schedule"
+                              className="!text-sm shrink-0"
+                            />
                             <span className="truncate">{event.time}</span>
                           </div>
-                          
+
                           {/* Location */}
                           <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                            <MaterialIcon name="location_on" className="!text-sm shrink-0" />
+                            <MaterialIcon
+                              name="location_on"
+                              className="!text-sm shrink-0"
+                            />
                             <span className="truncate">{event.location}</span>
                           </div>
-                          
+
                           {/* Publish Button for Mobile */}
                           {event.status === "APPROVED" && (
                             <button
@@ -526,170 +643,254 @@ const MyEvents = () => {
         </div>
       </div>
 
-      {/* Universal Dropdown Menu */}
-      {openDropdownId && anchorElement && (
-        <DropdownMenu
-          event={eventList.find(e => e.id === openDropdownId)}
-          onViewDetails={() => handleViewDetails(eventList.find(e => e.id === openDropdownId))}
-          onDelete={openDeleteModal}
-          onClose={() => {
-            setOpenDropdownId(null);
-            setAnchorElement(null);
-          }}
-          anchorElement={anchorElement}
-        />
-      )}
-
       {/* REST OF THE MODALS - Same as before */}
       {showDetailsModal && selectedEvent && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md px-3 sm:px-4 overflow-y-auto py-4 sm:py-8">
-          <div className="bg-gradient-to-br from-[#0d1f16] to-[#0a1610] border border-white/10 rounded-xl sm:rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl animate-fadeInScale">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/20 backdrop-blur-[6px] px-3 sm:px-4 overflow-y-auto py-4 sm:py-8">
+          <div className="bg-white dark:bg-[#0d1f16] border border-slate-200 dark:border-white/10 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-[0_10px_40px_rgba(0,0,0,0.08)] animate-fadeInScale">
             <div className="relative h-40 sm:h-48 md:h-64 rounded-t-xl sm:rounded-t-2xl overflow-hidden">
               {selectedEvent.event_banner ? (
                 <>
-                  <img 
-                    src={`${API_CONFIG.BASE_URL}/${selectedEvent.event_banner}`} 
+                  <img
+                    src={`${API_CONFIG.BASE_URL}/${selectedEvent.event_banner}`}
                     alt={selectedEvent.event_title}
-                    className="w-full h-full object-cover" 
-                    onError={(e) => { e.currentTarget.src = FALLBACK_IMAGE; }} 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = FALLBACK_IMAGE;
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0d1f16] via-transparent to-transparent" />
                 </>
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
-                  <MaterialIcon name="event" className="text-4xl sm:text-6xl text-white/20" />
+                  <MaterialIcon
+                    name="event"
+                    className="text-4xl sm:text-6xl text-slate-900/20"
+                  />
                 </div>
               )}
-              <button 
-                onClick={closeModal} 
-                className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-black/50 backdrop-blur-sm rounded-full p-1.5 sm:p-2 text-white hover:bg-black/70 transition-all active:scale-95"
+              {/* <button
+                onClick={closeModal}
+                className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-white border border-slate-200 rounded-full p-2 text-slate-600 hover:bg-slate-100 transition-all active:scale-95 shadow-sm"
               >
                 <MaterialIcon name="close" className="text-base sm:text-xl" />
-              </button>
+              </button> */}
               <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4">
-                <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border text-[9px] sm:text-xs font-bold ${getStatusStyles(STATUS_MAP[selectedEvent.status])?.text} ${getStatusStyles(STATUS_MAP[selectedEvent.status])?.bg} ${getStatusStyles(STATUS_MAP[selectedEvent.status])?.border}`}>
+                <span
+                  className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border text-[9px] sm:text-xs font-bold ${getStatusStyles(STATUS_MAP[selectedEvent.status])?.text} ${getStatusStyles(STATUS_MAP[selectedEvent.status])?.bg} ${getStatusStyles(STATUS_MAP[selectedEvent.status])?.border}`}
+                >
                   {STATUS_MAP[selectedEvent.status] || "PENDING"}
                 </span>
               </div>
             </div>
-            
+
             <div className="p-4 sm:p-6 md:p-8">
-              <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white mb-2 break-words">
+              <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white mb-2 break-words">
                 {selectedEvent.event_title}
               </h2>
-              
+
               <div className="flex flex-wrap gap-3 sm:gap-4 mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-white/10">
-                <div className="flex items-center gap-1.5 sm:gap-2 text-slate-400">
-                  <MaterialIcon name="calendar_today" className="!text-base sm:!text-lg" />
-                  <span className="text-xs sm:text-sm">{selectedEvent.start_date}{selectedEvent.end_date !== selectedEvent.start_date && ` - ${selectedEvent.end_date}`}</span>
+                <div className="flex items-center gap-1.5 sm:gap-2 text-slate-500">
+                  <MaterialIcon
+                    name="calendar_today"
+                    className="!text-base sm:!text-lg text-slate-700 dark:text-white"
+                  />
+                  <span className="text-xs sm:text-sm">
+                    {selectedEvent.start_date}
+                    {selectedEvent.end_date !== selectedEvent.start_date &&
+                      ` - ${selectedEvent.end_date}`}
+                  </span>
                 </div>
-                <div className="flex items-center gap-1.5 sm:gap-2 text-slate-400">
-                  <MaterialIcon name="schedule" className="!text-base sm:!text-lg" />
-                  <span className="text-xs sm:text-sm">{formatTime(selectedEvent.start_time)} - {formatTime(selectedEvent.end_time)}</span>
+                <div className="flex items-center gap-1.5 sm:gap-2 text-slate-500">
+                  <MaterialIcon
+                    name="schedule"
+                    className="!text-base sm:!text-lg text-slate-700 dark:text-white"
+                  />
+                  <span className="text-xs sm:text-sm">
+                    {formatTime(selectedEvent.start_time)} -{" "}
+                    {formatTime(selectedEvent.end_time)}
+                  </span>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
-                <div className="bg-white/5 rounded-lg sm:rounded-xl p-3 sm:p-4">
-                  <div className="flex items-center gap-1.5 sm:gap-2 text-blue-400 mb-1.5 sm:mb-2">
-                    <MaterialIcon name="public" className="!text-base sm:!text-lg" />
-                    <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Event Mode</span>
+                <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg sm:rounded-xl p-3 sm:p-4">
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-slate-800 dark:text-white mb-1.5 sm:mb-2">
+                    <MaterialIcon
+                      name="public"
+                      className="!text-base sm:!text-lg text-slate-700 dark:text-white"
+                    />
+                    <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">
+                      Event Mode
+                    </span>
                   </div>
-                  <p className="text-white text-sm sm:text-base">{selectedEvent.event_mode === "online" ? "🌐 Online Event" : "📍 In-Person Event"}</p>
+                  <p className="text-slate-900 dark:text-white text-sm sm:text-base">
+                    {selectedEvent.event_mode === "online"
+                      ? "🌐 Online Event"
+                      : "📍 In-Person Event"}
+                  </p>
                 </div>
-                
-                <div className="bg-white/5 rounded-lg sm:rounded-xl p-3 sm:p-4">
-                  <div className="flex items-center gap-1.5 sm:gap-2 text-blue-400 mb-1.5 sm:mb-2">
-                    <MaterialIcon name="location_on" className="!text-base sm:!text-lg" />
-                    <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Location</span>
+
+                <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg sm:rounded-xl p-3 sm:p-4">
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-slate-800 dark:text-white mb-1.5 sm:mb-2">
+                    <MaterialIcon
+                      name="location_on"
+                      className="!text-base sm:!text-lg text-slate-700 dark:text-white"
+                    />
+                    <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">
+                      Location
+                    </span>
                   </div>
                   {selectedEvent.event_mode === "online" ? (
-                    <a href={selectedEvent.meeting_link} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline break-all text-sm sm:text-base">
+                    <a
+                      href={selectedEvent.meeting_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:underline break-all text-sm sm:text-base"
+                    >
                       {selectedEvent.meeting_link || "N/A"}
                     </a>
                   ) : (
                     <div>
-                      <p className="text-white text-sm sm:text-base">{selectedEvent.venue_name || "N/A"}</p>
-                      {selectedEvent.full_address && <p className="text-slate-400 text-xs sm:text-sm mt-1 break-words">{selectedEvent.full_address}</p>}
-                      {(selectedEvent.city || selectedEvent.state || selectedEvent.country) && (
-                        <p className="text-slate-400 text-xs sm:text-sm mt-1">
-                          {[selectedEvent.city, selectedEvent.state, selectedEvent.country].filter(Boolean).join(", ")}
-                          {selectedEvent.pin_code && ` - ${selectedEvent.pin_code}`}
+                      <p className="text-slate-900 dark:text-white text-sm sm:text-base">
+                        {selectedEvent.venue_name || "N/A"}
+                      </p>
+                      {selectedEvent.full_address && (
+                        <p className="text-slate-500 text-xs sm:text-sm mt-1 break-words">
+                          {selectedEvent.full_address}
+                        </p>
+                      )}
+                      {(selectedEvent.city ||
+                        selectedEvent.state ||
+                        selectedEvent.country) && (
+                        <p className="text-slate-500 text-xs sm:text-sm mt-1">
+                          {[
+                            selectedEvent.city,
+                            selectedEvent.state,
+                            selectedEvent.country,
+                          ]
+                            .filter(Boolean)
+                            .join(", ")}
+                          {selectedEvent.pin_code &&
+                            ` - ${selectedEvent.pin_code}`}
                         </p>
                       )}
                     </div>
                   )}
                 </div>
               </div>
-              
+
               <div className="mb-4 sm:mb-6">
-                <div className="flex items-center gap-1.5 sm:gap-2 text-blue-400 mb-2 sm:mb-3">
-                  <MaterialIcon name="description" className="!text-base sm:!text-lg" />
-                  <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">About Event</span>
+                <div className="flex items-center gap-1.5 sm:gap-2 text-slate-800 dark:text-white mb-2 sm:mb-3">
+                  <MaterialIcon
+                    name="description"
+                    className="!text-base sm:!text-lg text-slate-700 dark:text-white"
+                  />
+                  <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">
+                    About Event
+                  </span>
                 </div>
-                <p className="text-slate-300 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap break-words">
+                <p className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap break-words">
                   {selectedEvent.event_description || "No description provided"}
                 </p>
               </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6 p-3 sm:p-4 bg-white/5 rounded-lg sm:rounded-xl">
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6 p-3 sm:p-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg sm:rounded-xl">
                 <div>
                   <div className="flex items-center gap-1 text-slate-500 text-[10px] sm:text-xs mb-1">
-                    <MaterialIcon name="person" className="!text-sm sm:!text-base" />
+                    <MaterialIcon
+                      name="person"
+                      className="!text-sm sm:!text-base"
+                    />
                     <span>Organizer</span>
                   </div>
-                  <p className="text-white text-sm sm:text-base break-words">{selectedEvent.organizer_name || "N/A"}</p>
+                  <p className="text-slate-900 dark:text-white text-sm sm:text-base break-words">
+                    {selectedEvent.organizer_name || "N/A"}
+                  </p>
                 </div>
                 <div>
                   <div className="flex items-center gap-1 text-slate-500 text-[10px] sm:text-xs mb-1">
-                    <MaterialIcon name="email" className="!text-sm sm:!text-base" />
+                    <MaterialIcon
+                      name="email"
+                      className="!text-sm sm:!text-base"
+                    />
                     <span>Email</span>
                   </div>
-                  <p className="text-white text-sm sm:text-base break-words">{selectedEvent.organizer_email || "N/A"}</p>
+                  <p className="text-slate-900 dark:text-white text-sm sm:text-base break-words">
+                    {selectedEvent.organizer_email || "N/A"}
+                  </p>
                 </div>
               </div>
-              
+
               {selectedEvent.event_category_tags?.length > 0 && (
                 <div className="mb-4 sm:mb-6">
-                  <div className="flex items-center gap-1.5 sm:gap-2 text-blue-400 mb-2 sm:mb-3">
-                    <MaterialIcon name="sell" className="!text-base sm:!text-lg" />
-                    <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Categories</span>
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-slate-800 dark:text-white mb-2 sm:mb-3">
+                    <MaterialIcon
+                      name="sell"
+                      className="!text-base sm:!text-lg text-slate-700 dark:text-white"
+                    />
+                    <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">
+                      Categories
+                    </span>
                   </div>
                   <div className="flex flex-wrap gap-1.5 sm:gap-2">
                     {selectedEvent.event_category_tags.map((tag, i) => (
-                      <span key={i} className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-white/5 border border-white/10 text-slate-300 text-[10px] sm:text-xs">
+                      <span
+                        key={i}
+                        className="px-3 py-1 rounded-full bg-[#00ff88]/10 dark:bg-[#00ff88]/5 border border-[#00ff88]/20 text-[#00aa66] dark:text-[#32ff99] text-xs font-medium"
+                      >
                         #{tag}
                       </span>
                     ))}
                   </div>
                 </div>
               )}
-              
+
               {selectedEvent.supporting_documents?.length > 0 && (
                 <div className="mb-4 sm:mb-6">
                   <div className="flex items-center gap-1.5 sm:gap-2 text-blue-400 mb-2 sm:mb-3">
-                    <MaterialIcon name="attach_file" className="!text-base sm:!text-lg" />
-                    <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Supporting Documents</span>
+                    <MaterialIcon
+                      name="attach_file"
+                      className="!text-base sm:!text-lg text-slate-700 dark:text-white"
+                    />
+                    <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">
+                      Supporting Documents
+                    </span>
                   </div>
                   <div className="space-y-1.5 sm:space-y-2">
                     {selectedEvent.supporting_documents.map((doc, i) => (
-                      <a key={i} href={`${API_CONFIG.BASE_URL}/${doc}`} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 sm:gap-2 text-blue-400 text-xs sm:text-sm p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-all group">
-                        <MaterialIcon name="description" className="!text-sm sm:!text-base shrink-0" />
-                        <span className="flex-1 truncate">{doc.split("/").pop() || `Document ${i + 1}`}</span>
-                        <MaterialIcon name="open_in_new" className="!text-sm sm:!text-base opacity-50 group-hover:opacity-100 transition-opacity shrink-0" />
+                      <a
+                        key={i}
+                        href={`${API_CONFIG.BASE_URL}/${doc}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-blue-500 dark:text-[#32ff99] text-sm p-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-all group"
+                      >
+                        <MaterialIcon
+                          name="description"
+                          className="!text-sm sm:!text-base shrink-0"
+                        />
+                        <span className="flex-1 truncate">
+                          {doc.split("/").pop() || `Document ${i + 1}`}
+                        </span>
+                        <MaterialIcon
+                          name="open_in_new"
+                          className="!text-sm sm:!text-base opacity-50 group-hover:opacity-100 transition-opacity shrink-0"
+                        />
                       </a>
                     ))}
                   </div>
                 </div>
               )}
-              
+
               <div className="flex justify-end pt-3 sm:pt-4 border-t border-white/10">
-                <button 
-                  onClick={closeModal} 
-                  className="px-4 sm:px-6 py-1.5 sm:py-2 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-400 hover:bg-blue-500/30 transition-all font-medium text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 active:scale-95"
+                <button
+                  onClick={closeModal}
+                  className="px-5 sm:px-6 py-2.5 rounded-xl bg-[#00ff88] text-black hover:bg-[#00e67a] transition-all font-semibold text-sm flex items-center gap-2 active:scale-95 shadow-sm"
                 >
-                  <MaterialIcon name="close" className="!text-sm sm:!text-base" />
+                  <MaterialIcon
+                    name="close"
+                    className="!text-sm sm:!text-base"
+                  />
                   Close
                 </button>
               </div>
@@ -703,10 +904,15 @@ const MyEvents = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm px-3 sm:px-4">
           <div className="bg-[#0d1f16] border border-blue-500/30 rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 w-full max-w-[350px] sm:max-w-[400px] shadow-2xl text-center animate-fadeInScale">
             <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center mx-auto mb-3 sm:mb-4">
-              <MaterialIcon name="public" className="text-blue-400 text-2xl sm:text-3xl" />
+              <MaterialIcon
+                name="public"
+                className="text-blue-400 text-2xl sm:text-3xl"
+              />
             </div>
-            <h2 className="text-lg sm:text-xl font-bold text-white mb-2">Publish Event?</h2>
-            <p className="text-slate-400 text-xs sm:text-sm leading-relaxed mb-4 sm:mb-5">
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-2">
+              Publish Event?
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm leading-relaxed mb-4 sm:mb-5">
               Are you sure? It will become visible to all users.
             </p>
             {publishError && (
@@ -715,20 +921,26 @@ const MyEvents = () => {
               </div>
             )}
             <div className="flex gap-2 sm:gap-3">
-              <button 
-                onClick={closeModal} 
+              <button
+                onClick={closeModal}
                 disabled={processingEvents.has(selectedEventId)}
-                className="flex-1 py-2 rounded-lg sm:rounded-xl border border-slate-500/30 text-slate-300 font-bold text-xs sm:text-sm hover:bg-white/5 transition-all disabled:opacity-50 active:scale-95"
+                className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-700 font-semibold text-sm hover:bg-slate-100 transition-all"
               >
                 Cancel
               </button>
-              <button 
-                onClick={confirmPublish} 
+              <button
+                onClick={confirmPublish}
                 disabled={processingEvents.has(selectedEventId)}
                 className="flex-1 py-2 rounded-lg sm:rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 font-bold text-xs sm:text-sm hover:bg-blue-500/20 transition-all flex justify-center items-center gap-1.5 sm:gap-2 disabled:opacity-50 active:scale-95"
               >
                 {processingEvents.has(selectedEventId) ? (
-                  <><MaterialIcon name="hourglass_empty" className="animate-spin !text-xs sm:!text-sm" />Publishing...</>
+                  <>
+                    <MaterialIcon
+                      name="hourglass_empty"
+                      className="animate-spin !text-xs sm:!text-sm"
+                    />
+                    Publishing...
+                  </>
                 ) : (
                   "Yes, Publish"
                 )}
@@ -741,12 +953,17 @@ const MyEvents = () => {
       {/* DELETE MODAL */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm px-3 sm:px-4">
-          <div className="bg-[#1a0d0d] border border-red-500/30 rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 w-full max-w-[350px] sm:max-w-[400px] shadow-2xl text-center animate-fadeInScale">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto mb-3 sm:mb-4">
-              <MaterialIcon name="delete_forever" className="text-red-400 text-2xl sm:text-3xl" />
+          <div className="bg-white dark:bg-[#1a0d0d] border border-red-100 dark:border-red-500/20 rounded-2xl p-6 sm:p-7 md:p-8 w-full max-w-[400px] shadow-[0_10px_40px_rgba(0,0,0,0.08)] text-center animate-fadeInScale">
+            <div className="w-16 h-16 rounded-full bg-red-50 border border-red-100 flex items-center justify-center mx-auto mb-4">
+              <MaterialIcon
+                name="delete_forever"
+                className="text-red-400 text-2xl sm:text-3xl"
+              />
             </div>
-            <h2 className="text-lg sm:text-xl font-bold text-white mb-2">Delete Event?</h2>
-            <p className="text-slate-400 text-xs sm:text-sm leading-relaxed mb-4 sm:mb-5">
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-2">
+              Delete Event?
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm leading-relaxed mb-4 sm:mb-5">
               This action cannot be undone.
             </p>
             {deleteError && (
@@ -755,20 +972,26 @@ const MyEvents = () => {
               </div>
             )}
             <div className="flex gap-2 sm:gap-3">
-              <button 
-                onClick={closeModal} 
+              <button
+                onClick={closeModal}
                 disabled={processingEvents.has(selectedEventId)}
-                className="flex-1 py-2 rounded-lg sm:rounded-xl border border-slate-500/30 text-slate-300 font-bold text-xs sm:text-sm hover:bg-white/5 transition-all disabled:opacity-50 active:scale-95"
+                className="flex-1 py-2 rounded-lg sm:rounded-xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-bold text-xs sm:text-sm hover:bg-slate-100 dark:hover:bg-white/5 transition-all disabled:opacity-50 active:scale-95"
               >
                 Cancel
               </button>
-              <button 
-                onClick={confirmDelete} 
+              <button
+                onClick={confirmDelete}
                 disabled={processingEvents.has(selectedEventId)}
-                className="flex-1 py-2 rounded-lg sm:rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 font-bold text-xs sm:text-sm hover:bg-red-500/20 transition-all flex justify-center items-center gap-1.5 sm:gap-2 disabled:opacity-50 active:scale-95"
+                className="flex-1 py-3 rounded-xl bg-red-500 text-white font-semibold text-sm hover:bg-red-600 transition-all flex justify-center items-center gap-2 shadow-sm"
               >
                 {processingEvents.has(selectedEventId) ? (
-                  <><MaterialIcon name="hourglass_empty" className="animate-spin !text-xs sm:!text-sm" />Deleting...</>
+                  <>
+                    <MaterialIcon
+                      name="hourglass_empty"
+                      className="animate-spin !text-xs sm:!text-sm"
+                    />
+                    Deleting...
+                  </>
                 ) : (
                   "Yes, Delete"
                 )}

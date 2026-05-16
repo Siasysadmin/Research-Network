@@ -115,9 +115,9 @@ const GroupChat = ({ group, currentUserId, onLastMessage }) => {
         id: msg.id,
         isMine,
         sender: isMine ? "(YOU)" : msg.sender_name || "Unknown",
-        senderAvatar: isMine
-          ? `https://ui-avatars.com/api/?name=You&background=00ff85&color=000`
-          : profileImg,
+        // senderAvatar: isMine
+        //   ? `https://ui-avatars.com/api/?name=You&background=00ff85&color=000`
+        //   : profileImg,
         text: msg.message || "",
         time: timeString,
         timestamp: messageDate.getTime(),
@@ -197,19 +197,65 @@ useEffect(() => {
 }, [fetchGroupMessages, sending]); // <--- 'sending' yahan zaroori hai
 
   // ✅ Smart scroll — sirf tab scroll karo jab user bottom pe ho
-  const scrollToBottomIfNeeded = useCallback((force = false) => {
-    const container = messagesContainerRef.current;
-    if (!container) return;
-    const { scrollTop, scrollHeight, clientHeight } = container;
-    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-    if (force || distanceFromBottom < 100) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, []);
+ const scrollToBottomIfNeeded = useCallback((force = false) => {
+  const container = messagesContainerRef.current;
+
+  if (!container) return;
+
+  const distanceFromBottom =
+    container.scrollHeight -
+    container.scrollTop -
+    container.clientHeight;
+
+  if (force || distanceFromBottom < 100) {
+    requestAnimationFrame(() => {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: "smooth",
+      });
+    });
+  }
+}, []);
 
   useEffect(() => {
+  setTimeout(() => {
     scrollToBottomIfNeeded();
-  }, [messages, scrollToBottomIfNeeded]);
+  }, 50);
+}, [messages, scrollToBottomIfNeeded]);
+
+const handleClearChat = async () => {
+  const confirmClear = window.confirm(
+    "Are you sure you want to clear all messages?"
+  );
+
+  if (!confirmClear) return;
+
+  try {
+    const token = getAuthToken();
+
+    const res = await fetch(
+      `${API_CONFIG.BASE_URL}/group/group-clear-chat/${groupId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const result = await res.json();
+
+    if (result.status) {
+      setMessages([]);
+      toast.success("Chat cleared successfully");
+    } else {
+      toast.error(result.message || "Failed to clear chat");
+    }
+  } catch (err) {
+    console.error(err);
+    toast.error("Error clearing chat");
+  }
+};
 
   const handleSendMessage = async () => {
     if ((!messageText.trim() && !selectedFile) || sending) return;
@@ -227,8 +273,8 @@ useEffect(() => {
       id: tempId,
       isMine: true,
       sender: "(YOU)",
-      senderAvatar: `https://ui-avatars.com/api/?name=You&background=00ff85&color=000`,
       text: textToSend,
+      //senderAvatar: `https://ui-avatars.com/api/?name=You&background=00ff85&color=000`,
       time: now.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" }),
       timestamp: now.getTime(),
       filePath: previewToSend?.url || null,
@@ -327,19 +373,19 @@ useEffect(() => {
       {/* Messages Area */}
       <div
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto p-4 lg:p-5 space-y-3 lg:space-y-4 hide-scrollbar bg-[#121413]/30 min-h-0"
+        className="flex-1 overflow-y-auto p-4 lg:p-5 space-y-3 lg:space-y-4 hide-scrollbar bg-gray-100 dark:bg-[#121413]/30 min-h-0"
       >
         {loading ? (
           <div className="flex flex-col items-center justify-center h-full gap-3">
             <div className="w-48 h-1 bg-[#1e201f] rounded-full overflow-hidden">
               <div className="h-full bg-[#00ff85] rounded-full animate-pulse w-2/3" />
             </div>
-            <span className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">
+            <span className="text-[10px] font-mono text-slate-500 dark:text-slate-600 uppercase tracking-widest">
               Loading messages...
             </span>
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-slate-500 font-mono text-sm uppercase italic opacity-40">
+          <div className="flex items-center justify-center h-full text-slate-500 dark:text-slate-500 font-mono text-sm uppercase italic opacity-40">
             NO MESSAGES YET — SAY HI!
           </div>
         ) : (
@@ -349,19 +395,21 @@ useEffect(() => {
                 key={msg.id}
                 className={`flex ${msg.isMine ? "flex-row-reverse" : ""} items-start gap-3 max-w-[85%] ${msg.isMine ? "ml-auto" : ""}`}
               >
-                <img
-                  className={`w-7 h-7 lg:w-8 lg:h-8 rounded-full object-cover mt-1 shrink-0 ${
-                    msg.isMine ? "border-2 border-[#00ff85]/30" : ""
-                  }`}
-                  src={msg.senderAvatar}
-                  alt={msg.sender}
-                  onError={(e) => {
-                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.sender)}&background=1a1c1b&color=00ff85`;
-                  }}
-                />
+                {/* <img
+  className={`w-7 h-7 lg:w-8 lg:h-8 rounded-full object-cover mt-1 shrink-0 ${
+    msg.isMine ? "border-2 border-[#00ff85]/30" : ""
+  }`}
+  src={msg.senderAvatar}
+  alt={msg.sender}
+  onError={(e) => {
+    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      msg.sender
+    )}&background=1a1c1b&color=00ff85`;
+  }}
+/> */}
                 <div className={`space-y-1 ${msg.isMine ? "text-right" : ""} min-w-0`}>
                   <div className={`flex items-baseline gap-2 ${msg.isMine ? "justify-end" : ""} flex-wrap`}>
-                    <span className={`text-[11px] font-bold uppercase tracking-wider ${msg.isMine ? "text-[#00ff85]" : "text-white"}`}>
+                    <span className={`text-[11px] font-bold uppercase tracking-wider ${msg.isMine ? "text-[#00ff85]" : "text-slate-800 dark:text-white"}`}>
                       {msg.sender}
                     </span>
                     <span className="text-[9px] font-mono text-slate-500 whitespace-nowrap">
@@ -405,9 +453,8 @@ useEffect(() => {
                     <div
                       className={`px-4 py-2.5 lg:py-3 rounded-2xl text-sm leading-relaxed inline-block max-w-full text-left ${
                         msg.isMine
-                          ? "bg-[#0d0f0e] text-white border border-[#00ff85]/30 rounded-tr-none"
-                          : "bg-[#1e201f] text-[#e2e3e0] border border-white/5 rounded-tl-none"
-                      }`}
+                          ? ":bg-[#dcfce7] dark:bg-[#0d0f0e] text-slate-900 dark:text-white border border-[#00ff85]/30 rounded-tr-none"
+:"bg-white dark:bg-[#1e201f] text-slate-800 dark:text-[#e2e3e0] border border-gray-300 dark:border-white/5 rounded-tl-none"                      }`}
                     >
                       <p className="whitespace-pre-wrap break-words">{msg.text}</p>
                     </div>
@@ -415,14 +462,13 @@ useEffect(() => {
                 </div>
               </div>
             ))}
-            <div ref={messagesEndRef} />
           </>
         )}
       </div>
 
       {/* ✅ File Preview Bar */}
       {filePreview && (
-        <div className="px-4 lg:px-6 pt-3 pb-2 bg-[#0d0f0e] border-t border-[#3b4b3d]/20 flex items-center gap-3">
+        <div className="px-4 lg:px-6 pt-3 pb-2 bg-white dark:bg-[#0d0f0e] border-t border-gray-300 dark:border-[#3b4b3d]/20 flex items-center gap-3">
           {filePreview.type === "image" && (
             <img
               src={filePreview.url}
@@ -431,15 +477,15 @@ useEffect(() => {
             />
           )}
           {filePreview.type === "video" && (
-            <div className="flex items-center gap-2 bg-[#1e201f] border border-[#00ff85]/20 rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2 bg-gray-100 dark:bg-[#1e201f] border border-[#00ff85]/20 rounded-lg px-3 py-2">
               <MaterialIcon name="videocam" className="text-[#00ff85] text-xl" />
-              <span className="text-xs text-slate-300 truncate max-w-[180px]">{filePreview.name}</span>
+              <span className="text-xs text-slate-700 dark:text-slate-300 truncate max-w-[180px]">{filePreview.name}</span>
             </div>
           )}
           {filePreview.type === "other" && (
-            <div className="flex items-center gap-2 bg-[#1e201f] border border-[#00ff85]/20 rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2 bg-gray-100 dark:bg-[#1e201f] border border-[#00ff85]/20 rounded-lg px-3 py-2">
               <MaterialIcon name="attach_file" className="text-[#00ff85] text-xl" />
-              <span className="text-xs text-slate-300 truncate max-w-[180px]">{filePreview.name}</span>
+              <span className="text-xs text-slate-700 dark:text-slate-300 truncate max-w-[180px]">{filePreview.name}</span>
             </div>
           )}
           <button
@@ -452,7 +498,7 @@ useEffect(() => {
       )}
 
       {/* Input Area */}
-      <div className="px-4 lg:px-6 pb-4 pt-3 bg-[#0d0f0e] shrink-0 border-t border-[#3b4b3d]/20">
+      <div className="px-4 lg:px-6 pb-4 pt-3 bg-white dark:bg-[#0d0f0e] shrink-0 border-t border-gray-300 dark:border-[#3b4b3d]/20">
 
         {/* ✅ Hidden file inputs — alag alag photo aur video ke liye */}
         <input
@@ -471,14 +517,13 @@ useEffect(() => {
         />
 
         <div className="flex items-center gap-3 lg:gap-4">
-          <div className="flex-1 flex items-center bg-[#0d0f0e] border border-[#3b4b3d]/50 rounded-[24px] px-4 py-2 relative">
+          <div className="flex-1 flex items-center bg-gray-100 dark:bg-[#0d0f0e] border border-gray-300 dark:border-[#3b4b3d]/50 rounded-[24px] px-4 py-2 relative">
 
             {/* ✅ Attach popup menu — Photo ya Video choose karo */}
             {showAttachMenu && (
               <div
                 ref={attachBtnRef}
-                className="absolute bottom-14 left-0 bg-[#1a1c1b] border border-[#00ff85]/20 rounded-xl overflow-hidden z-20 shadow-2xl"
-                style={{ minWidth: "150px" }}
+className="absolute bottom-14 left-0 bg-white dark:bg-[#1a1c1b] border border-gray-300 dark:border-[#00ff85]/20 rounded-xl overflow-hidden z-20 shadow-2xl"                style={{ minWidth: "150px" }}
               >
                 <button
                   type="button"
@@ -486,7 +531,7 @@ useEffect(() => {
                     photoInputRef.current?.click();
                     setShowAttachMenu(false);
                   }}
-                  className="flex items-center gap-3 w-full px-4 py-3 text-sm text-[#e2e3e0] hover:bg-[#1e201f] border-b border-white/5 transition-colors text-left"
+                 className="flex items-center gap-3 w-full px-4 py-3 text-sm text-slate-800 dark:text-[#e2e3e0] hover:bg-gray-100 dark:hover:bg-[#1e201f] border-b border-white/5 transition-colors text-left"
                 >
                   <MaterialIcon name="image" className="text-[#00ff85]" style={{ fontSize: "20px" }} />
                   Photo
@@ -497,7 +542,7 @@ useEffect(() => {
                     videoInputRef.current?.click();
                     setShowAttachMenu(false);
                   }}
-                  className="flex items-center gap-3 w-full px-4 py-3 text-sm text-[#e2e3e0] hover:bg-[#1e201f] transition-colors text-left"
+                 className="flex items-center gap-3 w-full px-4 py-3 text-sm text-slate-800 dark:text-[#e2e3e0] hover:bg-gray-100 dark:hover:bg-[#1e201f] border-b border-white/5 transition-colors text-left"
                 >
                   <MaterialIcon name="videocam" className="text-[#00ff85]" style={{ fontSize: "20px" }} />
                   Video
@@ -521,7 +566,7 @@ useEffect(() => {
             <textarea
               ref={messageInputRef}
               rows="1"
-              className="flex-1 bg-transparent text-sm text-white outline-none focus:ring-0 placeholder:text-[#3b4b3d] font-inter resize-none py-1.5 max-h-[120px] overflow-y-auto custom-scrollbar"
+              className="flex-1 bg-transparent text-sm text-slate-900 dark:text-white outline-none focus:ring-0 placeholder:text-slate-400 dark:placeholder:text-[#3b4b3d] font-inter resize-none py-1.5 max-h-[120px] overflow-y-auto custom-scrollbar"
               placeholder="Type a group message..."
               value={messageText}
               onChange={(e) => {

@@ -79,7 +79,7 @@ const PendingRequests = ({ searchQuery, onApprove, onReject, onViewDetails }) =>
   }, []);
 
   // Filter by search query
-  const filteredRequests = requests.filter((request) => {
+  const filteredRequests = (requests || []).filter((request) => {
     if (!searchQuery) return true;
     
     const query = searchQuery.toLowerCase();
@@ -104,8 +104,10 @@ const PendingRequests = ({ searchQuery, onApprove, onReject, onViewDetails }) =>
 
   // Handle page change
   const handlePageChange = (pageNumber) => {
+  if (pageNumber >= 1 && pageNumber <= totalPages) {
     setCurrentPage(pageNumber);
-  };
+  }
+};
 
    const handleViewDetails = (id) => {
   navigate("/admin/view-research", { state: { id } });
@@ -113,10 +115,13 @@ const PendingRequests = ({ searchQuery, onApprove, onReject, onViewDetails }) =>
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64 bg-[#13231a] border border-[#1e3a2c] rounded-xl">
+      <div className="flex items-center justify-center h-64 bg-white dark:bg-[#13231a] border border-gray-200 dark:border-[#1e3a2c] rounded-xl transition-colors duration-300">
         <div className="flex items-center space-x-2">
-          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#00ff88]"></div>
-          <p className="text-white">Loading pending requests...</p>
+          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600 dark:border-[#00ff88]"></div>
+
+          <p className="text-gray-700 dark:text-white">
+            Loading pending requests...
+          </p>
         </div>
       </div>
     );
@@ -124,8 +129,10 @@ const PendingRequests = ({ searchQuery, onApprove, onReject, onViewDetails }) =>
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-64 bg-[#13231a] border border-red-900/30 rounded-xl">
-        <p className="text-red-400">Error: {error}</p>
+      <div className="flex items-center justify-center h-64 bg-white dark:bg-[#13231a] border border-red-200 dark:border-red-900/30 rounded-xl transition-colors duration-300">
+        <p className="text-red-600 dark:text-red-400">
+          Error: {error}
+        </p>
       </div>
     );
   }

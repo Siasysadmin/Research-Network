@@ -17,7 +17,7 @@ const VerifyOTP = () => {
   useEffect(() => {
     const emailFromState = location.state?.email;
     const emailFromStorage = localStorage.getItem("userEmail");
-    
+
     if (emailFromState) {
       setEmail(emailFromState);
       localStorage.setItem("userEmail", emailFromState);
@@ -32,7 +32,7 @@ const VerifyOTP = () => {
   // ⏱️ TIMER COUNTDOWN EFFECT - YEH ADD KARO
   useEffect(() => {
     let interval;
-    
+
     if (timer > 0 && isResendDisabled) {
       interval = setInterval(() => {
         setTimer((prevTimer) => prevTimer - 1);
@@ -92,7 +92,7 @@ const VerifyOTP = () => {
         toast.success("OTP Verified Successfully ✅");
         localStorage.setItem("userOtp", enteredOtp);
         localStorage.setItem("isOtpVerified", "true");
-        
+
         navigate("/reset", {
           state: {
             email: email,
@@ -135,7 +135,6 @@ const VerifyOTP = () => {
     }
   };
 
-  
   return (
     <div className="bg-[#f5f8f7] dark:bg-[#030806] text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-sans">
       <main className="flex-grow flex items-center justify-center p-4 relative overflow-hidden">
@@ -212,23 +211,6 @@ const VerifyOTP = () => {
                 </div>
               </div>
             </form>
-          </div>
-
-          {/* Footer Links */}
-          <div className="flex justify-center items-center gap-4 text-[10px] sm:text-xs font-normal text-[#0df287]/40">
-            <a
-              className="hover:text-[#0df287] transition-colors duration-200"
-              href="#terms"
-            >
-              Terms of Services
-            </a>
-            <span className="w-[3px] h-[3px] rounded-full bg-[#0df287]/20"></span>
-            <a
-              className="hover:text-[#0df287] transition-colors duration-200"
-              href="#privacy"
-            >
-              Privacy Policy
-            </a>
           </div>
         </div>
       </main>

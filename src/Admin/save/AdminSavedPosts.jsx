@@ -357,7 +357,7 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
   };
 
   return (
-    <article className="bg-[#141414] rounded-2xl border border-white/5 shadow-sm overflow-hidden relative mb-6 sm:mb-8">
+    <article className="bg-white dark:bg-[#141414] rounded-2xl border border-gray-200 dark:border-white/5 shadow-sm overflow-hidden relative mb-6 sm:mb-8">
       <div className="p-4 sm:p-5">
         {/* Header */}
         <div className="flex items-start gap-3 sm:gap-5 mt-2 sm:mt-4 mb-3 sm:mb-4">
@@ -374,12 +374,12 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <h4 className="font-bold text-white hover:text-[#00ff85] cursor-pointer transition-colors capitalize truncate text-sm sm:text-base">
+                <h4 className="font-bold text-slate-900 dark:text-white transition-colors capitalize truncate text-sm sm:text-base">
                   {postData.institute_name ? postData.institute_name : postData.name}
                 </h4>
-                <p className="text-xs text-slate-500 capitalize mt-0.5 truncate flex items-center gap-1">
+                <p className="text-xs text-slate-500 dark:text-slate-500 capitalize mt-0.5 truncate flex items-center gap-1">
                   {postData.institute_name ? "Institute" : "Individual"}
-                  <span className="w-1 h-1 rounded-full bg-slate-500 inline-block"></span>
+                  <span className="w-1 h-1 rounded-full bg-slate-400 dark:bg-slate-500 inline-block"></span>
                   {new Date(postData.created_at).toLocaleDateString()}
                 </p>
               </div>
@@ -388,7 +388,7 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
         </div>
 
         {/* Post Text */}
-        <div className="text-xs sm:text-sm leading-relaxed text-slate-300 break-words whitespace-pre-wrap mb-3 sm:mb-4">
+        <div className="text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-slate-300 break-words whitespace-pre-wrap mb-3 sm:mb-4">
           {displayText}
           {needsReadMore && !isExpanded && "..."}
         </div>
@@ -396,7 +396,7 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
           <div className="mb-3 sm:mb-4">
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-[#00ff85] hover:text-white text-xs sm:text-sm font-bold transition-colors"
+              className="text-[#00ff85] hover:underline text-xs sm:text-sm font-bold transition-colors"
             >
               {isExpanded ? "Read less" : "Read more"}
             </button>
@@ -458,14 +458,14 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
 
         {/* Research File */}
         {postData.research_file && postData.isResearchPost && (
-          <div className="mt-3 sm:mt-4 rounded-xl overflow-hidden border border-white/10 bg-[#0e0f10] p-3 sm:p-4">
+          <div className="mt-3 sm:mt-4 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#0e0f10] p-3 sm:p-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-[#0f172a] border border-[#00ff85]/20 flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-gray-100 dark:bg-[#0f172a] border border-[#00ff85]/20 flex items-center justify-center shrink-0">
                   <MaterialIcon name="description" className="text-[#00ff85] text-xl sm:text-2xl" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs sm:text-sm font-semibold text-white truncate">
+                  <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white truncate">
                     {postData.research_file.split("/").pop() || "Research Paper"}
                   </p>
                   <p className="text-[10px] sm:text-xs text-slate-400 mt-1">
@@ -477,7 +477,7 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
                 href={`${API_CONFIG.BASE_URL}/${postData.research_file}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto px-4 py-2 bg-[#00ff85] text-black font-bold text-xs sm:text-sm rounded-lg hover:bg-[#00dd77] transition-all flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-4 py-2 bg-[#00ff88] text-black font-bold text-xs sm:text-sm rounded-lg hover:bg-[#00dd77] transition-all flex items-center justify-center gap-2"
               >
                 <span className="material-symbols-outlined text-sm sm:text-base">open_in_new</span>
                 View PDF
@@ -489,7 +489,7 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
 
       {/* Actions */}
       <div className="p-4 sm:p-5">
-        <div className="flex items-center gap-3 sm:gap-6 pt-4 border-t border-white/5 flex-wrap">
+        <div className="flex items-center gap-3 sm:gap-6 pt-4 border-t border-gray-200 dark:border-white/5 flex-wrap">
           {/* Like */}
           <button
             onClick={handleLike}
@@ -538,7 +538,7 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
           {/* Unsave */}
           <button
             onClick={() => onUnsave(postData.id)}
-            className="ml-auto flex items-center gap-1 sm:gap-2 text-[#00ff85] hover:text-white transition-all"
+            className="ml-auto flex items-center gap-1 sm:gap-2 text-[#00ff85]"
           >
             <MaterialIcon
               name="bookmark"
@@ -560,7 +560,7 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
                   onChange={(e) => setNewCommentText(e.target.value)}
                   onKeyPress={(e) => { if (e.key === "Enter") addComment(); }}
                   placeholder="Add a comment..."
-                  className="w-full bg-[#1e293b] border border-white/10 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm focus:outline-none focus:border-[#00ff85]/50 transition-colors pr-10 text-white"
+                  className="w-full bg-gray-100 dark:bg-[#1e293b] border border-gray-200 dark:border-white/10 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm focus:outline-none focus:border-[#00ff85]/50 transition-colors pr-10 text-slate-900 dark:text-white placeholder:text-slate-400"
                   style={{ outline: "none", boxShadow: "none" }}
                 />
                 <button
@@ -588,7 +588,7 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-white truncate">{comment.author}</span>
+                        <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{comment.author}</span>
                         <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-2">
                           <span className="text-[10px] text-slate-500 uppercase">
                             {formatTimeAgo(comment.timestamp)}
@@ -603,7 +603,7 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
                           )}
                         </div>
                       </div>
-                      <p className={`text-xs text-slate-300 mt-1 leading-relaxed ${
+                      <p className={`text-xs text-slate-700 dark:text-slate-300 mt-1 leading-relaxed ${
                         expandedComments[comment.id] ? "" : "line-clamp-3"
                       }`}>
                         {comment.text}
@@ -621,7 +621,7 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
                           {expandedComments[comment.id] ? "Show less" : "Read more"}
                         </button>
                       )}
-                      <div className="border-b border-white/10 mt-3"></div>
+                      <div className="border-b border-gray-200 dark:border-white/10 mt-3"></div>
                     </div>
                   </div>
                 ))
@@ -762,10 +762,10 @@ const AdminSavedPosts = () => {
       <div className="max-w-3xl mx-auto py-6 sm:py-10">
         {/* Page Header */}
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#e2e3e0] uppercase">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-[#e2e3e0] uppercase">
             Saved Posts
           </h1>
-          <div className="flex items-center gap-2 text-[#b9cbb9] mt-1">
+          <div className="flex items-center gap-2 text-slate-500 dark:text-[#b9cbb9] mt-1">
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest">
               Your bookmarked content
             </span>
@@ -788,11 +788,11 @@ const AdminSavedPosts = () => {
             />
           ))
         ) : (
-          <div className="flex flex-col items-center justify-center py-16 sm:py-20 border-2 border-dashed border-[#1e3a2c] rounded-xl opacity-60">
-            <span className="material-symbols-outlined text-5xl sm:text-6xl text-[#b9cbb9]/30 mb-4">
+          <div className="flex flex-col items-center justify-center py-16 sm:py-20 border-2 border-dashed border-gray-300 dark:border-[#1e3a2c] rounded-xl opacity-60">
+            <span className="material-symbols-outlined text-5xl sm:text-6xl text-slate-400 dark:text-[#b9cbb9]/30 mb-4">
               bookmark
             </span>
-            <p className="text-[#b9cbb9] font-medium uppercase tracking-widest text-xs">
+            <p className="text-slate-500 dark:text-[#b9cbb9] font-medium uppercase tracking-widest text-xs">
               No saved posts yet
             </p>
           </div>

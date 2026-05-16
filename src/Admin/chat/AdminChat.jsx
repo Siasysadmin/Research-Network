@@ -560,22 +560,22 @@ const Chats = () => {
   return (
     <Layout activeNav={activeNav} setActiveNav={setActiveNav}>
       {/* ✅ FIX: h-[calc(100vh-80px)] hataya, ab flex-1 h-full use ho raha hai */}
-      <div className="flex-1 h-full overflow-hidden flex flex-col font-inter bg-[#0d0f0e] w-full">
-        <div className="flex flex-1 p-3 lg:p-4 gap-4 lg:gap-6 h-full min-h-0 max-w-[1800px] mx-auto w-full">
+      <div className="flex-1 h-full overflow-hidden flex flex-col font-inter bg-gray-50 dark:bg-[#0d0f0e] w-full">
+        <div className="flex flex-1 p-3 lg:p-4 gap-4 lg:gap-6 h-full min-h-0 max-w-[1800px] mx-auto w-full bg-gray-50 dark:bg-[#0d0f0e]">
 
           {/* LEFT SIDEBAR */}
-          <div className="hidden md:flex w-[340px] lg:w-[350px] flex-col bg-[#1a1c1b] rounded-2xl border border-[#3b4b3d]/30 shrink-0 shadow-lg min-h-0 h-full">
-            <div className="p-4 lg:p-5 flex items-center justify-between border-b border-[#3b4b3d]/20 relative shrink-0">
-              <h2 className="text-xl lg:text-2xl font-extrabold text-white tracking-tight">
+          <div className={`${activeChatId ? "hidden md:flex" : "flex"} w-full md:w-[340px] lg:w-[350px] flex-col bg-white dark:bg-[#1a1c1b] rounded-2xl border border-gray-200 dark:border-[#3b4b3d]/30 shrink-0 shadow-lg min-h-0 h-full`}>
+            <div className="p-4 lg:p-5 flex items-center justify-between border-b border-gray-200 dark:border-[#3b4b3d]/20 relative shrink-0">
+              <h2 className="text-xl lg:text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
                 Active Feeds
               </h2>
               <div className="relative flex items-center" ref={addMenuRef}>
                 {showAddMenu && (
                   <div
                     onClick={() => navigate("/admin/CreateGroup")}
-                    className="absolute right-full top-0 mr-3 w-48 bg-[#1a1c1b] border border-[#3b4b3d]/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeIn"
+                    className="absolute right-full top-0 mr-3 w-48 bg-white dark:bg-[#1a1c1b] border border-gray-200 dark:border-[#3b4b3d]/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeIn"
                   >
-                    <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-[#3b4b3d]/20 hover:text-white transition-all text-sm font-bold">
+                    <button className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-[#3b4b3d]/20 hover:text-black dark:hover:text-white transition-all text-sm font-bold">
                       <MaterialIcon name="group_add" className="text-[18px]" /> NEW GROUP
                     </button>
                   </div>
@@ -590,19 +590,19 @@ const Chats = () => {
             </div>
 
             <div className="px-3 pt-3 pb-2 shrink-0">
-              <div className="flex items-center bg-[#121413] border border-[#3b4b3d]/40 rounded-full px-4 py-2">
+              <div className="flex items-center bg-gray-100 dark:bg-[#121413] border border-gray-200 dark:border-[#3b4b3d]/40 rounded-full px-4 py-2">
                 <MaterialIcon name="search" className="text-slate-500 text-[18px] mr-2 shrink-0" />
                 <input
                   ref={searchInputRef}
                   type="text"
-                  className="w-full bg-transparent text-sm text-white outline-none focus:ring-0 focus:border-transparent"
+                  className="w-full bg-transparent text-sm text-gray-900 dark:text-white outline-none focus:ring-0 focus:border-transparent"
                   placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{ outline: "none", boxShadow: "none", border: "none" }}
                 />
                 {searchQuery && (
-                  <button onClick={() => setSearchQuery("")} className="text-slate-500 hover:text-white transition-colors ml-1 shrink-0">
+                  <button onClick={() => setSearchQuery("")} className="text-slate-500 hover:text-black dark:hover:text-white transition-colors ml-1 shrink-0">
                     <MaterialIcon name="close" className="text-[16px]" />
                   </button>
                 )}
@@ -625,14 +625,14 @@ const Chats = () => {
                     onClick={() => handleChatClick(chat.id)}
                     className={`group cursor-pointer p-3 lg:p-3.5 rounded-xl transition-all relative ${
                       String(activeChatId) === String(chat.id)
-                        ? "bg-[#121413] border-l-4 border-l-[#00ff85] border-y border-r border-[#3b4b3d]/20 shadow-sm"
-                        : "border border-transparent hover:bg-[#121413]/50"
+                        ? "bg-green-50 dark:bg-[#121413] border-l-4 border-l-[#00ff85] border-y border-r border-green-200 dark:border-[#3b4b3d]/20 shadow-sm"
+                        : "border border-transparent hover:bg-gray-100 dark:hover:bg-[#121413]/50"
                     }`}
                   >
                     <div className="flex gap-3 lg:gap-4 items-center">
                       <div className="flex items-center shrink-0 relative">
                         <img
-                          className="w-8 h-8 lg:w-10 lg:h-10 rounded-full object-cover"
+                          className="w-8 h-8 lg:w-10 lg:h-10 rounded-full object-cover border border-gray-200 dark:border-transparent"
                           src={chat.avatars[0]}
                           alt={chat.name}
                           onError={(e) => { e.target.src = defaultAvatar; }}
@@ -645,7 +645,10 @@ const Chats = () => {
                       </div>
                       <div className="flex-1 min-w-0 flex justify-between items-start">
                         <div className="min-w-0 pr-2 flex-1">
-                          <h4 className={`text-sm font-bold truncate flex items-center gap-1.5 ${String(activeChatId) === String(chat.id) ? "text-[#00ff85]" : "text-white group-hover:text-[#e2e3e0]"}`}>
+                          <h4 className={`text-sm font-bold truncate flex items-center gap-1.5 ${String(activeChatId) === String(chat.id)
+  ? "text-[#00ff85]"
+  : "text-gray-900 dark:text-white group-hover:text-black dark:group-hover:text-[#e2e3e0]"
+}`}>
                             <span className="truncate">{chat.name}</span>
                             {chat.isYou && (
                               <span className="shrink-0 text-[9px] font-mono font-normal px-1.5 py-0.5 rounded-full bg-[#00ff85]/10 text-[#00ff85] border border-[#00ff85]/30 normal-case tracking-normal">
@@ -653,7 +656,10 @@ const Chats = () => {
                               </span>
                             )}
                           </h4>
-                          <p className={`text-[11px] lg:text-xs truncate mt-1 ${String(activeChatId) === String(chat.id) ? "text-[#e2e3e0]" : "text-slate-500"}`}>
+                          <p className={`text-[11px] lg:text-xs truncate mt-1 ${String(activeChatId) === String(chat.id)
+  ? "text-gray-700 dark:text-[#e2e3e0]"
+  : "text-slate-500"
+}`}>
                             {chat.lastMsg}
                           </p>
                         </div>
@@ -676,7 +682,7 @@ const Chats = () => {
           </div>
 
           {/* RIGHT CHAT WINDOW */}
-          <div className="flex-1 flex flex-col bg-transparent rounded-2xl overflow-hidden min-w-0 relative h-full">
+          <div className={`${activeChatId ? "flex" : "hidden md:flex"} flex-1 flex-col bg-white dark:bg-[#0d0f0e] rounded-2xl overflow-hidden min-w-0 relative h-full`}>
             {activeChatData ? (
               showProfile ? (
                 activeChatData.isGroup ? (
@@ -688,12 +694,24 @@ const Chats = () => {
                 <>
                   <div
                     onClick={() => setShowProfile(true)}
-                    className="h-14 lg:h-16 border-b border-[#3b4b3d]/30 px-4 lg:px-6 flex items-center justify-between shrink-0 bg-[#0d0f0e] cursor-pointer hover:bg-white/5 transition-all"
+                    className="h-14 lg:h-16 border-b border-gray-200 dark:border-[#3b4b3d]/30 px-4 lg:px-6 flex items-center justify-between shrink-0 bg-white dark:bg-[#0d0f0e] cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
                   >
                     <div className="flex items-center gap-3 min-w-0">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveChatId(null);
+                        }}
+                        className="md:hidden w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-all"
+                      >
+                        <MaterialIcon
+                          name="arrow_back"
+                          className="text-gray-700 dark:text-white"
+                        />
+                      </button>
                       <div className="relative">
                         <img
-                          className="w-8 h-8 lg:w-10 lg:h-10 rounded-full border-2 border-[#1a1c1b] z-10 object-cover"
+                          className="w-8 h-8 lg:w-10 lg:h-10 rounded-full border-2 border-white dark:border-[#1a1c1b] z-10 object-cover"
                           src={activeChatData.avatars[0]}
                           alt={activeChatData.name}
                           onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(activeChatData.name)}&background=1a1c1b&color=00ff85`; }}
@@ -705,7 +723,7 @@ const Chats = () => {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <h3 className="text-base lg:text-lg font-bold text-white truncate">{activeChatData.name}</h3>
+                        <h3 className="text-base lg:text-lg font-bold text-gray-900 dark:text-white truncate">{activeChatData.name}</h3>
                         <p className="text-[11px] text-slate-500 font-mono mt-0.5">{activeChatData.type}</p>
                       </div>
                     </div>
@@ -713,7 +731,7 @@ const Chats = () => {
                     <div className="flex items-center gap-1 lg:gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
                       <div className="relative flex items-center justify-center h-full" ref={groupMenuRef}>
                         {showGroupMenu && (
-                          <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 bg-[#1a1c1b] border border-[#3b4b3d]/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeIn">
+                          <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 bg-white dark:bg-[#1a1c1b] border border-gray-200 dark:border-[#3b4b3d]/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeIn">
                             <button
                               onClick={activeChatData.isGroup ? handleGroupClearChat : handleClearChat}
                               className="flex items-center gap-3 px-5 py-3 text-[#ffb4ab] hover:bg-[#93000a]/20 transition-all text-sm font-bold uppercase tracking-wider whitespace-nowrap"
@@ -724,7 +742,10 @@ const Chats = () => {
                         )}
                         <button
                           onClick={() => setShowGroupMenu(!showGroupMenu)}
-                          className={`w-9 h-9 flex items-center justify-center rounded-full transition-colors ${showGroupMenu ? "bg-[#3b4b3d]/30 text-white" : "hover:bg-[#3b4b3d]/20 text-slate-300"}`}
+                          className={`w-9 h-9 flex items-center justify-center rounded-full transition-colors ${showGroupMenu
+  ? "bg-green-100 dark:bg-[#3b4b3d]/30 text-gray-900 dark:text-white"
+  : "hover:bg-gray-100 dark:hover:bg-[#3b4b3d]/20 text-slate-500 dark:text-slate-300"
+}`}
                         >
                           <MaterialIcon name="more_vert" className="text-lg lg:text-xl" />
                         </button>
@@ -748,7 +769,7 @@ const Chats = () => {
                     />
                   ) : (
                     <>
-                      <div className="flex-1 overflow-y-auto p-4 lg:p-5 space-y-3 lg:space-y-4 hide-scrollbar bg-[#121413]/30 min-h-0">
+                      <div className="flex-1 overflow-y-auto p-4 lg:p-5 space-y-3 lg:space-y-4 hide-scrollbar bg-gray-50 dark:bg-[#121413]/30 min-h-0">
                         {activeChatData.messages?.length === 0 ? (
                           <div className="flex items-center justify-center h-full text-slate-500 font-mono text-sm uppercase italic opacity-40">
                             SAY HI TO START MESSAGING
@@ -758,19 +779,22 @@ const Chats = () => {
                             {activeChatData.messages.map((msg) => (
                               <div
                                 key={msg.id}
-                                className={`flex ${msg.isMine ? "flex-row-reverse" : ""} items-start gap-3 max-w-[85%] ${msg.isMine ? "ml-auto" : ""}`}
+                                className={`flex ${msg.isMine ? "flex-row-reverse" : ""} items-start gap-2 sm:gap-3 max-w-[92%] sm:max-w-[85%] ${msg.isMine ? "ml-auto" : ""}`}
                               >
                                 <div className={`space-y-1 ${msg.isMine ? "text-right" : ""} min-w-0`}>
                                   <div className={`flex items-baseline gap-2 ${msg.isMine ? "justify-end" : ""}`}>
-                                    <span className={`text-[11px] font-bold uppercase tracking-wider ${msg.isMine ? "text-[#00ff85]" : "text-white"}`}>
+                                    <span className={`text-[11px] font-bold uppercase tracking-wider ${msg.isMine
+  ? "text-[#00ff85]"
+  : "text-gray-900 dark:text-white"
+}`}>
                                       {msg.sender}
                                     </span>
                                     <span className="text-[9px] font-mono text-slate-500">{msg.time}</span>
                                   </div>
-                                  <div className={`px-4 py-2.5 lg:py-3 rounded-2xl text-sm leading-relaxed inline-block max-w-full text-left ${
+                                  <div className={`px-3 sm:px-4 py-2.5 lg:py-3 rounded-2xl text-sm leading-relaxed inline-block max-w-full text-left ${
                                     msg.isMine
-                                      ? "bg-[#0d0f0e] text-white border border-[#00ff85]/30 rounded-tr-none"
-                                      : "bg-[#1e201f] text-[#e2e3e0] border border-white/5 rounded-tl-none"
+                                      ? "bg-green-50 dark:bg-[#0d0f0e] text-gray-900 dark:text-white border border-[#00ff85]/30 rounded-tr-none"
+                                      : "bg-white dark:bg-[#1e201f] text-gray-800 dark:text-[#e2e3e0] border border-gray-200 dark:border-white/5 rounded-tl-none"
                                   }`}>
                                     {msg.localFile && (
                                       msg.localFile.type === "image" || msg.localFile.type?.includes("image") ? (
@@ -801,12 +825,12 @@ const Chats = () => {
                         )}
                       </div>
 
-                      <div className="px-4 lg:px-6 pb-4 pt-3 bg-[#0d0f0e] shrink-0">
+                      <div className="px-4 lg:px-6 pb-4 pt-3 bg-white dark:bg-[#0d0f0e] shrink-0">
                         {selectedFile && (
                           <div className="w-full flex mb-2 pl-4">
-                            <div className="bg-[#1a1c1b] border border-[#3b4b3d] rounded-lg px-3 py-1.5 flex items-center gap-2 shadow-lg">
+                            <div className="bg-white dark:bg-[#1a1c1b] border border-gray-200 dark:border-[#3b4b3d] rounded-lg px-3 py-1.5 flex items-center gap-2 shadow-lg">
                               <MaterialIcon name={selectedFile.type === "image" ? "image" : "videocam"} className="text-[#00ff85] text-[16px]" />
-                              <span className="text-[11px] text-white truncate max-w-[120px] sm:max-w-[200px]">{selectedFile.file.name}</span>
+                              <span className="text-[11px] text-gray-900 dark:text-white truncate max-w-[120px] sm:max-w-[200px]">{selectedFile.file.name}</span>
                               <button onClick={() => setSelectedFile(null)} className="text-slate-400 hover:text-red-400 ml-1 flex items-center">
                                 <MaterialIcon name="close" className="text-[14px]" />
                               </button>
@@ -815,20 +839,20 @@ const Chats = () => {
                         )}
 
                         <div className="flex items-center gap-3 lg:gap-4">
-                          <div className="flex-1 flex items-center bg-[#0d0f0e] border border-[#3b4b3d]/50 rounded-[24px] px-4 py-2">
+                          <div className="flex-1 flex items-center bg-gray-100 dark:bg-[#0d0f0e] border border-gray-300 dark:border-[#3b4b3d]/50 rounded-[24px] px-4 py-2">
                             <div className="relative self-end mb-1 flex items-center mr-2" ref={attachMenuRef}>
                               {showAttachMenu && (
-                                <div className="absolute bottom-full left-0 mb-4 w-40 bg-[#1a1c1b] border border-[#3b4b3d]/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeIn">
+                                <div className="absolute bottom-full left-0 mb-4 w-40 bg-white dark:bg-[#1a1c1b] border border-gray-200 dark:border-[#3b4b3d]/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeIn">
                                   <button
                                     onClick={() => { setShowAttachMenu(false); imageAttachRef.current?.click(); }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-[#3b4b3d]/20 hover:text-white transition-all text-sm font-bold"
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-[#3b4b3d]/20 hover:text-black dark:hover:text-white transition-all text-sm font-bold"
                                   >
                                     <MaterialIcon name="image" className="text-[18px]" /> Images
                                   </button>
-                                  <div className="h-px w-full bg-[#3b4b3d]/30"></div>
+                                  <div className="h-px w-full bg-gray-200 dark:bg-[#3b4b3d]/30"></div>
                                   <button
                                     onClick={() => { setShowAttachMenu(false); videoAttachRef.current?.click(); }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-[#3b4b3d]/20 hover:text-white transition-all text-sm font-bold"
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-[#3b4b3d]/20 hover:text-black dark:hover:text-white transition-all text-sm font-bold"
                                   >
                                     <MaterialIcon name="videocam" className="text-[18px]" /> Videos
                                   </button>
@@ -844,7 +868,7 @@ const Chats = () => {
                             <textarea
                               ref={messageInputRef}
                               rows="1"
-                              className="flex-1 bg-transparent text-sm text-white outline-none focus:ring-0 placeholder:text-[#3b4b3d] font-inter resize-none py-1.5 max-h-[120px] overflow-y-auto custom-scrollbar"
+                              className="flex-1 bg-transparent text-sm text-gray-900 dark:text-white outline-none focus:ring-0 placeholder:text-gray-400 dark:placeholder:text-[#3b4b3d] font-inter resize-none py-1.5 max-h-[120px] overflow-y-auto custom-scrollbar"
                               placeholder="Type a message..."
                               value={messageText}
                               onChange={(e) => {

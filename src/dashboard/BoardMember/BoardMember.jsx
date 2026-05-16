@@ -12,7 +12,7 @@ const getAuthToken = () =>
   localStorage.getItem("auth_token") ||
   localStorage.getItem("token") ||
   sessionStorage.getItem("auth_token");
-  
+
 const Toast = ({ message, type, onClose }) => {
   useEffect(() => {
     const timer = setTimeout(onClose, 3000);
@@ -20,9 +20,11 @@ const Toast = ({ message, type, onClose }) => {
   }, [onClose]);
 
   return (
-    <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-white ${
-      type === "success" ? "bg-green-500" : "bg-red-500"
-    }`}>
+    <div
+      className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-slate-900 dark:text-white ${
+        type === "success" ? "bg-green-500" : "bg-red-500"
+      }`}
+    >
       {message}
     </div>
   );
@@ -54,7 +56,7 @@ const BoardMembers = () => {
   // ✅ Get profile image URL from member data
   const getProfileImageUrl = (member) => {
     let profileImage = "";
-    
+
     if (member.user_type === "individual") {
       profileImage = member.individual_details?.profile_image || "";
     } else {
@@ -77,11 +79,9 @@ const BoardMembers = () => {
   };
 
   // ✅ CORRECT PLACE - boardMembers state yahan accessible hai
-const isAlreadyBoardMember = (regId) => {
-  return boardMembers.some(
-    (member) => member.registration_id === regId
-  );
-};
+  const isAlreadyBoardMember = (regId) => {
+    return boardMembers.some((member) => member.registration_id === regId);
+  };
 
   // =========================
   // FETCH BOARD MEMBERS
@@ -89,7 +89,7 @@ const isAlreadyBoardMember = (regId) => {
   useEffect(() => {
     const fetchBoardMembers = async () => {
       try {
-const token = getAuthToken();
+        const token = getAuthToken();
         const response = await fetch(
           `${API_CONFIG.BASE_URL}/research/get-board-member`,
           {
@@ -104,7 +104,10 @@ const token = getAuthToken();
           // ✅ Store stable IDs for each member
           result.data.forEach((member) => {
             if (!stableIds.current.has(member.registration_id)) {
-              stableIds.current.set(member.registration_id, `stable-${member.registration_id}-${Date.now()}-${Math.random()}`);
+              stableIds.current.set(
+                member.registration_id,
+                `stable-${member.registration_id}-${Date.now()}-${Math.random()}`,
+              );
             }
           });
           setBoardMembers(result.data);
@@ -128,7 +131,7 @@ const token = getAuthToken();
     }
     try {
       setSearchLoading(true);
-const token = getAuthToken();
+      const token = getAuthToken();
       const response = await fetch(
         `${API_CONFIG.BASE_URL}/user/get-user-registration/${registrationId}`,
         {
@@ -140,9 +143,9 @@ const token = getAuthToken();
       );
       const result = await response.json();
       console.log("API SE AYA DATA:", result); // ← BAS YE ADD KAR
-if (result.status) {
-  setSearchedUser(result.data);
-}
+      if (result.status) {
+        setSearchedUser(result.data);
+      }
       if (result.status) {
         setSearchedUser(result.data);
       } else {
@@ -173,18 +176,16 @@ if (result.status) {
   // =========================
   // MAIN SEARCH FILTER
   // =========================
- const filteredMembers = boardMembers.filter((member) => {
-  const name =
-    member.user_type === "individual"
-      ? member.name
-      : member.institute_details?.institute_name ||
-        member.institute_name ||
-        member.name;
+  const filteredMembers = boardMembers.filter((member) => {
+    const name =
+      member.user_type === "individual"
+        ? member.name
+        : member.institute_details?.institute_name ||
+          member.institute_name ||
+          member.name;
 
-  return (name || "")
-    .toLowerCase()
-    .includes(search.toLowerCase());
-});
+    return (name || "").toLowerCase().includes(search.toLowerCase());
+  });
 
   // =========================
   // REPLACE BOARD MEMBER API
@@ -192,16 +193,16 @@ if (result.status) {
   const replaceBoardMember = async () => {
     if (!searchedUser || !replaceMemberId) return;
 
-      if (registrationId === replaceMemberId) {
-    showToast("You are selecting the same member!", "error");
-    return;
-  }
+    if (registrationId === replaceMemberId) {
+      showToast("You are selecting the same member!", "error");
+      return;
+    }
 
-  if (isAlreadyBoardMember(registrationId)) {
-    showToast("This user is already a board member!", "error");
-    return;
-  }
-  
+    if (isAlreadyBoardMember(registrationId)) {
+      showToast("This user is already a board member!", "error");
+      return;
+    }
+
     try {
       const token = getAuthToken();
       const response = await fetch(
@@ -215,11 +216,12 @@ if (result.status) {
           body: JSON.stringify({
             board_member_id: replaceMemberId,
             new_board_member_id: registrationId,
-            new_member_email: searchedUser?.email || searchedUser?.email_id || "",
+            new_member_email:
+              searchedUser?.email || searchedUser?.email_id || "",
           }),
         },
       );
-     const result = await response.json();
+      const result = await response.json();
 
       if (result.status) {
         showToast("Board member replaced successfully!");
@@ -250,10 +252,12 @@ if (result.status) {
                 // For institute users
                 updatedMember.name = searchedUser.name; // Keep for fallback
                 updatedMember.institute_details = {
-                  institute_name: searchedUser.institute_name || searchedUser.name
+                  institute_name:
+                    searchedUser.institute_name || searchedUser.name,
                 };
                 // Also set institute_name directly for easier access
-                updatedMember.institute_name = searchedUser.institute_name || searchedUser.name;
+                updatedMember.institute_name =
+                  searchedUser.institute_name || searchedUser.name;
               }
               return updatedMember;
             }
@@ -290,10 +294,11 @@ if (result.status) {
         {/* HEADER */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight mt-4">
+            <h2 className="text-2xl font-bold tracking-tight mt-4 text-slate-900 dark:text-white">
+              {" "}
               Board Members Management
             </h2>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-500 dark:text-slate-600 dark:text-slate-400">
               Overview and management of the current institutional advisory
               board.
             </p>
@@ -311,16 +316,22 @@ if (result.status) {
               if (member.user_type === "individual") {
                 displayName = member.name;
               } else {
-                displayName = member.institute_details?.institute_name || member.institute_name || member.name;
+                displayName =
+                  member.institute_details?.institute_name ||
+                  member.institute_name ||
+                  member.name;
               }
 
               return (
                 <div
                   // ✅ Use stable ID from ref, not registration_id
-                  key={stableIds.current.get(member.registration_id) || member.registration_id}
-                  className="bg-[#13231a] border border-[#1e3a2c] rounded-lg p-4 flex flex-col items-center text-center shadow-lg hover:-translate-y-1 transition-all duration-200"
+                  key={
+                    stableIds.current.get(member.registration_id) ||
+                    member.registration_id
+                  }
+                  className="bg-white dark:bg-[#13231a] border border-slate-200 dark:border-[#1e3a2c] rounded-lg p-4 flex flex-col items-center text-center shadow-lg hover:-translate-y-1 transition-all duration-200"
                 >
-                  <div className="size-16 rounded-full bg-[#0a120e] border-2 border-[#1e3a2c] flex items-center justify-center mb-3 overflow-hidden">
+                  <div className="size-16 rounded-full border-slate-200 dark:border-[#1e3a2c] border-2 border-[#1e3a2c] flex items-center justify-center mb-3 overflow-hidden">
                     <img
                       src={getProfileImageUrl(member)}
                       alt={displayName}
@@ -330,13 +341,13 @@ if (result.status) {
                       }}
                     />
                   </div>
-                  <h3 className="text-base font-bold text-white mb-1">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">
                     {displayName}
                   </h3>
                   <p className="text-xs text-[#00ff88] font-semibold mb-1">
                     {member.registration_id}
                   </p>
-                  <p className="text-xs text-slate-400 mb-4 break-all whitespace-normal text-center w-full">
+                  <p className="text-xs text-slate-500 dark:text-slate-600 dark:text-slate-400 mb-4 break-all whitespace-normal text-center w-full">
                     {member.email}
                   </p>
                   <button
@@ -354,81 +365,6 @@ if (result.status) {
           </div>
         )}
       </div>
-
-      {/* POPUP */}
-      {showReplacePopup && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-[#13231a] border border-[#1e3a2c] rounded-lg w-[420px] p-6 min-h-[320px] flex flex-col">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-white">
-                Replace Board Member
-              </h3>
-              <button
-                onClick={() => setShowReplacePopup(false)}
-                className="text-slate-400 hover:text-white"
-              >
-                ✕
-              </button>
-            </div>
-
-            <input
-              type="text"
-              placeholder="Enter Registration ID (Example: SRN9814)"
-              value={registrationId}
-              onChange={(e) => setRegistrationId(e.target.value)}
-              className="w-full mb-4 px-3 py-2 bg-[#0a120e] border border-[#1e3a2c] rounded-md text-white text-sm outline-none"
-            />
-
-            {searchLoading && (
-              <p className="text-center text-gray-400">Searching user...</p>
-            )}
-
-            {registrationId && !searchLoading && !searchedUser && (
-              <p className="text-center text-gray-400 text-sm">No user found</p>
-            )}
-
-            {searchedUser && (
-              <div className="bg-[#0a120e] p-3 rounded flex justify-between items-center gap-3">
-                <div className="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden border border-[#1e3a2c]">
-                  <img
-                    src={getProfileImageUrl(searchedUser)}
-                    alt={searchedUser.user_type === "individual" ? searchedUser.name : (searchedUser.institute_name || searchedUser.name)}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.src = avatar;
-                    }}
-                  />
-                </div>
-                <div className="flex-1">
-                  <p className="text-white font-semibold">
-                    {searchedUser.user_type === "individual"
-                      ? searchedUser.name
-                      : searchedUser.institute_name || searchedUser.name}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    Type: {searchedUser.user_type}
-                  </p>
-                  {searchedUser.user_type === "institute" && (
-                    <p className="text-xs text-gray-400">
-                      Institute:{" "}
-                      {searchedUser.institute_name || searchedUser.name}
-                    </p>
-                  )}
-                  <p className="text-xs text-gray-400">
-                    Email: {searchedUser.email}
-                  </p>
-                </div>
-                <button
-                  className="bg-[#00ff88] text-black px-3 py-1 rounded text-sm font-semibold flex-shrink-0"
-                  onClick={() => setSelectedProfileUser(searchedUser)}
-                >
-                  VIEW PROFILE
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* ✅ UserProfile Modal */}
       {selectedProfileUser && (
@@ -449,23 +385,23 @@ if (result.status) {
         </div>
       )}
       <style jsx global>{`
-  /* Chrome, Safari aur Opera ke liye */
-  ::-webkit-scrollbar {
-    display: none;
-    width: 0;
-    height: 0;
-  }
+        /* Chrome, Safari aur Opera ke liye */
+        ::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
+        }
 
-  /* Firefox ke liye */
-  * {
-    scrollbar-width: none;
-  }
+        /* Firefox ke liye */
+        * {
+          scrollbar-width: none;
+        }
 
-  /* IE aur Edge ke liye */
-  * {
-    -ms-overflow-style: none;
-  }
-`}</style>
+        /* IE aur Edge ke liye */
+        * {
+          -ms-overflow-style: none;
+        }
+      `}</style>
     </DashboardLayout>
   );
 };

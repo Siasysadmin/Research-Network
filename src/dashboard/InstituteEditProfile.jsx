@@ -356,9 +356,9 @@ const EditInstituteProfile = () => {
     setPlatforms(platforms.filter((_, i) => i !== index));
 
   const inputClass =
-    "w-full bg-black/40 border border-[#1a1a1a] rounded-lg px-4 py-3 text-white focus:border-[#0df287] focus:ring-1 focus:ring-[#0df287] outline-none transition-all placeholder:text-slate-600";
+    "w-full bg-[#fcfdfc] dark:bg-black/40 border border-[#e5ece7] dark:border-[#1a1a1a] rounded-lg px-4 py-3 text-slate-800 dark:text-white focus:border-[#0df287] focus:ring-1 focus:ring-[#0df287] outline-none transition-all placeholder:text-slate-500 dark:placeholder:text-slate-600";
   const labelClass =
-    "text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block";
+    "text-xs font-bold text-slate-600 dark:text-slate-500 uppercase tracking-wider mb-2 block";
 
   if (loading) {
     return (
@@ -372,34 +372,32 @@ const EditInstituteProfile = () => {
 
   return (
     <DashboardLayout>
-      <div className="mx-auto px-4 py-4 pb-24 max-w-7xl">
+      <div className="mx-auto px-4 py-4 pb-24 max-w-7xl text-slate-900 dark:text-white">
+        {" "}
         <header className="mb-10">
-          <h2 className="text-3xl font-bold text-white">
+          <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
             Edit Institute Profile
           </h2>
-          <p className="text-slate-400 mt-1">
+          <p className="text-slate-600 dark:text-slate-400 mt-1">
             Update your institute's information, focus areas, and external
             links.
           </p>
         </header>
-
         {successMessage && (
           <div className="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400">
             {successMessage}
           </div>
         )}
-
         {error && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400">
             {error}
           </div>
         )}
-
         <div className="flex flex-col gap-6">
-          <section className="bg-[#0a0a0a]/50 p-8 rounded-2xl border border-[#1a1a1a] flex flex-col md:flex-row items-center gap-8">
+          <section className="bg-white dark:bg-[#0a0a0a]/50 p-8 rounded-2xl border border-slate-200 dark:border-[#1a1a1a] flex flex-col md:flex-row items-center gap-8">
             <div className="flex flex-col items-center gap-3">
               <div className="relative group">
-                <div className="w-32 h-32 rounded-full ring-4 ring-[#0df287]/20 p-1 overflow-hidden relative bg-black/40 flex items-center justify-center">
+                <div className="w-32 h-32 rounded-full ring-4 ring-[#0df287]/20 p-1 overflow-hidden relative bg-slate-50 dark:bg-black/40 flex items-center justify-center">
                   <img
                     src={finalImage}
                     className="w-full h-full object-cover rounded-full"
@@ -409,9 +407,9 @@ const EditInstituteProfile = () => {
                   <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
                     <MaterialIcon
                       name="photo_camera"
-                      className="text-white text-2xl"
+                      className="text-slate-900 dark:text-white text-2xl"
                     />
-                    <span className="text-[10px] text-white font-bold uppercase mt-1">
+                    <span className="text-[10px] text-slate-900 dark:text-white font-bold uppercase mt-1">
                       {uploading ? "Uploading..." : "Upload"}
                     </span>
                     <input
@@ -448,7 +446,7 @@ const EditInstituteProfile = () => {
                 <div>
                   <label className={labelClass}>Institute Name</label>
                   <input
-                    className={`${inputClass} bg-black/60 cursor-not-allowed`}
+                    className={`${inputClass} bg-slate-100 dark:bg-black/60 cursor-not-allowed`}
                     placeholder="Enter institute name"
                     type="text"
                     value={profileData.organization_name}
@@ -481,11 +479,11 @@ const EditInstituteProfile = () => {
             </div>
           </section>
 
-          <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl">
-            <div className="px-8 py-6 border-b border-[#1a1a1a] flex justify-between items-center">
+          <div className="bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl">
+            <div className="px-8 py-6 border-b border-slate-200 dark:border-[#1a1a1a] flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <MaterialIcon name="domain" className="text-[#0df287]" />
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                   Institute Details
                 </h2>
               </div>
@@ -502,13 +500,13 @@ const EditInstituteProfile = () => {
                     value={profileData.establishment_year}
                     max={new Date().getFullYear()} // ✅ current year se aage nahi
                     min={1800}
-                   onChange={(e) => {
-    const val = parseInt(e.target.value);
-    const currentYear = new Date().getFullYear();
-    if (val <= currentYear || e.target.value === "") {
-      handleInputChange("establishment_year", e.target.value);
-    }
-  }}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      const currentYear = new Date().getFullYear();
+                      if (val <= currentYear || e.target.value === "") {
+                        handleInputChange("establishment_year", e.target.value);
+                      }
+                    }}
                     disabled={saving}
                   />
                 </div>
@@ -581,7 +579,7 @@ const EditInstituteProfile = () => {
 
               <div>
                 <label className={labelClass}>Focus Areas</label>
-                <div className="flex flex-wrap gap-2 p-3 bg-black/40 border border-[#1a1a1a] rounded-xl">
+                <div className="flex flex-wrap gap-2 p-3 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-[#1a1a1a] rounded-xl">
                   {researchFocus.map((area, index) => (
                     <span
                       key={index}
@@ -590,13 +588,13 @@ const EditInstituteProfile = () => {
                       {area}
                       <MaterialIcon
                         name="close"
-                        className="text-xs cursor-pointer hover:text-white"
+                        className="text-xs cursor-pointer hover:text-slate-900 dark:text-white"
                         onClick={() => removeFocus(index)}
                       />
                     </span>
                   ))}
                   <input
-                    className="!bg-transparent !border-none !p-0 focus:ring-0 text-xs w-32 text-white outline-none placeholder:text-slate-500 ml-2"
+                    className="!bg-transparent !border-none !p-0 focus:ring-0 text-xs w-32 text-slate-900 dark:text-white outline-none placeholder:text-slate-500 ml-2"
                     placeholder="+ Add Focus Area"
                     type="text"
                     value={focusInput}
@@ -607,11 +605,11 @@ const EditInstituteProfile = () => {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-[#1a1a1a]">
+              <div className="pt-4 border-t border-slate-200 dark:border-[#1a1a1a]">
                 <label className={labelClass}>
                   Sustainability / Platform Goals
                 </label>
-                <div className="flex flex-wrap gap-2 p-3 bg-black/40 border border-[#1a1a1a] rounded-xl">
+                <div className="flex flex-wrap gap-2 p-3 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-[#1a1a1a] rounded-xl">
                   {platforms.map((goal, index) => (
                     <span
                       key={index}
@@ -620,13 +618,13 @@ const EditInstituteProfile = () => {
                       {goal}
                       <MaterialIcon
                         name="close"
-                        className="text-xs cursor-pointer hover:text-white"
+                        className="text-xs cursor-pointer hover:text-slate-900 dark:text-white"
                         onClick={() => removePlatform(index)}
                       />
                     </span>
                   ))}
                   <input
-                    className="!bg-transparent !border-none !p-0 focus:ring-0 text-xs w-32 text-white outline-none placeholder:text-slate-500 ml-2"
+                    className="!bg-transparent !border-none !p-0 focus:ring-0 text-xs w-32 text-slate-900 dark:text-white outline-none placeholder:text-slate-500 ml-2"
                     placeholder="+ Add Goal"
                     type="text"
                     value={platformInput}
@@ -639,14 +637,14 @@ const EditInstituteProfile = () => {
             </div>
           </div>
 
-          <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl">
-            <div className="px-8 py-6 border-b border-[#1a1a1a]">
+          <div className="bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl">
+            <div className="px-8 py-6 border-b border-slate-200 dark:border-[#1a1a1a]">
               <div className="flex items-center gap-3">
                 <MaterialIcon
                   name="admin_panel_settings"
                   className="text-[#0df287]"
                 />
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                   Administrator Information
                 </h2>
               </div>
@@ -679,14 +677,14 @@ const EditInstituteProfile = () => {
             </div>
           </div>
 
-          <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl">
-            <div className="px-8 py-6 border-b border-[#1a1a1a] flex justify-between items-center">
+          <div className="bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl">
+            <div className="px-8 py-6 border-b border-slate-200 dark:border-[#1a1a1a] flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <MaterialIcon
                   name="contact_support"
                   className="text-[#0df287]"
                 />
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                   Contact & Social
                 </h2>
               </div>
@@ -697,7 +695,7 @@ const EditInstituteProfile = () => {
                 <label className={labelClass}>Institute Email</label>
                 <div className="relative">
                   <input
-                    className={`${inputClass} pl-12 bg-black/60 cursor-not-allowed`}
+                    className={`${inputClass} pl-12 bg-slate-100 dark:bg-black/60 cursor-not-allowed`}
                     placeholder="institute@email.com"
                     type="email"
                     value={profileData.email}
@@ -806,10 +804,10 @@ const EditInstituteProfile = () => {
             </div>
           </div>
 
-          <div className="mt-8 pt-8 border-t border-[#1a1a1a] flex items-center justify-end gap-4">
+          <div className="mt-8 pt-8 border-t border-slate-200 dark:border-[#1a1a1a] flex items-center justify-end gap-4">
             <button
               onClick={() => navigate("/dashboard/institute-profile")}
-              className="px-8 py-3 text-slate-400 hover:text-white transition-colors font-bold text-sm"
+              className="px-8 py-3 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-white transition-colors font-bold text-sm"
               disabled={saving || uploading}
             >
               Discard Changes

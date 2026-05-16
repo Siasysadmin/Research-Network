@@ -307,13 +307,13 @@ const currentUserAvatar = getCurrentUserAvatar();
     <div className="flex-1 flex flex-col h-full overflow-hidden font-inter relative">
 
       {/* ── Header ── */}
-      <div className="h-14 lg:h-16 border-b border-[#3b4b3d]/30 px-4 lg:px-6 flex items-center justify-between shrink-0 bg-[#0d0f0e]">
+      <div className="h-14 lg:h-16 border-b border-gray-300 dark:border-[#3b4b3d]/30 px-4 lg:px-6 flex items-center justify-between shrink-0 bg-white dark:bg-[#0d0f0e]">
         <div className="flex items-center gap-3">
-          <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white/10 text-[#e2e3e0] transition-all">
+          <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-white/10 text-slate-700 dark:text-[#e2e3e0] transition-all">
             <MaterialIcon name="arrow_back" className="text-[22px]" />
           </button>
           <div>
-            <h3 className="text-base lg:text-lg font-extrabold text-white leading-none">
+            <h3 className="text-base lg:text-lg font-extrabold text-slate-900 dark:text-white leading-none">
               Group Details
              
             </h3>
@@ -333,27 +333,26 @@ const currentUserAvatar = getCurrentUserAvatar();
       </div>
 
       {/* ── Scrollable Content ── */}
-      <div className="flex-1 overflow-y-auto hide-scrollbar bg-[#121413]/30 p-5 lg:p-8">
+      <div className="flex-1 overflow-y-auto hide-scrollbar bg-gray-100 dark:bg-[#121413]/30 p-5 lg:p-8">
         <div className="max-w-2xl mx-auto space-y-8">
 
           {/* Group Avatar */}
           <div className="flex flex-col items-center">
             <div className="relative">
               <img
-                className="w-24 h-24 lg:w-28 lg:h-28 rounded-full object-cover border-4 border-[#1a1c1b] shadow-[0_0_30px_rgba(0,255,133,0.2)]"
-                src={groupImagePreview || defaultAvatar}
+className="w-24 h-24 lg:w-28 lg:h-28 rounded-full object-cover border-4 border-white dark:border-[#1a1c1b] shadow-[0_0_30px_rgba(0,255,133,0.2)]"                src={groupImagePreview || defaultAvatar}
                 alt={group?.name}
                 onError={(e) => { e.target.src = defaultAvatar; }}
               />
               {/* Only admin can change photo */}
               {group?.isAdmin && (
-                <label className="absolute -bottom-1 -right-1 w-9 h-9 bg-[#00FF85] text-[#003919] rounded-full flex items-center justify-center border-4 border-[#121413] cursor-pointer hover:brightness-110 transition-all">
+                <label className="absolute -bottom-1 -right-1 w-9 h-9 bg-[#00FF85] text-[#003919] rounded-full flex items-center justify-center border-4 border-white dark:border-[#121413] cursor-pointer hover:brightness-110 transition-all">
                   <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
                   <MaterialIcon name="photo_camera" className="text-[16px]" />
                 </label>
               )}
             </div>
-            <p className="text-[10px] font-mono text-slate-500 uppercase mt-3 tracking-widest">Group Profile</p>
+            <p className="text-[10px] font-mono text-slate-500 dark:text-slate-500 uppercase mt-3 tracking-widest">Group Profile</p>
           </div>
 
           {/* Group Name */}
@@ -365,13 +364,13 @@ const currentUserAvatar = getCurrentUserAvatar();
                   type="text"
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
-                  className="w-full bg-[#121413]/80 border border-[#3b4b3d]/50 rounded-xl px-4 py-3 text-base font-bold text-white focus:outline-none focus:border-[#00FF85]/50 transition-all"
+                  className="w-full bg-white dark:bg-[#121413]/80 border border-gray-300 dark:border-[#3b4b3d]/50 rounded-xl px-4 py-3 text-base font-bold text-slate-900 dark:text-white focus:outline-none focus:border-[#00FF85]/50 transition-all"
                   style={{ boxShadow: "none" }}
                 />
                 <MaterialIcon name="edit" className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-[18px]" />
               </div>
             ) : (
-              <div className="bg-[#121413]/80 border border-[#3b4b3d]/30 rounded-xl px-4 py-3 text-base font-bold text-white">
+              <div className="bg-white dark:bg-[#121413]/80 border border-gray-300 dark:border-[#3b4b3d]/30 rounded-xl px-4 py-3 text-base font-bold text-slate-900 dark:text-white">
                 {groupName}
               </div>
             )}
@@ -380,12 +379,12 @@ const currentUserAvatar = getCurrentUserAvatar();
           {/* Members */}
           <div>
             <div className="flex items-center justify-between mb-4 px-1">
-              <h4 className="text-[10px] font-mono font-bold text-white uppercase tracking-widest flex items-center gap-2">
+              <h4 className="text-[10px] font-mono font-bold text-slate-800 dark:text-white uppercase tracking-widest flex items-center gap-2">
                 <span className="w-2 h-2 bg-[#00FF85] rounded-full"></span>
                 Members ({members.length + 1})
               </h4>
               {group?.isAdmin && (
-                <button onClick={openAddModal} className="flex items-center gap-1.5 text-[#00FF85] hover:text-white transition-colors">
+                <button onClick={openAddModal} className="flex items-center gap-1.5 text-[#00FF85] hover:text-green-600 dark:hover:text-white transition-colors">
                   <MaterialIcon name="person_add" className="text-[16px]" />
                   <span className="text-[9px] font-bold uppercase tracking-widest">Add Member</span>
                 </button>
@@ -394,7 +393,7 @@ const currentUserAvatar = getCurrentUserAvatar();
 
             <div className="space-y-2">
               {/* YOU card */}
-              <div className="flex items-center justify-between p-3.5 rounded-xl border border-[#00FF85]/20 bg-[#00FF85]/5">
+              <div className="flex items-center justify-between p-3.5 rounded-xl border border-[#00FF85]/20 bg-green-50 dark:bg-[#00FF85]/5">
                 <div className="flex items-center gap-3">
                   <img
                     className="w-10 h-10 rounded-full object-cover border border-[#00FF85]/50"
@@ -423,7 +422,7 @@ onError={(e) => { e.target.src = defaultAvatar; }}                    alt="You"
                 <div className="text-center py-6 text-slate-500 font-mono text-xs uppercase opacity-50">No other members</div>
               ) : (
                 members.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between p-3.5 rounded-xl border border-[#3b4b3d]/20 bg-[#121413]/40 group hover:border-[#3b4b3d]/40 transition-all relative">
+                  <div key={member.id} className="flex items-center justify-between p-3.5 rounded-xl border border-gray-300 dark:border-[#3b4b3d]/20 bg-white dark:bg-[#121413]/40 group hover:border-[#3b4b3d]/40 transition-all relative">
                     <div className="flex items-center gap-3">
                       <img
                         className="w-10 h-10 rounded-full object-cover border border-[#3b4b3d]/40 group-hover:border-[#00FF85]/40 transition-colors"
@@ -433,7 +432,7 @@ onError={(e) => { e.target.src = defaultAvatar; }}                    alt="You"
                       />
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-bold text-white">{member.name}</p>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white">{member.name}</p>
                           {member.isAdmin && (
                             <span className="text-[9px] bg-[#00FF85] text-[#003919] px-1.5 py-0.5 rounded font-black uppercase">ADMIN</span>
                           )}
@@ -446,12 +445,12 @@ onError={(e) => { e.target.src = defaultAvatar; }}                    alt="You"
 
                     {group?.isAdmin && (
                       <div className="relative" onMouseDown={(e) => e.stopPropagation()}>
-                        <button onClick={() => toggleMenu(member.id)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-slate-400 transition-colors">
+                        <button onClick={() => toggleMenu(member.id)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-slate-500 transition-colors">
                           <MaterialIcon name="more_vert" className="text-[18px]" />
                         </button>
 
                         {activeMenu === member.id && (
-                          <div className="absolute right-0 top-full mt-1 w-48 bg-[#1a1c1b] border border-[#3b4b3d]/50 rounded-xl shadow-2xl z-50 overflow-hidden">
+                          <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-[#1a1c1b] border border-gray-300 dark:border-[#3b4b3d]/50 rounded-xl shadow-2xl z-50 overflow-hidden">
                             {member.isAdmin ? (
                               <button onClick={() => removeAdmin(member.id)}
                                 className="w-full text-left px-4 py-2.5 text-xs font-bold text-amber-400 hover:bg-amber-400/10 flex items-center gap-2 border-b border-[#3b4b3d]/20">
@@ -483,12 +482,12 @@ onError={(e) => { e.target.src = defaultAvatar; }}                    alt="You"
       {showAddModal && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
           onClick={() => setShowAddModal(false)}>
-          <div className="w-full max-w-md mx-4 bg-[#1a1c1b] border border-[#3b4b3d]/50 rounded-2xl shadow-2xl overflow-hidden"
+          <div className="w-full max-w-md mx-4 bg-white dark:bg-[#1a1c1b] border border-gray-300 dark:border-[#3b4b3d]/50 rounded-2xl shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}>
 
             {/* Modal Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-[#3b4b3d]/30">
-              <h4 className="text-sm font-extrabold text-white uppercase tracking-wider">Add Members</h4>
+              <h4 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">Add Members</h4>
               <button onClick={() => setShowAddModal(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-slate-400">
                 <MaterialIcon name="close" className="text-[18px]" />
               </button>
@@ -496,14 +495,14 @@ onError={(e) => { e.target.src = defaultAvatar; }}                    alt="You"
 
             {/* Search */}
             <div className="px-4 pt-3 pb-2">
-              <div className="flex items-center bg-[#121413] border border-[#3b4b3d]/40 rounded-full px-4 py-2 gap-2">
+              <div className="flex items-center bg-gray-100 dark:bg-[#121413] border border-gray-300 dark:border-[#3b4b3d]/40 rounded-full px-4 py-2 gap-2">
                 <MaterialIcon name="search" className="text-slate-500 text-[18px] shrink-0" />
                 <input
                   type="text"
                   placeholder="Search users..."
                   value={addSearch}
                   onChange={(e) => setAddSearch(e.target.value)}
-                  className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
+                  className="flex-1 bg-transparent text-sm text-slate-900 dark:text-white outline-none placeholder:text-slate-400 dark:placeholder:text-slate-600"
                   style={{ border: "none", boxShadow: "none" }}
                 />
               </div>
@@ -527,13 +526,13 @@ onError={(e) => { e.target.src = defaultAvatar; }}                    alt="You"
                         isSelected ? prev.filter((id) => id !== user.id) : [...prev, user.id]
                       )}
                       className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all mb-1 ${
-                        isSelected ? "bg-[#00FF85]/10 border border-[#00FF85]/30" : "hover:bg-white/5 border border-transparent"
+                        isSelected ? "bg-[#00FF85]/10 border border-[#00FF85]/30" : ":hover:bg-gray-100 dark:hover:bg-white/5 border border-transparent"
                       }`}
                     >
                       <img className="w-9 h-9 rounded-full object-cover" src={user.avatar} alt={user.name}
                         onError={(e) => { e.target.src = defaultAvatar; }} />
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-bold truncate ${isSelected ? "text-[#00FF85]" : "text-white"}`}>{user.name}</p>
+                        <p className={`text-sm font-bold truncate ${isSelected ? "text-[#00FF85]" : "text-slate-900 dark:text-white"}`}>{user.name}</p>
                         <p className="text-[10px] font-mono text-slate-500">{user.role} . {user.registerId}</p>
                       </div>
                       {isSelected && <MaterialIcon name="check_circle" className="text-[#00FF85] text-[20px] shrink-0" />}
@@ -544,7 +543,7 @@ onError={(e) => { e.target.src = defaultAvatar; }}                    alt="You"
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-3 border-t border-[#3b4b3d]/30 flex items-center justify-between">
+            <div className="px-4 py-3 border-t border-gray-300 dark:border-[#3b4b3d]/30 bg-white dark:bg-[#1a1c1b] flex items-center justify-between">
               <span className="text-[10px] font-mono text-slate-400 uppercase">{selectedToAdd.length} selected</span>
               <button onClick={handleAddMembers} disabled={addingMembers || selectedToAdd.length === 0}
                 className="flex items-center gap-2 px-5 py-2 bg-[#00FF85] text-[#003919] rounded-xl text-xs font-black uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all disabled:opacity-50">
