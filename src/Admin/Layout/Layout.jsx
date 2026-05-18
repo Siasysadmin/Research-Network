@@ -1,18 +1,22 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Logo from "../../assets/Logo";
-import API_CONFIG from "../../config/api.config";
-import avatar from "../../assets/images/avatar.jpg";
+import avatar from "../../assets/images/avatar.jpg"
 import axios from "axios";
+import API_CONFIG from "../../config/api.config";
 
 const MaterialIcon = ({ name, className = "" }) => (
   <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
 const getNavStyle = (isActive, isDark) => ({
-  color: isActive ? "#00ff88" : isDark ? "#94a3b8" : "#334155",
-  background: isActive ? "rgba(0,255,136,0.1)" : "transparent",
-  borderLeft: isActive ? "4px solid #00ff88" : "4px solid transparent",
+  color: isActive
+    ? "#00ff88"
+    : (isDark ? "#94a3b8" : "#334155"),
+  background: isActive
+    ? "rgba(0,255,136,0.1)"
+    : "transparent",
+  borderLeft: isActive ? "4px solid #00ff88" : "4px solid transparent"
 });
 
 const handleHover = (e, isActive, isDark) => {
@@ -29,42 +33,148 @@ const handleLeave = (e, isActive, isDark) => {
   e.currentTarget.style.color = isDark ? "#94a3b8" : "#334155";
 };
 
+
+
 const HeaderNav = ({ user, toggleSidebar, isSidebarOpen, isDark }) => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+  const [blockedUserIds, setBlockedUserIds] = useState([]);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const navigate = useNavigate();
   const profileRef = useRef(null);
+  const searchRef = useRef(null);
+
+
+
+  const SearchDropdown = ({ results }) => {
+  if (results.length === 0) return null;
+
+  return (
+    <div
+      className="
+        absolute top-full mt-2 left-0 w-full rounded-xl shadow-xl overflow-hidden z-[200]
+        max-h-64 overflow-y-auto
+        bg-white border border-gray-200
+        dark:bg-[#111f17] dark:border-[#32ff9920]
+      "
+    >
+      {results.map((u) => {
+        const name =
+          u.user_type === "institute"
+            ? u.institute_details?.institute_name || u.name || "Institute"
+            : u.name || "User";
+
+        const img =
+          u.user_type === "institute"
+            ? u.profile_institute_details?.profile_image
+            : u.profile_individual_details?.profile_image;
+
+        const imgUrl = img
+          ? `${API_CONFIG.BASE_URL}/${img}`
+          : avatar;
+
+        return (
+          <div
+            key={u.id}
+            onMouseDown={() => navigate(`/user/${u.id}`)}
+            className="
+              flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors
+
+              hover:bg-gray-100
+              dark:hover:bg-[#32ff9910]
+            "
+          >
+            <img
+              src={imgUrl}
+              onError={(e) => {
+                e.target.src = avatar;
+              }}
+              className="w-8 h-8 rounded-full object-cover"
+              alt={name}
+            />
+
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                {name}
+              </p>
+
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 capitalize">
+                {u.user_type || "individual"}
+              </p>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+
+
+
+useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (
+      profileRef.current &&
+      !profileRef.current.contains(event.target)
+    ) {
+      setIsProfileOpen(false);
+    }
+
+    if (
+      searchRef.current &&
+      !searchRef.current.contains(event.target)
+    ) {
+      setIsSearchFocused(false);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, []);
+
+
+
 
   const handleCreateEvent = () => {
     navigate("/admin/create-event");
     setIsMobileMenuOpen(false);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+  try {
     const token = localStorage.getItem("token");
 
-    localStorage.clear();
-    sessionStorage.clear();
-
-    setIsProfileOpen(false);
-
-    navigate("/login", { replace: true });
-
-    axios
-      .post(
-        `${API_CONFIG.BASE_URL}/auth/logout`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+    await axios.post(
+      "https://sasedge.org/research-network/back-end/auth/logout",
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      )
-      .catch((error) => {
-        console.error("Logout API error:", error);
-      });
+      }
+    );
+
+  } catch (error) {
+    console.log(error);
+  } finally {
+    localStorage.clear();
+    navigate("/login");
+  }
+};
+
+const handleLogoutClick = async (e) => {
+    e.stopPropagation();
+    setIsProfileOpen(false);
+    await handleLogout();
   };
   const handleSettings = () => {
     navigate("/admin/settings");
@@ -72,38 +182,130 @@ const HeaderNav = ({ user, toggleSidebar, isSidebarOpen, isDark }) => {
   };
 
   const handleProfile = () => {
-    navigate("/admin/profile");
+  navigate("/admin/profile");
+  setIsProfileOpen(false);
+};
+
+
+useEffect(() => {
+  const handleClickOutside = (event) => {
+  if (
+    profileRef.current &&
+    !profileRef.current.contains(event.target)
+  ) {
     setIsProfileOpen(false);
+  }
+};
+document.addEventListener("click", handleClickOutside);
+  return () => {
+    document.removeEventListener("click", handleClickOutside);
+  };
+}, []);
+
+
+
+useEffect(() => {
+  const fetchAllUsers = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(
+        `${API_CONFIG.BASE_URL}/user/get-all-users`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await res.json();
+
+      const list =
+        data.data || data.users || (Array.isArray(data) ? data : []);
+
+      setAllUsers(list);
+
+    } catch (err) {
+      console.error("Users fetch error:", err);
+    }
   };
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (profileRef.current && !profileRef.current.contains(event.target)) {
-        setIsProfileOpen(false);
-      }
-    };
+  fetchAllUsers();
+}, []);
 
-    document.addEventListener("mousedown", handleClickOutside);
 
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+
+const handleSearch = (query) => {
+  setSearchQuery(query);
+
+  if (!query.trim()) {
+    setSearchResults([]);
+    return;
+  }
+
+  const q = query.toLowerCase().trim();
+
+  const filtered = allUsers.filter((u) => {
+
+    const isBlocked =
+      Array.isArray(blockedUserIds) &&
+      blockedUserIds.includes(String(u.id));
+
+    if (isBlocked) return false;
+
+    const userType = (u.user_type || "").toLowerCase();
+
+    const name =
+      userType === "institute" || userType === "institution"
+        ? u.institute_details?.institute_name || u.name || ""
+        : u.name || "";
+
+    const email = u.email || "";
+    const id = String(u.id || "");
+    const registrationId = String(u.registration_id || "");
+
+ if (q === "individual" || q === "indivual") {
+  return userType.includes("individual");
+}
+
+if (
+  q === "institute" ||
+  q === "institution" ||
+  q === "innstiute"
+) {
+  return (
+    userType.includes("institute") ||
+    userType.includes("institution")
+  );
+}
+    return (
+      name.toLowerCase().includes(q) ||
+      email.toLowerCase().includes(q) ||
+      id.includes(q) ||
+      registrationId.toLowerCase().includes(q) ||
+      userType.includes(q)
+    );
+  });
+
+  setSearchResults(filtered);
+};
+
+
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 h-16 flex items-center justify-between px-4 md:px-6 z-[100]"
-      style={{
-        background: isDark ? "#13231a" : "#ffffff",
-        borderBottom: isDark ? "1px solid #1e3a2c" : "1px solid #e2e8f0",
-      }}
-    >
+  className="fixed top-0 left-0 right-0 h-16 flex items-center justify-between px-4 md:px-6 z-[100]"
+  style={{
+    background: isDark ? "#13231a" : "#ffffff",
+    borderBottom: isDark ? "1px solid #1e3a2c" : "1px solid #e2e8f0"
+  }}
+>
       <div className="flex items-center gap-3">
         <button
           onClick={toggleSidebar}
           className="lg:hidden p-2 hover:text-[#00ff88] transition-colors"
           aria-label="Toggle sidebar"
-          style={{ transform: "translateY(6px)" }}
+          style={{ transform: 'translateY(6px)' }}
         >
           <MaterialIcon
             name={isSidebarOpen ? "close" : "menu"}
@@ -113,28 +315,50 @@ const HeaderNav = ({ user, toggleSidebar, isSidebarOpen, isDark }) => {
 
         <Logo />
       </div>
+      <div className="relative ml-auto mr-4" ref={searchRef}>
+  <MaterialIcon
+    name="search"
+    className="
+    absolute left-3 top-1/2 -translate-y-1/2
+    text-slate-400 text-lg pointer-events-none
+    "
+  />
 
-      <div className="flex items-center gap-3 md:gap-6">
-        <button
-          onClick={() => {
-            const newTheme = isDark ? "light" : "dark";
+  <input
+    type="text"
+    value={searchQuery}
+    onChange={(e) => handleSearch(e.target.value)}
+    onFocus={() => setIsSearchFocused(true)}
+    placeholder="Search users..."
+    className="
+    pl-9 pr-4 py-2 rounded-xl text-sm transition-all w-48
 
-            localStorage.setItem("theme", newTheme);
+    bg-gray-100 text-slate-800
+    border border-gray-300
+    placeholder:text-gray-400
 
-            document.documentElement.classList.toggle(
-              "dark",
-              newTheme === "dark",
-            );
+    focus:border-[#00ff88]
+    focus:ring-2
+    focus:ring-[#00ff88]/20
+    outline-none
 
-            window.location.reload();
-          }}
-          className="w-10 h-10 flex items-center justify-center rounded-xl border border-gray-200 dark:border-[#1e3a2c] bg-gray-100 dark:bg-[#1a2b21] text-gray-700 dark:text-[#00ff88] hover:scale-105 hover:border-[#00ff88]/40 transition-all duration-300"
-        >
-          <MaterialIcon
-            name={isDark ? "light_mode" : "dark_mode"}
-            className="text-xl"
-          />
-        </button>
+    dark:bg-white/5
+    dark:text-white
+    dark:border-[#5bf9aa20]
+
+    dark:placeholder:text-slate-500
+    dark:focus:border-[#32ff99]
+    "
+  />
+
+  {isSearchFocused && searchResults.length > 0 && (
+    <SearchDropdown results={searchResults} />
+  )}
+</div>
+      <div
+  ref={profileRef}
+  className="relative flex items-center gap-3 md:gap-6"
+>
 
         <button
           onClick={handleCreateEvent}
@@ -149,15 +373,30 @@ const HeaderNav = ({ user, toggleSidebar, isSidebarOpen, isDark }) => {
           <span className="hidden xs:inline">Create Event</span>
         </button>
 
-        <div
-          ref={profileRef}
-          className="flex items-center gap-2 md:gap-3 border-l border-[#1e3a2c] pl-3 md:pl-6 relative"
-        >
+        <button
+  onClick={() => {
+    const newTheme = isDark ? "light" : "dark";
+
+    localStorage.setItem("theme", newTheme);
+
+    document.documentElement.classList.toggle(
+      "dark",
+      newTheme === "dark"
+    );
+
+    window.location.reload();
+  }}
+  className="w-10 h-10 flex items-center justify-center rounded-xl border border-gray-200 dark:border-[#1e3a2c] bg-gray-100 dark:bg-[#1a2b21] text-gray-700 dark:text-[#00ff88] hover:scale-105 hover:border-[#00ff88]/40 transition-all duration-300"
+>
+  <MaterialIcon
+    name={isDark ? "light_mode" : "dark_mode"}
+    className="text-xl"
+  />
+</button>
+
+       <div className="relative flex items-center gap-2 md:gap-3 border-l border-[#1e3a2c] pl-3 md:pl-6">
           <div className="text-right hidden md:block">
-            <p
-              className="text-xs font-bold leading-none truncate max-w-[120px]"
-              style={{ color: isDark ? "#ffffff" : "#0f172a" }}
-            >
+            <p className="text-xs font-bold leading-none truncate max-w-[120px]" style={{ color: isDark ? "#ffffff" : "#0f172a" }}>
               {user?.name || "User Name"}
             </p>
             <p className="text-[10px] text-[#00ff88] uppercase tracking-widest mt-1">
@@ -169,92 +408,160 @@ const HeaderNav = ({ user, toggleSidebar, isSidebarOpen, isDark }) => {
             style={{
               backgroundImage: `url('${user?.avatar || avatar}')`,
             }}
-            onClick={() => setIsProfileOpen(!isProfileOpen)}
+            onClick={(e) => {
+  e.stopPropagation();
+  setIsProfileOpen((prev) => !prev);
+}}
           />
         </div>
       </div>
 
-      {isProfileOpen && (
+   {isProfileOpen && (
+  <div
+    onClick={(e) => e.stopPropagation()}
+    className="absolute top-[72px] right-0 w-72 rounded-3xl overflow-hidden z-[999] animate-slideDown"
+    style={{
+      background: isDark
+        ? "linear-gradient(180deg,#16271d 0%, #13231a 100%)"
+        : "#ffffff",
+      border: isDark
+        ? "1px solid rgba(0,255,136,0.12)"
+        : "1px solid #e2e8f0",
+      boxShadow: isDark
+        ? "0 25px 50px -12px rgba(0,0,0,0.45)"
+        : "0 20px 45px rgba(15,23,42,0.12)",
+      backdropFilter: "blur(14px)",
+    }}
+  >
+
+    {/* TOP PROFILE SECTION */}
+    <div
+  className="px-6 pt-6 pb-5 flex flex-col items-center text-center"
+  style={{
+    background: isDark ? "#13231a" : "#ffffff",
+    borderBottom: isDark
+      ? "1px solid rgba(255,255,255,0.06)"
+      : "1px solid #edf2f7",
+  }}
+>
+      <div
+        className="w-20 h-20 rounded-full border-4 overflow-hidden"
+        style={{
+          borderColor: "rgba(0,255,136,0.55)",
+          boxShadow: "0 0 30px rgba(0,255,136,0.18)",
+        }}
+      >
+        <img
+          src={user?.avatar || avatar}
+          alt="profile"
+          className="w-full h-full object-cover"
+        />
+      </div>
+
+      <h3
+        className="mt-4 text-lg font-bold"
+        style={{ color: isDark ? "#ffffff" : "#0f172a" }}
+      >
+        {user?.name || "Admin"}
+      </h3>
+
+      <p
+        className="text-sm mt-1"
+        style={{ color: isDark ? "#94a3b8" : "#64748b" }}
+      >
+        {user?.email || "admin@gmail.com"}
+      </p>
+
+      <div
+        className="mt-3 px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider"
+        style={{
+          background: "rgba(0,255,136,0.12)",
+          color: "#00ff88",
+          border: "1px solid rgba(0,255,136,0.18)",
+        }}
+      >
+        {user?.role || "ADMIN"}
+      </div>
+    </div>
+
+    {/* ACTIONS */}
+    <div className="p-3">
+
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsProfileOpen(false);
+          handleLogout();
+        }}
+        className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group"
+        style={{
+          color: isDark ? "#cbd5e1" : "#475569",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = isDark
+            ? "rgba(255,255,255,0.06)"
+            : "#f8fafc";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "transparent";
+        }}
+      >
         <div
-          className="absolute top-16 right-4 rounded-lg shadow-lg p-2 w-48 z-50"
+          className="w-10 h-10 rounded-xl flex items-center justify-center"
           style={{
-            background: isDark ? "#13231a" : "#ffffff",
-            border: isDark ? "1px solid #1e3a2c" : "1px solid #e2e8f0",
+            background: "rgba(255,59,59,0.12)",
+            color: "#ff4d4f",
           }}
         >
-          <div
-            className="pb-2 mb-2"
-            style={{
-              borderBottom: isDark ? "1px solid #1e3a2c" : "1px solid #e2e8f0",
-            }}
-          >
-            <p
-              className="text-sm font-bold"
-              style={{ color: isDark ? "#ffffff" : "#0f172a" }}
-            >
-              {user?.name || "User Name"}
-            </p>
-            <p className="text-xs text-[#00ff88]">{user?.role || "ADMIN"}</p>
-          </div>
-
-          {/* <button
-      onClick={handleProfile}
-      className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors"
-    >
-      <MaterialIcon name="person" className="text-lg" />
-      <span>My Profile</span>
-    </button> */}
-
-          <button
-            onMouseDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleLogout();
-            }}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors"
-            style={{ color: isDark ? "#94a3b8" : "#475569" }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = isDark
-                ? "#ffffff10"
-                : "#f1f5f9";
-              e.currentTarget.style.color = isDark ? "#ffffff" : "#0f172a";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.color = isDark ? "#94a3b8" : "#475569";
-            }}
-          >
-            <MaterialIcon name="logout" className="text-lg" />
-            <span>Logout</span>
-          </button>
+          <MaterialIcon name="logout" className="text-[20px]" />
         </div>
-      )}
+
+        <div className="flex flex-col items-start">
+          <span className="text-sm font-semibold">
+            Logout
+          </span>
+
+          <span
+            className="text-xs"
+            style={{
+              color: isDark ? "#64748b" : "#94a3b8",
+            }}
+          >
+            End your current session
+          </span>
+        </div>
+      </button>
+
+    </div>
+  </div>
+)}
     </header>
   );
 };
+
 
 const Sidebar = ({ activeNav, setActiveNav, isOpen, onClose, isDark }) => {
   const [isUserAppsOpen, setIsUserAppsOpen] = useState(false);
   const [isEventsOpen, setIsEventsOpen] = useState(false); // ✅ Events dropdown ki nayi state
   const navigate = useNavigate();
 
+
   const handleNavigation = (path, navItem) => {
-    setActiveNav(navItem);
-    navigate(path);
+  setActiveNav(navItem);
+  navigate(path);
 
-    if (window.innerWidth < 1024) {
-      onClose();
-    }
-  };
-
-  {
-    isOpen && (
-      <div
-        className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-        onClick={onClose}
-      />
-    );
+  if (window.innerWidth < 1024) {
+    onClose();
   }
+};
+
+  {isOpen && (
+  <div
+    className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+    onClick={onClose}
+  />
+)}
 
   const handleHomeClick = () => {
     handleNavigation("/admin", "home");
@@ -273,52 +580,50 @@ const Sidebar = ({ activeNav, setActiveNav, isOpen, onClose, isDark }) => {
 
   return (
     <>
+      
+
       <aside
-        id="sidebar"
-        className={`fixed left-0 top-16 bottom-0 w-64 lg:w-61 flex flex-col z-[50] transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        }`}
-        style={{
-          background: isDark ? "#13231a" : "#ffffff",
-          borderRight: isDark ? "1px solid #1e3a2c" : "1px solid #e2e8f0",
-        }}
-      >
+  id="sidebar"
+  className={`fixed left-0 top-16 bottom-0 w-64 lg:w-61 flex flex-col z-[50] transition-transform duration-300 ease-in-out ${
+    isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+  }`}
+  style={{
+    background: isDark ? "#13231a" : "#ffffff",
+    borderRight: isDark ? "1px solid #1e3a2c" : "1px solid #e2e8f0"
+  }}
+>
         {/* mobile close handled by header toggle; removed duplicate button */}
         <nav className="flex-1 px-2 md:px-3 py-4 space-y-1 overflow-y-auto custom-scrollbar">
           <button
-            onClick={handleHomeClick}
-            className="w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all"
-            style={getNavStyle(activeNav === "home", isDark)}
-            onMouseEnter={(e) => handleHover(e, activeNav === "home", isDark)}
-            onMouseLeave={(e) => handleLeave(e, activeNav === "home", isDark)}
-          >
-            <MaterialIcon name="home" className="text-m" />
-            <span className="text-sm font-medium">Home</span>
-          </button>
+  onClick={handleHomeClick}
+  className="w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all"
+  style={getNavStyle(activeNav === "home", isDark)}
+  onMouseEnter={(e) => handleHover(e, activeNav === "home", isDark)}
+  onMouseLeave={(e) => handleLeave(e, activeNav === "home", isDark)}
+>
+  <MaterialIcon name="home" className="text-m" />
+  <span className="text-sm font-medium">Home</span>
+</button>
 
           <button
             onClick={() => handleNavigation("/admin/board-members", "board")}
             className="w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all"
-            style={getNavStyle(activeNav === "board", isDark)}
-            onMouseEnter={(e) => handleHover(e, activeNav === "board", isDark)}
-            onMouseLeave={(e) => handleLeave(e, activeNav === "board", isDark)}
+ style={getNavStyle(activeNav === "board", isDark)}
+onMouseEnter={(e) => handleHover(e, activeNav === "board", isDark)}
+onMouseLeave={(e) => handleLeave(e, activeNav === "board", isDark)}
           >
             <MaterialIcon name="groups" className="text-m" />
             <span className="text-sm font-medium">Board Members</span>
           </button>
-
+          
           {/* USER APPLICATIONS DROPDOWN */}
           <div>
             <button
               onClick={() => setIsUserAppsOpen(!isUserAppsOpen)}
               className="w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all"
-              style={getNavStyle(activeNav === "users", isDark)}
-              onMouseEnter={(e) =>
-                handleHover(e, activeNav === "users", isDark)
-              }
-              onMouseLeave={(e) =>
-                handleLeave(e, activeNav === "users", isDark)
-              }
+style={getNavStyle(activeNav === "users", isDark)}
+onMouseEnter={(e) => handleHover(e, activeNav === "users", isDark)}
+onMouseLeave={(e) => handleLeave(e, activeNav === "users", isDark)}
             >
               <div className="flex items-center gap-3">
                 <MaterialIcon name="person_add" className="text-m" />
@@ -359,36 +664,36 @@ const Sidebar = ({ activeNav, setActiveNav, isOpen, onClose, isDark }) => {
             onClick={() =>
               handleNavigation("/admin/research-upload-requests", "research")
             }
-            className="w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all"
-            style={getNavStyle(activeNav === "research", isDark)}
-            onMouseEnter={(e) =>
-              handleHover(e, activeNav === "research", isDark)
-            }
-            onMouseLeave={(e) =>
-              handleLeave(e, activeNav === "research", isDark)
-            }
+           className="w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all"
+style={getNavStyle(activeNav === "research", isDark)}
+onMouseEnter={(e) => handleHover(e, activeNav === "research", isDark)}
+onMouseLeave={(e) => handleLeave(e, activeNav === "research", isDark)}
           >
             <MaterialIcon name="menu_book" className="text-m" />
             <span className="text-sm font-medium">Research Applications</span>
           </button>
-
+          
           <button
-            onClick={() => handleNavigation("/admin/chat", "chats")}
+            onClick={() =>
+              handleNavigation("/admin/chat", "chats")
+            }
             className="w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all"
-            style={getNavStyle(activeNav === "chats", isDark)}
-            onMouseEnter={(e) => handleHover(e, activeNav === "chats", isDark)}
-            onMouseLeave={(e) => handleLeave(e, activeNav === "chats", isDark)}
+style={getNavStyle(activeNav === "chats", isDark)}
+onMouseEnter={(e) => handleHover(e, activeNav === "chats", isDark)}
+onMouseLeave={(e) => handleLeave(e, activeNav === "chats", isDark)}
           >
             <MaterialIcon name="chat" className="text-m" />
             <span className="text-sm font-medium">Chats</span>
           </button>
 
           <button
-            onClick={() => handleNavigation("/admin/save", "save")}
-            className="w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all"
-            style={getNavStyle(activeNav === "save", isDark)}
-            onMouseEnter={(e) => handleHover(e, activeNav === "save", isDark)}
-            onMouseLeave={(e) => handleLeave(e, activeNav === "save", isDark)}
+            onClick={() =>
+              handleNavigation("/admin/save", "save")
+            }
+           className="w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all"
+style={getNavStyle(activeNav === "save", isDark)}
+onMouseEnter={(e) => handleHover(e, activeNav === "save", isDark)}
+onMouseLeave={(e) => handleLeave(e, activeNav === "save", isDark)}
           >
             <MaterialIcon name="bookmark" className="text-m" />
             <span className="text-sm font-medium">Save</span>
@@ -399,13 +704,9 @@ const Sidebar = ({ activeNav, setActiveNav, isOpen, onClose, isDark }) => {
             <button
               onClick={() => setIsEventsOpen(!isEventsOpen)}
               className="w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all"
-              style={getNavStyle(activeNav === "events", isDark)}
-              onMouseEnter={(e) =>
-                handleHover(e, activeNav === "events", isDark)
-              }
-              onMouseLeave={(e) =>
-                handleLeave(e, activeNav === "events", isDark)
-              }
+style={getNavStyle(activeNav === "events", isDark)}
+onMouseEnter={(e) => handleHover(e, activeNav === "events", isDark)}
+onMouseLeave={(e) => handleLeave(e, activeNav === "events", isDark)}
             >
               <div className="flex items-center gap-3">
                 <MaterialIcon name="event" className="text-m" />
@@ -430,9 +731,7 @@ const Sidebar = ({ activeNav, setActiveNav, isOpen, onClose, isDark }) => {
                 </button>
 
                 <button
-                  onClick={() =>
-                    handleNavigation("/admin/event-approvals", "events")
-                  }
+                  onClick={() => handleNavigation("/admin/event-approvals", "events")}
                   className="w-full text-left px-3 md:px-4 py-2 rounded-lg text-sm transition-all"
                 >
                   <div className="flex items-center gap-2">
@@ -443,6 +742,7 @@ const Sidebar = ({ activeNav, setActiveNav, isOpen, onClose, isDark }) => {
               </div>
             )}
           </div>
+          
         </nav>
       </aside>
     </>
@@ -455,21 +755,21 @@ const Layout = ({ children, activeNav, setActiveNav }) => {
     typeof window !== "undefined" ? window.innerWidth : 0,
   );
 
-  const [isDark, setIsDark] = useState(true);
+ const [isDark, setIsDark] = useState(true);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
     setIsDark(savedTheme === "dark");
   }, []);
 
-  const [user, setUser] = useState(null);
+const [user, setUser] = useState(null);
 
-  useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    if (storedUser) {
-      setUser(storedUser);
-    }
-  }, []);
+useEffect(() => {
+  const storedUser = JSON.parse(localStorage.getItem("user"));
+  if (storedUser) {
+    setUser(storedUser);
+  }
+}, []);
   useEffect(() => {
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
@@ -490,12 +790,12 @@ const Layout = ({ children, activeNav, setActiveNav }) => {
 
   return (
     <div
-      className="h-screen overflow-hidden antialiased flex flex-col"
-      style={{
-        background: isDark ? "#0a120e" : "#f8fafc",
-        color: isDark ? "#f1f5f9" : "#0f172a",
-      }}
-    >
+  className="h-screen overflow-hidden antialiased flex flex-col"
+  style={{
+    background: isDark ? "#0a120e" : "#f8fafc",
+    color: isDark ? "#f1f5f9" : "#0f172a"
+  }}
+>
       <HeaderNav
         user={user}
         toggleSidebar={toggleSidebar}

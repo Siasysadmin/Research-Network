@@ -263,50 +263,49 @@ const DashboardLayout = ({ children }) => {
   }, []);
 
   // ── Search Handler ──
-  const handleSearch = (query) => {
-    setSearchQuery(query);
+ const handleSearch = (query) => {
+  setSearchQuery(query);
 
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
+  if (!query.trim()) {
+    setSearchResults([]);
+    return;
+  }
+
+  const q = query.toLowerCase().trim();
+
+  const filtered = allUsers.filter((u) => {
+    const isBlocked = blockedUserIds.includes(String(u.id));
+    if (isBlocked) return false;
+
+    const userType = (u.user_type || "").toLowerCase();
+
+    const name =
+      userType === "institute" || userType === "institution"
+        ? u.institute_details?.institute_name || u.name || ""
+        : u.name || "";
+
+    const email = u.email || "";
+    const id = String(u.id || "");
+    const registrationId = String(u.registration_id || "");
+
+    if (q === "individual" || q === "indivual") {
+      return userType === "individual";
     }
 
-    const q = query.toLowerCase().trim();
+    if (q === "institute" || q === "institution" || q === "innstiute") {
+      return userType === "institute" || userType === "institution";
+    }
 
-    const filtered = allUsers.filter((u) => {
-      const isBlocked = blockedUserIds.includes(String(u.id));
-      if (isBlocked) return false;
+    return (
+      name.toLowerCase().includes(q) ||
+      email.toLowerCase().includes(q) ||
+      id.includes(q) ||
+      registrationId.toLowerCase().includes(q) ||
+      userType.includes(q)
+    );
+  });
 
-      const userType = (u.user_type || "").toLowerCase();
-
-      const name =
-        userType === "institute" || userType === "institution"
-          ? u.institute_details?.institute_name || u.name || ""
-          : u.name || "";
-
-      const email = u.email || "";
-      const id = String(u.id || "");
-      const registrationId = String(u.registration_id || "");
-
-      if (q === "individual" || q === "indivual") {
-        return userType === "individual";
-      }
-
-      if (q === "institute" || q === "institution" || q === "innstiute") {
-        return userType === "institute" || userType === "institution";
-      }
-
-      return (
-        name.toLowerCase().includes(q) ||
-        email.toLowerCase().includes(q) ||
-        id.includes(q) ||
-        registrationId.toLowerCase().includes(q) ||
-        userType.includes(q)
-      );
-    });
-
-    setSearchResults(filtered);
-  };
+setSearchResults(filtered);};
 
   // ── Open UserProfile from search result ──
   const handleSearchUserClick = (u) => {
@@ -462,8 +461,8 @@ const DashboardLayout = ({ children }) => {
   const SearchDropdown = ({ results }) => {
     if (results.length === 0) return null;
     return (
-      <div
-        className="
+  <div
+  className="
     absolute top-full mt-2 left-0 w-full min-w-[260px]
     max-h-[320px] overflow-y-auto
     rounded-xl shadow-xl z-[70]
@@ -471,7 +470,7 @@ const DashboardLayout = ({ children }) => {
     bg-white border border-gray-200
     dark:bg-[#111f17] dark:border-[#32ff9920]
   "
-      >
+>
         {" "}
         {results.map((u) => {
           const name =
