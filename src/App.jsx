@@ -35,7 +35,7 @@ import MainContent from "./dashboard/MainContent";
 import RightSection from "./dashboard/RightSection";
 import ResearchUploadForm from "./dashboard/ResearchUploadForm";
 import BoardReviewPortal from "./dashboard/BoardReviewPortal";
-import PublicationCard from "./dashboard/PublicationCard";
+import Mypublication from "./dashboard/MyPublications/Mypublication";
 import IndividualResearcherProfile from "./dashboard/IndividualResearcherProfile";
 import IndividualEditProfile from "./dashboard/IndividualEditProfile";
 import InstituteProfile from "./dashboard/InstituteProfile";
@@ -128,7 +128,7 @@ const App = () => {
           element={<ResearchUploadForm />}
         />
         <Route path="/dashboard/board-review" element={<BoardReviewPortal />} />
-        <Route path="/dashboard/publications" element={<PublicationCard />} />
+        <Route path="/dashboard/publications" element={<Mypublication />} />
         <Route
           path="/dashboard/individual-profile"
           element={<IndividualResearcherProfile />}

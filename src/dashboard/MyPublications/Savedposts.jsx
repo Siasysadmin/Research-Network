@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
-import DashboardLayout from "./DashboardLayout";
-import defaultAvatar from "../assets/images/avatar.jpg";
-import API_CONFIG from "../config/api.config";
+import API_CONFIG from "../../config/api.config";
+import defaultAvatar from "../../assets/images/avatar.jpg";
 import { toast } from "react-toastify";
 
 const MaterialIcon = ({ name, className = "", style = {} }) => (
@@ -9,215 +8,6 @@ const MaterialIcon = ({ name, className = "", style = {} }) => (
     {name}
   </span>
 );
-
-// ✅ CONFIRM MODAL - TOP LEVEL (MyPublications ke BAHAR)
-const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message }) => {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/60 backdrop-blur-sm">
-      <div
-        className="
-    bg-white border border-gray-200 text-slate-800
-    dark:bg-[#1a2e1a] dark:border-[#3b4b3d]/50 dark:text-[#e2e3e0]
-    rounded-2xl p-6 sm:p-8 w-[90%] max-w-md shadow-2xl
-  "
-      >
-        {/* Icon */}
-        <div className="flex justify-center mb-4">
-          <div
-            className="w-14 h-14 rounded-full 
-bg-green-100 text-green-600
-dark:bg-[#00ff85]/10 dark:text-[#00ff85]
-flex items-center justify-center"
-          >
-            <span className="material-symbols-outlined text-3xl text-[#00ff85]">
-              publish
-            </span>
-          </div>
-        </div>
-        {/* Title */}
-        <h2
-          className="text-center text-lg sm:text-xl font-extrabold 
-text-slate-800 dark:text-[#e2e3e0] 
-uppercase tracking-wide mb-2"
-        >
-          {" "}
-          {title}
-        </h2>
-        {/* Message */}
-        <p
-          className="text-center text-sm 
-text-slate-600 dark:text-[#b9cbb9] mb-6"
-        >
-          {message}
-        </p>
-        {/* Buttons */}
-        <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className="
-    flex-1 py-2.5 rounded-xl border 
-    border-gray-300 text-slate-600
-    hover:bg-gray-100
-    dark:border-[#3b4b3d]/50 dark:text-[#b9cbb9] dark:hover:bg-[#3b4b3d]/30
-    text-sm font-bold uppercase tracking-widest transition-all
-  "
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            className="
-    flex-1 py-2.5 rounded-xl 
-    bg-green-600 text-white hover:bg-green-700
-    dark:bg-[#00ff85] dark:text-[#0a1a0a] dark:hover:bg-[#00e676]
-    text-sm font-bold uppercase tracking-widest transition-all
-  "
-          >
-            Publish
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ✅ PUBLICATION CARD
-const PublicationCard = ({
-  status,
-  statusColor,
-  statusCode,
-  title,
-  category,
-  abstract,
-  pdfPath,
-  onPublish,
-  updatedAt,
-}) => {
-  const fullPdfUrl = pdfPath ? `${API_CONFIG.BASE_URL}/${pdfPath}` : null;
-  const [showFullAbstract, setShowFullAbstract] = useState(false);
-  return (
-    <div
-      className="
-group relative flex flex-col sm:flex-row items-start sm:items-center justify-between
-p-5 sm:p-8 rounded-xl border transition-all duration-300 gap-5 sm:gap-4
-
-bg-white border-gray-200 text-slate-800
-  border-2 hover:border-[#00ff85]
-
-dark:bg-[#1a1c1b] dark:border-[#3b4b3d]/30 dark:text-[#e2e3e0]
-dark:hover:bg-[#1e201f] dark:hover:border-[#00ff85]
-"
-    >
-      {" "}
-      {/* Left - Info */}
-      <div className="flex flex-col gap-3 sm:gap-4 w-full sm:max-w-3xl">
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <span
-            className={`px-2 py-0.5 rounded-sm text-[10px] font-black tracking-widest uppercase ${statusColor}`}
-          >
-            {status}
-          </span>
-          <span
-            className="
-  px-2 py-0.5 rounded-sm
-  bg-slate-100 text-slate-700
-  dark:bg-[#333534] dark:text-[#b9cbb9]
-  text-[10px] font-bold tracking-widest uppercase
-"
-          >
-            {" "}
-            {category || "Uncategorized"}
-          </span>
-        </div>
-        <h2
-          className="
-text-lg sm:text-2xl font-bold tracking-tight transition-colors
-
-text-slate-800 hover:text-green-600
-dark:text-[#e2e3e0] dark:hover:text-[#00ff85]
-"
-        >
-          {" "}
-          {title}
-        </h2>
-        <div className="space-y-1">
-          <span className="text-[10px] font-black tracking-[0.2em] text-slate-500 dark:text-[#b9cbb9] uppercase">
-            {" "}
-            ABSTRACT
-          </span>
-          <>
-            <p
-              className={`
-    text-xs sm:text-sm leading-relaxed italic
-    text-slate-600 dark:text-[#b9cbb9]/80
-    ${showFullAbstract ? "" : "line-clamp-3"}
-  `}
-            >
-              {abstract}
-            </p>
-
-            {abstract && (
-              <button
-                type="button"
-                onClick={() => setShowFullAbstract(!showFullAbstract)}
-                className="
-      mt-1 text-[11px] font-semibold
-      text-green-600 hover:text-green-700
-      dark:text-[#00ff85] dark:hover:brightness-110
-      transition-all
-    "
-              >
-                {showFullAbstract ? "Show Less" : "Read More"}
-              </button>
-            )}
-          </>
-        </div>
-      </div>
-      {/* Right - Actions */}
-      <div className="flex flex-row sm:flex-col items-center sm:items-end gap-3 sm:gap-4 w-full sm:min-w-[140px]">
-        {fullPdfUrl && (
-          <a
-            href={fullPdfUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="
-flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all
-
-bg-gray-100 border border-gray-200 text-slate-700 hover:bg-green-100 hover:text-green-700
-
-dark:bg-[#333534] dark:border-[#3b4b3d]/30 dark:text-[#e2e3e0]
-dark:hover:bg-[#00ff85] dark:hover:text-[#003919]
-"
-          >
-            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">
-              View PDF
-            </span>
-            <MaterialIcon name="description" className="text-base sm:text-lg" />
-          </a>
-        )}
-
-        {statusCode === "2" && (
-          <button
-            onClick={onPublish}
-            className="
-flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all
-
-bg-green-600 text-white hover:bg-green-700
-
-dark:bg-[#00ff85] dark:text-[#003919] dark:hover:brightness-110
-"
-          >
-            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">
-              Publish
-            </span>
-            <MaterialIcon name="publish" className="text-base sm:text-lg" />
-          </button>
-        )}
-      </div>
-    </div>
-  );
-};
 
 // ✅ SAVED POST CARD
 const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
@@ -257,7 +47,8 @@ const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
     setLoadingPostData(true);
     const token = getAuthToken();
     const isResearch = postData.isResearchPost === true;
-    postData.researche_id || postData.research_id || postData.id;
+    const actualId =
+      postData.researche_id || postData.research_id || postData.id;
 
     try {
       if (isResearch) {
@@ -274,7 +65,12 @@ const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
         const result = await res.json();
 
         if (result.status && result.data) {
-          postData.researche_id || postData.research_id || postData.id;
+          const freshPost = result.data.find(
+            (p) =>
+              String(p.researche_id) === String(actualId) ||
+              String(p.research_id) === String(actualId) ||
+              String(p.id) === String(actualId),
+          );
           if (freshPost) {
             setIsLiked(freshPost.is_liked === "1");
             setLikeCount(parseInt(freshPost.like_count || 0));
@@ -364,7 +160,8 @@ const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
   const handleLike = async () => {
     const token = getAuthToken();
     const isResearch = postData.isResearchPost === true;
-    postData.researche_id || postData.research_id || postData.id;
+    const actualId =
+      postData.researche_id || postData.research_id || postData.id;
 
     const wasLiked = isLiked;
     const currentCount = likeCount;
@@ -403,7 +200,8 @@ const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
 
     const token = getAuthToken();
     const isResearch = postData.isResearchPost === true;
-    postData.researche_id || postData.research_id || postData.id;
+    const actualId =
+      postData.researche_id || postData.research_id || postData.id;
 
     const endpoint = isResearch
       ? `${API_CONFIG.BASE_URL}/research/get-comments/${actualId}`
@@ -458,7 +256,8 @@ const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
     const token = getAuthToken();
     const commentTextToAdd = newCommentText.trim();
     const isResearch = postData.isResearchPost === true;
-    postData.researche_id || postData.research_id || postData.id;
+    const actualId =
+      postData.researche_id || postData.research_id || postData.id;
 
     const endpoint = isResearch
       ? `${API_CONFIG.BASE_URL}/research/add-comment/${actualId}`
@@ -578,7 +377,6 @@ dark:bg-[#141414] dark:border-white/10 text-slate-800 dark:text-white
 rounded-2xl shadow-sm overflow-hidden relative mb-6 sm:mb-8
 "
     >
-      {" "}
       <div className="p-4 sm:p-5">
         {/* Header - Author Info */}
         <div className="flex items-start gap-3 sm:gap-5 mt-2 sm:mt-4 mb-3 sm:mb-4">
@@ -683,9 +481,6 @@ rounded-2xl shadow-sm overflow-hidden relative mb-6 sm:mb-8
                     className="text-xl sm:text-2xl"
                   />
                 </button>
-                <div className="absolute top-4 left-4 bg-black/80 px-3 py-1.5 rounded-lg text-xs text-slate-800 dark:text-white font-semibold">
-                  Video
-                </div>
               </div>
             )}
           </div>
@@ -696,19 +491,19 @@ rounded-2xl shadow-sm overflow-hidden relative mb-6 sm:mb-8
           <div className="mt-3 sm:mt-4 rounded-xl overflow-hidden dark:bg-[#0e0f10] dark:border-white/10 bg-gray-100 border border-gray-200 p-3 sm:p-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
               <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
-               <div
-  className="
+                <div
+                  className="
     w-12 h-12 sm:w-16 sm:h-16 rounded-lg
     bg-white border border-slate-200
     dark:bg-[#0f172a] dark:border-[#00ff85]/20
     flex items-center justify-center shrink-0
   "
->
-  <MaterialIcon
-    name="description"
-    className="text-[#00ff85] text-xl sm:text-2xl"
-  />
-</div>
+                >
+                  <MaterialIcon
+                    name="description"
+                    className="text-[#00ff85] text-xl sm:text-2xl"
+                  />
+                </div>
                 <div className="min-w-0">
                   <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-white truncate">
                     {postData.research_file.split("/").pop() ||
@@ -734,6 +529,7 @@ rounded-2xl shadow-sm overflow-hidden relative mb-6 sm:mb-8
           </div>
         )}
       </div>
+
       {/* POST ACTIONS */}
       <div className="p-4 sm:p-5">
         <div className="flex items-center gap-3 sm:gap-6 pt-4 border-t border-gray-200 dark:border-white/5 flex-wrap">
@@ -815,8 +611,7 @@ rounded-2xl shadow-sm overflow-hidden relative mb-6 sm:mb-8
                     if (e.key === "Enter") addComment();
                   }}
                   placeholder="Add a comment..."
-                  className="w-full bg-white text-slate-800 border border-gray-300   rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm focus:outline-none focus:border-[#00ff85]/50 transition-colors pr-10 text-slate-800 dark:bg-[#1e293b] dark:text-white dark:border-white/10
-"
+                  className="w-full bg-white text-slate-800 border border-gray-300 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm focus:outline-none focus:border-[#00ff85]/50 transition-colors pr-10 text-slate-800 dark:bg-[#1e293b] dark:text-white dark:border-white/10"
                   style={{ outline: "none", boxShadow: "none" }}
                 />
                 <button
@@ -904,19 +699,11 @@ rounded-2xl shadow-sm overflow-hidden relative mb-6 sm:mb-8
   );
 };
 
-// ✅ MAIN COMPONENT
-const MyPublications = () => {
-  const [publications, setPublications] = useState([]);
+// ✅ MAIN SavedPosts COMPONENT
+const SavedPosts = () => {
   const [savedPosts, setSavedPosts] = useState([]);
-  const [activeTab, setActiveTab] = useState("publications");
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
-
-  // ✅ CONFIRM MODAL STATE
-  const [confirmModal, setConfirmModal] = useState({
-    isOpen: false,
-    researchId: null,
-  });
 
   useEffect(() => {
     try {
@@ -927,48 +714,8 @@ const MyPublications = () => {
   }, []);
 
   useEffect(() => {
-    if (activeTab === "publications") {
-      fetchPublications();
-    } else if (activeTab === "saved") {
-      fetchSavedPosts();
-    }
-  }, [activeTab]);
-
-  // ✅ FETCH PUBLICATIONS - Latest First
-  const fetchPublications = async () => {
-    try {
-      setLoading(true);
-      const token =
-        localStorage.getItem("token") || localStorage.getItem("authToken");
-      const response = await fetch(
-        `${API_CONFIG.BASE_URL}/user/get-research-users`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-      const result = await response.json();
-      if (result.status) {
-        const data = Array.isArray(result.data) ? result.data : [result.data];
-        // ✅ Latest first sort
-        const sorted = data.sort((a, b) => {
-          const dateA = new Date(a.updated_at || a.created_at || 0);
-          const dateB = new Date(b.updated_at || b.created_at || 0);
-          return dateB - dateA;
-        });
-        setPublications(sorted);
-      } else {
-        setPublications([]);
-      }
-    } catch (error) {
-      console.error("Error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchSavedPosts();
+  }, []);
 
   // ✅ FETCH SAVED POSTS
   const fetchSavedPosts = async () => {
@@ -998,8 +745,8 @@ const MyPublications = () => {
 
       const transformedResearch = researchPosts.map((r) => ({
         ...r,
-        id: r.research_id || r.id, // ← already correct
-        researche_id: r.research_id, // ← yeh add karo
+        id: r.research_id || r.id,
+        researche_id: r.research_id,
         isResearchPost: true,
         created_at: r.created_at || new Date().toISOString(),
       }));
@@ -1014,37 +761,6 @@ const MyPublications = () => {
       setSavedPosts([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // ✅ OPEN CONFIRM MODAL
-  const openPublishConfirm = (id) => {
-    setConfirmModal({ isOpen: true, researchId: id });
-  };
-
-  // ✅ ACTUAL PUBLISH
-  const handlePublish = async () => {
-    const id = confirmModal.researchId;
-    setConfirmModal({ isOpen: false, researchId: null });
-    try {
-      const token =
-        localStorage.getItem("token") || localStorage.getItem("authToken");
-      const response = await fetch(
-        `${API_CONFIG.BASE_URL}/research/published-research/${id}`,
-        {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      const result = await response.json();
-      if (result.status) {
-        toast.success("Successfully Published!");
-        fetchPublications();
-      } else {
-        toast.error(result.message || "Failed to publish");
-      }
-    } catch (error) {
-      toast.error("Error publishing research.");
     }
   };
 
@@ -1138,165 +854,32 @@ const MyPublications = () => {
     }
   };
 
-  const getStatusDetails = (status) => {
-    switch (String(status)) {
-      case "1":
-        return {
-          label: "Pending",
-          color: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-        };
-      case "2":
-        return {
-          label: "Approved",
-          color: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-        };
-      case "3":
-        return {
-          label: "Published",
-          color: "bg-[#00ff85]/10 text-[#00ff85] border-[#00ff85]/20",
-        };
-      case "4":
-        return {
-          label: "Rejected",
-          color: "bg-red-500/10 text-red-400 border-red-500/20",
-        };
-      default:
-        return {
-          label: "Unknown",
-          color: "bg-slate-500/10 text-slate-400 border-slate-500/20",
-        };
-    }
-  };
-
   return (
-    <DashboardLayout>
-      {/* ✅ CONFIRM MODAL - DashboardLayout ke andar, sabse upar */}
-      <ConfirmModal
-        isOpen={confirmModal.isOpen}
-        onClose={() => setConfirmModal({ isOpen: false, researchId: null })}
-        onConfirm={handlePublish}
-        title="Publish Research?"
-        message="Are you sure? This research will be publicly visible.."
-      />
-
-      <div
-        className="
-flex-1 overflow-y-auto px-4 sm:px-8 lg:px-12 py-6 sm:py-10 space-y-6 sm:space-y-8 font-inter relative z-10
-
-bg-slate-50 text-slate-800
-dark:bg-transparent dark:text-[#e2e3e0]
-"
-      >
-        {" "}
-        {/* Header */}
-        <div className="flex flex-col gap-1 sm:gap-2">
-          <h1
-            className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight uppercase
-text-slate-900 dark:text-[#e2e3e0]"
-          >
-            {" "}
-            My Research
-          </h1>
-          <div className="flex items-center gap-2 text-slate-600 dark:text-[#b9cbb9]">
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest">
-              Personal Workspace
-            </span>
-            <div className="w-2 h-2 rounded-full bg-[#61ff97] shadow-[0_0_8px_rgba(97,255,151,0.6)]"></div>
-          </div>
+    <>
+      {loading ? (
+        <div className="flex justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 dark:border-[#00ff85]"></div>
         </div>
-        {/* Tabs */}
-        <div className="flex items-center border-b border-gray-200 dark:border-[#3b4b3d]/30 overflow-x-auto scrollbar-hidden">
-          <button
-            onClick={() => setActiveTab("publications")}
-            className={`px-4 sm:px-6 py-3 border-b-2 text-xs sm:text-sm font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
-              activeTab === "publications"
-                ? "border-[#00ff85] text-[#00ff85]"
-                : "border-transparent text-slate-500 hover:text-slate-900 dark:text-[#b9cbb9] dark:hover:text-[#e2e3e0]"
-            }`}
-          >
-            My Publications
-          </button>
-          <button
-            onClick={() => setActiveTab("saved")}
-            className={`px-4 sm:px-6 py-3 border-b-2 text-xs sm:text-sm font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
-              activeTab === "saved"
-                ? "border-[#00ff85] text-[#00ff85]"
-                : "border-transparent text-slate-500 hover:text-slate-900 dark:text-[#b9cbb9] dark:hover:text-[#e2e3e0]"
-            }`}
-          >
-            Saved
-          </button>
+      ) : savedPosts.length > 0 ? (
+        savedPosts.map((post) => (
+          <SavedPostCard
+            key={post.id}
+            post={post}
+            currentUserId={userId}
+            onUnsave={handleToggleSave}
+            onDelete={handleDeletePost}
+          />
+        ))
+      ) : (
+        <div className="flex flex-col items-center justify-center py-16 sm:py-20 border-2 border-dashed border-[#3b4b3d]/30 rounded-xl opacity-50">
+          <span className="material-symbols-outlined text-5xl sm:text-6xl text-[#b9cbb9]/30 mb-4">
+            bookmark
+          </span>
+          <p className="text-[#b9cbb9] font-medium uppercase tracking-widest text-xs">
+            No saved posts yet
+          </p>
         </div>
-        {/* Content */}
-        <div className="flex flex-col gap-4 sm:gap-6 relative">
-          {/* PUBLICATIONS TAB */}
-          {activeTab === "publications" &&
-            (loading ? (
-              <div className="flex justify-center py-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00ff85]"></div>
-              </div>
-            ) : publications.length > 0 ? (
-              publications.map((pub) => {
-                const updateDate = pub.updated_at
-                  ? new Date(pub.updated_at).toLocaleDateString()
-                  : "Just now";
-                return (
-                  <PublicationCard
-                    key={pub.id || pub.researche_id}
-                    statusCode={String(pub.status)}
-                    status={getStatusDetails(pub.status).label}
-                    statusColor={getStatusDetails(pub.status).color}
-                    title={pub.research_title}
-                    category={pub.research_type || "Research"}
-                    abstract={pub.abstract}
-                    pdfPath={pub.research_file}
-                    onPublish={() => openPublishConfirm(pub.id)}
-                    updatedAt={updateDate}
-                  />
-                );
-              })
-            ) : (
-              <div className="flex flex-col items-center justify-center py-16 sm:py-20 border-2 border-dashed border-[#3b4b3d]/30 rounded-xl opacity-50">
-                <span className="material-symbols-outlined text-5xl sm:text-6xl text-[#b9cbb9]/30 mb-4">
-                  description
-                </span>
-                <p className="text-[#b9cbb9] font-medium uppercase tracking-widest text-xs">
-                  No publications yet
-                </p>
-              </div>
-            ))}
-
-          {/* SAVED TAB */}
-          {activeTab === "saved" &&
-            (loading ? (
-              <div className="flex justify-center py-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 dark:border-[#00ff85]"></div>
-              </div>
-            ) : savedPosts.length > 0 ? (
-              savedPosts.map((post) => (
-                <SavedPostCard
-                  key={post.id}
-                  post={post}
-                  currentUserId={userId}
-                  onUnsave={handleToggleSave}
-                  onDelete={handleDeletePost}
-                />
-              ))
-            ) : (
-              <div className="flex flex-col items-center justify-center py-16 sm:py-20 border-2 border-dashed border-[#3b4b3d]/30 rounded-xl opacity-50">
-                <span className="material-symbols-outlined text-5xl sm:text-6xl text-[#b9cbb9]/30 mb-4">
-                  bookmark
-                </span>
-                <p className="text-[#b9cbb9] font-medium uppercase tracking-widest text-xs">
-                  No saved posts yet
-                </p>
-              </div>
-            ))}
-        </div>
-      </div>
-
-      {/* Background Glow */}
-      <div className="fixed bottom-0 right-0 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-emerald-200/40 dark:bg-[#00ff85]/5 rounded-full blur-[120px] pointer-events-none z-0"></div>
+      )}
 
       <style jsx>{`
         .line-clamp-3 {
@@ -1305,7 +888,6 @@ text-slate-900 dark:text-[#e2e3e0]"
           -webkit-box-orient: vertical;
           overflow: hidden;
         }
-
         .scrollbar-hidden {
           -ms-overflow-style: none;
           scrollbar-width: none;
@@ -1313,20 +895,9 @@ text-slate-900 dark:text-[#e2e3e0]"
         .scrollbar-hidden::-webkit-scrollbar {
           display: none;
         }
-        ::-webkit-scrollbar {
-          display: none;
-          width: 0;
-          height: 0;
-        }
-        * {
-          scrollbar-width: none;
-        }
-        * {
-          -ms-overflow-style: none;
-        }
       `}</style>
-    </DashboardLayout>
+    </>
   );
 };
 
-export default MyPublications;
+export default SavedPosts;
