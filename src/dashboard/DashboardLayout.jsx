@@ -40,7 +40,7 @@ const DashboardLayout = ({ children }) => {
   const [allUsers, setAllUsers] = useState([]);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMobileSearchFocused, setIsMobileSearchFocused] = useState(false);
-const [blockedUserIds, setBlockedUserIds] = useState([]);
+  const [blockedUserIds, setBlockedUserIds] = useState([]);
   // ── UserProfile Modal State ──
   const [selectedSearchUser, setSelectedSearchUser] = useState(null);
 
@@ -210,36 +210,35 @@ const [blockedUserIds, setBlockedUserIds] = useState([]);
     fetchAllUsers();
   }, []);
 
-useEffect(() => {
-  const fetchBlockedUsers = async () => {
-    try {
-      const token = getAuthToken();
+  useEffect(() => {
+    const fetchBlockedUsers = async () => {
+      try {
+        const token = getAuthToken();
 
-      const res = await fetch(
-        `${API_CONFIG.BASE_URL}/account/get-blocked-users`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+        const res = await fetch(
+          `${API_CONFIG.BASE_URL}/account/get-blocked-users`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
           },
+        );
+
+        const data = await res.json();
+
+        if (data.status && Array.isArray(data.data)) {
+          const ids = data.data.map((user) => String(user.id));
+          setBlockedUserIds(ids);
         }
-      );
-
-      const data = await res.json();
-
-      if (data.status && Array.isArray(data.data)) {
-        const ids = data.data.map((user) => String(user.id));
-        setBlockedUserIds(ids);
+      } catch (err) {
+        console.error("Blocked users fetch error:", err);
       }
-    } catch (err) {
-      console.error("Blocked users fetch error:", err);
-    }
-  };
+    };
 
-  fetchBlockedUsers();
-}, []);
-
+    fetchBlockedUsers();
+  }, []);
 
   // ✅ Only fetch unread count for bell dot — full data fetched inside NotificationPopup
   useEffect(() => {
@@ -265,29 +264,49 @@ useEffect(() => {
 
   // ── Search Handler ──
   const handleSearch = (query) => {
-  setSearchQuery(query);
+    setSearchQuery(query);
 
-  if (!query.trim()) {
-    setSearchResults([]);
-    return;
-  }
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
 
-  const q = query.toLowerCase();
+    const q = query.toLowerCase().trim();
 
-  const filtered = allUsers.filter((u) => {
-    const isBlocked = blockedUserIds.includes(String(u.id));
-    if (isBlocked) return false;
+    const filtered = allUsers.filter((u) => {
+      const isBlocked = blockedUserIds.includes(String(u.id));
+      if (isBlocked) return false;
 
-    const name =
-      u.user_type === "institute"
-        ? u.institute_details?.institute_name || u.name || ""
-        : u.name || "";
+      const userType = (u.user_type || "").toLowerCase();
 
-    return name.toLowerCase().includes(q);
-  });
+      const name =
+        userType === "institute" || userType === "institution"
+          ? u.institute_details?.institute_name || u.name || ""
+          : u.name || "";
 
-  setSearchResults(filtered.slice(0, 8));
-};
+      const email = u.email || "";
+      const id = String(u.id || "");
+      const registrationId = String(u.registration_id || "");
+
+      if (q === "individual" || q === "indivual") {
+        return userType === "individual";
+      }
+
+      if (q === "institute" || q === "institution" || q === "innstiute") {
+        return userType === "institute" || userType === "institution";
+      }
+
+      return (
+        name.toLowerCase().includes(q) ||
+        email.toLowerCase().includes(q) ||
+        id.includes(q) ||
+        registrationId.toLowerCase().includes(q) ||
+        userType.includes(q)
+      );
+    });
+
+    setSearchResults(filtered);
+  };
 
   // ── Open UserProfile from search result ──
   const handleSearchUserClick = (u) => {
@@ -355,31 +374,31 @@ useEffect(() => {
     setIsEventsMenuOpen(false);
   };
 
- const handleLogout = () => {
-  const token = getAuthToken();
+  const handleLogout = () => {
+    const token = getAuthToken();
 
-  // ✅ Pehle instantly logout
-  localStorage.clear();
-  sessionStorage.clear();
+    // ✅ Pehle instantly logout
+    localStorage.clear();
+    sessionStorage.clear();
 
-  setIsProfileOpen(false);
-  setIsMobileMenuOpen(false);
+    setIsProfileOpen(false);
+    setIsMobileMenuOpen(false);
 
-  navigate("/login", { replace: true });
+    navigate("/login", { replace: true });
 
-  // ✅ API background me call
-  if (token) {
-    fetch(`${API_CONFIG.BASE_URL}/auth/logout`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    }).catch((error) => {
-      console.error("Logout API Error:", error);
-    });
-  }
-};
+    // ✅ API background me call
+    if (token) {
+      fetch(`${API_CONFIG.BASE_URL}/auth/logout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }).catch((error) => {
+        console.error("Logout API Error:", error);
+      });
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -445,11 +464,13 @@ useEffect(() => {
     return (
       <div
         className="
-absolute top-full mt-2 left-0 w-full min-w-[260px] rounded-xl shadow-xl overflow-hidden z-[70]
+    absolute top-full mt-2 left-0 w-full min-w-[260px]
+    max-h-[320px] overflow-y-auto
+    rounded-xl shadow-xl z-[70]
 
-bg-white border border-gray-200
-dark:bg-[#111f17] dark:border-[#32ff9920]
-"
+    bg-white border border-gray-200
+    dark:bg-[#111f17] dark:border-[#32ff9920]
+  "
       >
         {" "}
         {results.map((u) => {
@@ -1010,22 +1031,41 @@ dark:bg-[#16291e] dark:border-[#5bf9aa37]
               />
 
               {isEventsMenuOpen && (
-                <div className="absolute bottom-[110%] right-0 bg-[#16291e] border border-[#5bf9aa37] rounded-xl py-2 min-w-[150px] shadow-[0_0_20px_rgba(0,0,0,0.5)] z-50">
-                  {" "}
+                <div
+                  className="
+      absolute bottom-[110%] right-0 
+      bg-white dark:bg-[#16291e]
+
+      border border-slate-200 dark:border-[#5bf9aa37]
+
+      rounded-2xl py-2 min-w-[170px]
+      shadow-xl dark:shadow-[0_0_20px_rgba(0,0,0,0.5)]
+      z-50 overflow-hidden
+    "
+                >
                   <button
                     onClick={() => handleNavigation("/dashboard/events")}
-                    className={`w-full flex items-center gap-2 px-4 py-2 text-sm ${location.pathname === "/dashboard/events" ? "text-[#32ff99]" : "text-slate-300 hover:text-white hover:bg-white/5"}`}
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-all ${
+                      location.pathname === "/dashboard/events"
+                        ? "bg-[#00b86b]/10 text-[#00b86b] dark:bg-[#32ff99]/10 dark:text-[#32ff99]"
+                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/5"
+                    }`}
                   >
-                    <span className="material-symbols-outlined text-[16px]">
+                    <span className="material-symbols-outlined text-[18px]">
                       list
                     </span>
                     All Events
                   </button>
+
                   <button
                     onClick={() => handleNavigation("/dashboard/my-event")}
-                    className={`w-full flex items-center gap-2 px-4 py-2 text-sm ${location.pathname === "/dashboard/my-event" ? "text-[#32ff99]" : "text-slate-300 hover:text-white hover:bg-white/5"}`}
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-all ${
+                      location.pathname === "/dashboard/my-event"
+                        ? "bg-[#00b86b]/10 text-[#00b86b] dark:bg-[#32ff99]/10 dark:text-[#32ff99]"
+                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/5"
+                    }`}
                   >
-                    <span className="material-symbols-outlined text-[16px]">
+                    <span className="material-symbols-outlined text-[18px]">
                       person
                     </span>
                     My Events
