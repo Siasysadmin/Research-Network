@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import DashboardLayout from "../DashboardLayout";
 import Myresearch from "./Myresearch";
 import Savedposts from "./Savedposts";
+// import Myposts from "./Myposts";
 
 // ✅ MAIN COMPONENT
 const MyPublications = () => {
@@ -23,7 +24,8 @@ dark:bg-transparent dark:text-[#e2e3e0]
             className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight uppercase
 text-slate-900 dark:text-[#e2e3e0]"
           >
-            My Research
+            My Publication 
+
           </h1>
           <div className="flex items-center gap-2 text-slate-600 dark:text-[#b9cbb9]">
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest">
@@ -45,6 +47,17 @@ text-slate-900 dark:text-[#e2e3e0]"
           >
             My Research
           </button>
+          {/* <button
+  onClick={() => setActiveTab("posts")}
+  className={`px-4 sm:px-6 py-3 border-b-2 text-xs sm:text-sm font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
+    activeTab === "posts"
+      ? "border-[#00ff85] text-[#00ff85]"
+      : "border-transparent text-slate-500 hover:text-slate-900 dark:text-[#b9cbb9] dark:hover:text-[#e2e3e0]"
+  }`}
+>
+  Posts
+</button> */}
+
           <button
             onClick={() => setActiveTab("saved")}
             className={`px-4 sm:px-6 py-3 border-b-2 text-xs sm:text-sm font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
@@ -60,6 +73,7 @@ text-slate-900 dark:text-[#e2e3e0]"
         {/* Content */}
         <div className="flex flex-col gap-4 sm:gap-6 relative">
           {activeTab === "publications" && <Myresearch />}
+          {/* {activeTab === "posts" && <Myposts />} */}
           {activeTab === "saved" && <Savedposts />}
         </div>
       </div>
