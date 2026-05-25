@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import DashboardLayout from "./DashboardLayout";
-import UserProfile from "./UserProfile";
-import GroupDetails from "./GroupDetails";
+import DashboardLayout from "../DashboardLayout";
+import UserProfile from "../UserProfile";
+import GroupDetails from "../GroupDetails";
 import GroupChat from "./Groupchat";
-import API_CONFIG from "../config/api.config";
+import API_CONFIG from "../../config/api.config";
 import { toast } from "react-toastify";
-import defaultAvatar from "../assets/images/avatar.jpg";
+import defaultAvatar from "../../assets/images/avatar.jpg";
 
 const MaterialIcon = ({ name, className = "", style = {} }) => (
   <span className={`material-symbols-outlined ${className}`} style={style}>
@@ -39,11 +39,18 @@ const Chats = () => {
   const messagesEndRef = useRef(null);
   const imageAttachRef = useRef(null);
   const videoAttachRef = useRef(null);
-
+  // Post modal ke liye states
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const [selectedPostIdForPopup, setSelectedPostIdForPopup] = useState(null);
+  const [loadingPostData, setLoadingPostData] = useState(false);
+  const [popupPostData, setPopupPostData] = useState(null);
+  const [isExpanded, setIsExpanded] = useState(false);
   const activeChatIdRef = useRef(null);
   const chatsRef = useRef([]);
   const currentUserIdRef = useRef("");
-
+  // State add karo (top pe existing states ke saath)
+  const [prefetchedGroups, setPrefetchedGroups] = useState({});
+  const prefetchTimerRef = useRef(null);
   // FIX 1: isSendingRef properly managed with finally block
   const isSendingRef = useRef(false);
 
@@ -51,8 +58,36 @@ const Chats = () => {
   const isPollingRef = useRef(false);
   const isBgPollingRef = useRef(false);
 
+  const getRecentlySeenChatIds = () => {
+    try {
+      return JSON.parse(localStorage.getItem("recentlySeenChats") || "{}");
+    } catch {
+      return {};
+    }
+  };
   const getAuthToken = () =>
     localStorage.getItem("token") || localStorage.getItem("authToken");
+
+  const getDateLabel = (timestamp) => {
+    if (!timestamp) return null;
+    const msgDate = new Date(timestamp);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    const isSameDay = (a, b) =>
+      a.getDate() === b.getDate() &&
+      a.getMonth() === b.getMonth() &&
+      a.getFullYear() === b.getFullYear();
+
+    if (isSameDay(msgDate, today)) return "Today";
+    if (isSameDay(msgDate, yesterday)) return "Yesterday";
+    return msgDate.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
 
   const getCurrentUserId = () => {
     try {
@@ -152,6 +187,35 @@ const Chats = () => {
     }
   }, []);
 
+  const fetchSinglePostDetails = async (postId) => {
+    if (!postId) return;
+    setLoadingPostData(true);
+    setPopupPostData(null);
+
+    try {
+      const token = getAuthToken();
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}/post/get-posts-id/${postId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const result = await response.json();
+      if (result.status && result.data) {
+        setPopupPostData(result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching shared post:", error);
+    } finally {
+      setLoadingPostData(false);
+    }
+  };
+
   useEffect(() => {
     fetchBlockedUserIds();
   }, [fetchBlockedUserIds]);
@@ -244,9 +308,11 @@ const Chats = () => {
                   "Unknown Institute"
                 : user.name || "Unknown Individual";
             const finalType =
-              user.user_type === "institute"
-                ? "Research Institute"
-                : "Individual";
+  user.user_type === "institute"
+    ? "Research Institute"
+    : user.user_type === "admin"
+      ? "Admin"
+      : "Individual";
             const profileImg =
               user.user_type === "institute"
                 ? user.profile_institute_details?.profile_image
@@ -406,6 +472,23 @@ const Chats = () => {
             const allMsgs = deduplicateMessages(msgs, chat.messages || []);
 
             const latestMsg = msgs[msgs.length - 1];
+
+            // 💡 FIXED: Chat open karne par sidebar ka text clean rakhne ke liye check
+            let cleanLastMsgText = chat.lastMsg;
+            if (latestMsg) {
+              const rawMessageText = latestMsg.text || "";
+              const isSharedPost = String(rawMessageText)
+                .toUpperCase()
+                .includes("POST_SHARE_ID:");
+              const cleanText = isSharedPost
+                ? "Shared a post 📝"
+                : rawMessageText || "Sent an attachment";
+
+              cleanLastMsgText = latestMsg.isMine
+                ? `You: ${cleanText}`
+                : cleanText;
+            }
+
             const unreadCount = result.data.filter(
               (m) =>
                 String(m.sender_id) !== uid &&
@@ -413,16 +496,11 @@ const Chats = () => {
                 String(m.is_seen) === "0",
             ).length;
             const newTimestamp = latestMsg?.timestamp || chat.timestamp;
-
             return {
               ...chat,
-              messages: allMsgs,
+              messages: msgs,
               messagesLoaded: true,
-              lastMsg: latestMsg
-                ? latestMsg.isMine
-                  ? `You: ${latestMsg.text || "Sent an attachment"}`
-                  : latestMsg.text || "Sent an attachment"
-                : chat.lastMsg,
+              lastMsg: cleanLastMsgText, // Ab yahan filter kiya hua saaf text jayega
               time: latestMsg?.time || chat.time,
               timestamp: newTimestamp,
               unreadCount: activeChatIdRef.current === chatId ? 0 : unreadCount,
@@ -532,12 +610,30 @@ const Chats = () => {
               String(m.receiver_id) === uid &&
               String(m.is_seen) === "0",
           ).length;
+
+          // ✅ Yeh add karo — agar MainContent ne recently dekha hai to 0 rakho
+          const recentlySeen = getRecentlySeenChatIds();
+          const seenAt = recentlySeen[String(chat.id)];
+          const effectiveUnread =
+            seenAt && Date.now() - seenAt < 30000 ? 0 : unreadCount;
+          // 💡 FIXED: Sidebar text cleaning filter for shared posts under active monitoring
           const latestMsg = msgs[msgs.length - 1];
-          const lastMsgText = latestMsg
-            ? String(latestMsg.sender_id) === uid
-              ? `You: ${latestMsg.message || "Sent an attachment"}`
-              : latestMsg.message || "Sent an attachment"
-            : null;
+          let lastMsgText = null;
+
+          if (latestMsg) {
+            const rawMessageText = latestMsg.message || "";
+            const isSharedPost = String(rawMessageText)
+              .toUpperCase()
+              .includes("POST_SHARE_ID:");
+            const cleanText = isSharedPost
+              ? "Shared a post 📝"
+              : rawMessageText || "Sent an attachment";
+
+            lastMsgText =
+              String(latestMsg.sender_id) === uid
+                ? `You: ${cleanText}`
+                : cleanText;
+          }
           const lastTimestamp = latestMsg
             ? new Date(latestMsg.created_at).getTime()
             : 0;
@@ -547,7 +643,7 @@ const Chats = () => {
             chat.timestamp !== lastTimestamp
           ) {
             hasUpdates = true;
-            updates[chat.id] = { unreadCount, lastMsgText, lastTimestamp };
+            updates[chat.id] = { unreadCount: effectiveUnread, lastMsgText, lastTimestamp };
           }
         });
 
@@ -681,10 +777,18 @@ const Chats = () => {
     setChats((prevChats) => {
       const updated = prevChats.map((chat) => {
         if (String(chat.id) !== String(activeChatId)) return chat;
+        //  Isse replace kijiye:
+        const isSharedPostMsg = String(textToSend)
+          .toUpperCase()
+          .includes("POST_SHARE_ID:");
+        const dynamicSidebarText = isSharedPostMsg
+          ? "Shared a post 📝"
+          : textToSend || "Sent an attachment";
+
         return {
           ...chat,
           messages: [...(chat.messages || []), newMsg],
-          lastMsg: `You: ${textToSend || "Sent an attachment"}`,
+          lastMsg: `You: ${dynamicSidebarText}`,
           time: newMsg.time,
           timestamp: newMsg.timestamp,
           unreadCount: 0,
@@ -856,9 +960,203 @@ const Chats = () => {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [activeChatData?.messages?.length]);
+  // Hover handler — mouse aate hi silently fetch shuru
+  const handleGroupHover = useCallback(
+    async (chat) => {
+      if (!chat.isGroup || prefetchedGroups[chat.id]) return;
+
+      // Small delay taaki accidental hovers pe fetch na ho
+      prefetchTimerRef.current = setTimeout(async () => {
+        try {
+          const token = getAuthToken();
+          const res = await fetch(
+            `${API_CONFIG.BASE_URL}/group/get-group-messages/${chat.groupId}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            },
+          );
+          const data = await res.json();
+          if (data.status) {
+            setPrefetchedGroups((prev) => ({ ...prev, [chat.id]: data }));
+          }
+        } catch (e) {}
+      }, 150); // 150ms hover ke baad fetch
+    },
+    [prefetchedGroups],
+  );
+
+  const handleGroupHoverLeave = useCallback(() => {
+    clearTimeout(prefetchTimerRef.current);
+  }, []);
 
   return (
     <DashboardLayout>
+      {isPostModalOpen && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fadeIn">
+          {/* Width badhakar max-w-2xl kar di hai aur light/dark mode dono ke liye colors set hain */}
+          <div className="bg-white dark:bg-[#121214] border border-gray-200 dark:border-white/10 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl relative text-left transition-colors duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/5">
+              <div className="flex items-center gap-2 text-[#00ff85]">
+                <span className="material-symbols-outlined text-lg">
+                  description
+                </span>
+                <h3 className="font-bold text-sm tracking-wide uppercase text-gray-900 dark:text-white">
+                  Shared Post Details
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setIsPostModalOpen(false);
+                  setSelectedPostIdForPopup(null);
+                  setPopupPostData(null);
+                  setIsExpanded(false); // Reset expand state on close
+                }}
+                className="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-all flex items-center justify-center"
+              >
+                <span className="material-symbols-outlined text-xl">close</span>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 flex flex-col gap-4 max-h-[75vh] overflow-y-auto custom-scrollbar">
+              {loadingPostData ? (
+                /* API loading State */
+                <div className="flex flex-col items-center justify-center py-12 gap-3">
+                  <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-[#00ff85]"></div>
+                  <span className="text-xs text-gray-500 dark:text-slate-500 font-mono">
+                    FETCHING POST DATA...
+                  </span>
+                </div>
+              ) : popupPostData ? (
+                /* Actual Data Loaded State */
+                <div className="flex flex-col gap-4">
+                  {/* 1. AUTHOR NAME / TITLE (Pele Name Aaye) */}
+                  <div>
+                    <span className="text-[10px] uppercase font-mono text-gray-400 dark:text-slate-500 block mb-0.5">
+                      Posted By
+                    </span>
+                    <h4 className="text-gray-900 dark:text-white font-extrabold text-lg tracking-tight">
+                      {popupPostData.institute_name ||
+                        popupPostData.name ||
+                        "No Name Available"}
+                    </h4>
+                  </div>
+
+                  {/* 2. POST TEXT / CONTENT WITH DYNAMIC INLINE LINE CLAMP */}
+                  <div className="bg-gray-50 dark:bg-black/20 p-4 rounded-xl border border-gray-200 dark:border-white/5">
+                    <span className="text-[10px] uppercase font-mono text-gray-400 dark:text-slate-500 block mb-1.5">
+                      Description
+                    </span>
+
+                    {popupPostData.post_text ? (
+                      <div>
+                        {/* 💡 FIX: Yahan humne Tailwind class ki jagah inline style (-webkit-line-clamp) use kiya hai, 
+          jo image hone par 3 lines aur image na hone par direct 10 lines strict apply karega */}
+                        <p
+                          className="text-gray-800 dark:text-slate-300 text-sm leading-relaxed whitespace-pre-wrap break-words"
+                          style={
+                            !isExpanded
+                              ? {
+                                  display: "-webkit-box",
+                                  WebkitBoxOrient: "vertical",
+                                  WebkitLineClamp:
+                                    popupPostData.image &&
+                                    popupPostData.image.trim() !== ""
+                                      ? 3
+                                      : 11,
+                                  overflow: "hidden",
+                                }
+                              : {}
+                          }
+                        >
+                          {popupPostData.post_text}
+                        </p>
+
+                        {/* Dynamic Read More / Show Less Button logic */}
+                        {((popupPostData.image &&
+                          popupPostData.image.trim() !== "" &&
+                          popupPostData.post_text.length > 150) ||
+                          ((!popupPostData.image ||
+                            popupPostData.image.trim() === "") &&
+                            popupPostData.post_text.length > 400)) && (
+                          <button
+                            onClick={() => setIsExpanded(!isExpanded)}
+                            className="mt-2 text-xs font-bold text-[#00ff85] hover:underline flex items-center gap-0.5"
+                          >
+                            {isExpanded ? (
+                              <>
+                                Show Less{" "}
+                                <span className="material-symbols-outlined text-xs">
+                                  expand_less
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                Read More{" "}
+                                <span className="material-symbols-outlined text-xs">
+                                  expand_more
+                                </span>
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-gray-400 dark:text-slate-500 text-xs italic">
+                        No text description provided for this post.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* 3. POST IMAGE CONTAINER (Fir Image Aaye) */}
+                  {popupPostData.image && (
+                    <div className="w-full border border-gray-200 dark:border-white/5 rounded-xl overflow-hidden bg-gray-100 dark:bg-black/40">
+                      <span className="text-[10px] uppercase font-mono text-gray-400 dark:text-slate-500 block p-3 pb-0">
+                        Attached Media
+                      </span>
+                      <div className="p-3">
+                        <img
+                          src={`${API_CONFIG.BASE_URL}/${popupPostData.image.replace(/^\//, "")}`}
+                          alt="Shared Content"
+                          className="w-full max-h-80 object-contain rounded-lg bg-gray-50 dark:bg-[#1a1a1a]"
+                          onError={(e) => {
+                            e.target.parentNode.style.display = "none";
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Error or Empty State */
+                <div className="text-center py-6 text-xs text-gray-500 dark:text-slate-500 font-mono">
+                  FAILED TO LOAD POST CONTENT.
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3 border-t border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-black/20 flex justify-end">
+              <button
+                onClick={() => {
+                  setIsPostModalOpen(false);
+                  setSelectedPostIdForPopup(null);
+                  setPopupPostData(null);
+                  setIsExpanded(false);
+                }}
+                className="px-6 py-2 bg-[#00ff85] text-[#003919] font-bold text-xs rounded-lg hover:bg-[#00e676] hover:scale-[1.03] transition-all duration-200 shadow-md hover:shadow-[0_0_15px_rgba(0,255,133,0.45)] active:scale-95"
+              >
+                Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex-1 h-[calc(100vh-176px)] md:h-[calc(100vh-128px)] overflow-hidden flex flex-col font-inter bg-white dark:bg-[#0d0f0e] w-full">
         <div className="flex flex-1 p-3 lg:p-4 gap-4 lg:gap-6 h-full min-h-0 max-w-[1800px] mx-auto w-full">
           {/* LEFT SIDEBAR */}
@@ -934,6 +1232,8 @@ const Chats = () => {
                   <div
                     key={chat.id}
                     onClick={() => handleChatClick(chat.id)}
+                    onMouseEnter={() => handleGroupHover(chat)} // ADD
+                    onMouseLeave={handleGroupHoverLeave}
                     className={`group cursor-pointer p-3 lg:p-3.5 rounded-xl transition-all relative ${
                       String(activeChatId) === String(chat.id)
                         ? "bg-emerald-50 dark:bg-[#121413] border-l-4 border-l-[#00ff85] border-y border-r border-emerald-200 dark:border-[#3b4b3d]/20 shadow-sm"
@@ -1104,6 +1404,9 @@ const Chats = () => {
                       key={groupChatKey}
                       group={activeChatData}
                       currentUserId={currentUserId}
+                      prefetchedData={
+                        prefetchedGroups[activeChatData.id] || null
+                      }
                       // GroupChat ko yeh updated prop do:
                       onLastMessage={(
                         groupId,
@@ -1246,11 +1549,57 @@ const Chats = () => {
                                           </a>
                                         );
                                       })()}
-                                    {msg.text && (
-                                      <p className="whitespace-pre-wrap break-words">
-                                        {msg.text}
-                                      </p>
-                                    )}
+                                    {msg.text &&
+                                    String(msg.text).includes("POST_SHARE_ID:")
+                                      ? (() => {
+                                          const extractedId =
+                                            String(msg.text).split(
+                                              "POST_SHARE_ID:",
+                                            )[1] || "";
+                                          return (
+                                            <div className="p-3 bg-emerald-50 dark:bg-[#0d0f0e] border border-[#00ff85]/30 rounded-xl min-w-[220px] max-w-xs flex flex-col gap-2 my-1 shadow-md text-left animate-fadeIn">
+                                              <div className="flex items-center gap-2 border-b border-emerald-200 dark:border-white/10 pb-1.5">
+                                                <MaterialIcon
+                                                  name="share"
+                                                  className="text-emerald-500 text-sm"
+                                                  style={{
+                                                    fontVariationSettings:
+                                                      "'FILL' 1",
+                                                  }}
+                                                />
+                                                <span className="text-[11px] font-mono tracking-wider text-[#00ff85] uppercase font-bold">
+                                                  Shared Post
+                                                </span>
+                                              </div>
+                                              <div className="text-xs text-slate-700 dark:text-slate-300">
+                                                View shared post
+                                              </div>
+                                              <button
+                                                onClick={() => {
+                                                  setSelectedPostIdForPopup(
+                                                    extractedId,
+                                                  );
+                                                  setIsPostModalOpen(true);
+                                                  fetchSinglePostDetails(
+                                                    extractedId,
+                                                  );
+                                                }}
+                                                className="w-full mt-1 py-1.5 px-3 bg-[#00ff85] hover:bg-[#00e676] text-[#003919] font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-1"
+                                              >
+                                                <MaterialIcon
+                                                  name="visibility"
+                                                  className="text-xs"
+                                                />{" "}
+                                                View Post
+                                              </button>
+                                            </div>
+                                          );
+                                        })()
+                                      : msg.text && (
+                                          <p className="whitespace-pre-wrap break-words">
+                                            {msg.text}
+                                          </p>
+                                        )}
                                   </div>
                                 </div>
                               </div>

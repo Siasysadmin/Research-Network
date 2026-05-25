@@ -6,6 +6,33 @@ import DashboardLayout from "./DashboardLayout";
 import API_CONFIG from "../config/api.config";
 import { toast } from "react-toastify";
 
+const SharedPostCard = ({ postId, onOpen }) => {
+  return (
+    <div
+      onClick={() => onOpen && onOpen(postId, null)}
+      className="mt-1 rounded-xl border border-emerald-200 dark:border-[#00ff85]/30 bg-emerald-50 dark:bg-[#0d1a12] overflow-hidden max-w-[220px] cursor-pointer hover:opacity-80 transition-opacity"
+    >
+      <div className="p-3 flex flex-col gap-2">
+        <div className="flex items-center gap-1.5 text-emerald-600 dark:text-[#00ff85]">
+          <span className="material-symbols-outlined text-sm">share</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider">
+            Shared Post
+          </span>
+        </div>
+        <div className="border-t border-white/10 pt-2">
+          <p className="text-[10px] text-slate-600 dark:text-slate-300">
+            View shared post
+          </p>{" "}
+        </div>
+        <button className="w-full bg-[#00ff85] text-black text-[10px] font-bold py-1.5 rounded-lg flex items-center justify-center gap-1">
+          <span className="material-symbols-outlined text-xs">visibility</span>
+          View Post
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const MaterialIcon = ({ name, className = "", style = {} }) => (
   <span className={`material-symbols-outlined ${className}`} style={style}>
     {name}
@@ -39,6 +66,17 @@ const MainContent = () => {
   const [connectedUsers, setConnectedUsers] = useState({});
   const [reportStep, setReportStep] = useState(1); // 1: Reasons, 2: Thanks
   const [isReportingLoading, setIsReportingLoading] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [selectedSharePostId, setSelectedSharePostId] = useState(null);
+  const [shareSearchQuery, setShareSearchQuery] = useState("");
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+  const [shareGroups, setShareGroups] = useState([]);
+  const chatWidgetRef = useRef(null);
+  // 💡 Group Chat jaisa scroll track karne ke liye Refs
+  const popupMessagesContainerRef = useRef(null);
+  const popupShouldAutoScrollRef = useRef(true);
+  const popupMessagesEndRef = useRef(null);
   const reportReasons = [
     "I just don't like it",
     "Bullying or unwanted contact",
@@ -57,10 +95,16 @@ const MainContent = () => {
   const [chatMessages, setChatMessages] = useState({});
   const pollingRef = useRef(null);
   const feedDataRef = useRef([]);
-const [blockedUserIds, setBlockedUserIds] = useState(null);
+  const [blockedUserIds, setBlockedUserIds] = useState([]);
   const currentPlayingVideo = useRef(null);
   const videoRefs = useRef({});
   const observerRef = useRef(null);
+
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const [selectedPostIdForPopup, setSelectedPostIdForPopup] = useState(null);
+  const [popupPostData, setPopupPostData] = useState(null);
+  const [loadingPostData, setLoadingPostData] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const [chats, setChats] = useState([]);
   const [isInstituteApprovalPending, setIsInstituteApprovalPending] =
@@ -252,6 +296,37 @@ const [blockedUserIds, setBlockedUserIds] = useState(null);
     });
   }, []);
 
+  // 💡 Group Chat ka original scroll monitor logic
+  const handlePopupScroll = () => {
+    if (!popupMessagesContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } =
+      popupMessagesContainerRef.current;
+    // Agar user bottom se 100px se upar jata hai toh auto-scroll rok do
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
+    popupShouldAutoScrollRef.current = isAtBottom;
+  };
+
+  // 💡 Naye message aane par ya chat click hone par control karne wala effect
+  useEffect(() => {
+    if (!activeChatId) return;
+
+    const messagesCount = (chatMessages[activeChatId] || []).length;
+
+    if (popupShouldAutoScrollRef.current && popupMessagesEndRef.current) {
+      setTimeout(() => {
+        popupMessagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 60);
+    }
+
+    // Jab user pehli baar kisi naye user par click karke chat box khole (0 messages state clear ho tab)
+    if (messagesCount === 0) {
+      popupShouldAutoScrollRef.current = true;
+      setTimeout(() => {
+        popupMessagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+      }, 50);
+    }
+  }, [activeChatId, chatMessages]);
+
   useEffect(() => {
     feedDataRef.current = feedData;
   }, [feedData]);
@@ -297,7 +372,6 @@ const [blockedUserIds, setBlockedUserIds] = useState(null);
   };
 
   const handleOpenUserProfile = (postData, isMockPost = false) => {
-
     if (isMockPost) {
       setSelectedProfileUser({
         id: userId,
@@ -491,29 +565,29 @@ const [blockedUserIds, setBlockedUserIds] = useState(null);
   };
 
   const fetchBlockedUserIds = async () => {
-  try {
-    const token = getAuthToken();
+    try {
+      const token = getAuthToken();
 
-    const res = await fetch(
-      `${API_CONFIG.BASE_URL}/account/get-blocked-users`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `${API_CONFIG.BASE_URL}/account/get-blocked-users`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         },
+      );
+
+      const data = await res.json();
+
+      if (data.status && Array.isArray(data.data)) {
+        setBlockedUserIds(data.data.map((u) => String(u.id)));
       }
-    );
-
-    const data = await res.json();
-
-    if (data.status && Array.isArray(data.data)) {
-      setBlockedUserIds(data.data.map((u) => String(u.id)));
+    } catch (err) {
+      console.error("Blocked users fetch error:", err);
     }
-  } catch (err) {
-    console.error("Blocked users fetch error:", err);
-  }
-};
+  };
 
   useEffect(() => {
     if (!loadingFeed && feedData.length > 0) {
@@ -934,9 +1008,9 @@ const [blockedUserIds, setBlockedUserIds] = useState(null);
       const data = await response.json();
       const userList =
         data.data || data.users || (Array.isArray(data) ? data : []);
-const visibleUserList = userList.filter(
-  (user) => !blockedUserIds.includes(String(user.id))
-);
+      const visibleUserList = userList.filter(
+        (user) => !blockedUserIds?.includes(String(user.id)),
+      );
       const savedTimestamps = JSON.parse(
         localStorage.getItem("floatingChatTimestamps") || "{}",
       );
@@ -957,7 +1031,12 @@ const visibleUserList = userList.filter(
           isYou: userId === String(currentUserId),
           timestamp: savedTimestamps[userId] || 0,
           lastMsg: `Say hi to ${name}...`,
-          type: user.user_type === "institute" ? "Institute" : "Individual",
+          type:
+            user.user_type === "institute"
+              ? "Institute"
+              : user.user_type === "admin"
+                ? "Admin"
+                : "Individual",
           time: "",
           isActive: false,
           isGroup: false,
@@ -1186,21 +1265,17 @@ const visibleUserList = userList.filter(
 
     fetchFeed();
     // fetchChatUsers();
-   if (!pendingApproval) {
-  fetchChatUsers();
-}
-fetchConnectedUsersList();
-fetchBlockedUserIds();
-   
+    if (!pendingApproval) {
+      fetchChatUsers();
+    }
+    fetchConnectedUsersList();
+    fetchBlockedUserIds();
   }, []);
-useEffect(() => {
-  if (
-    !isInstituteApprovalPending &&
-    blockedUserIds !== null
-  ) {
-    fetchChatUsers();
-  }
-}, [blockedUserIds, isInstituteApprovalPending]);
+  useEffect(() => {
+    if (!isInstituteApprovalPending && blockedUserIds !== null) {
+      fetchChatUsers();
+    }
+  }, [blockedUserIds, isInstituteApprovalPending]);
 
   useEffect(() => {
     localStorage.setItem("videoMuteStates", JSON.stringify(videoMutedState));
@@ -1306,11 +1381,9 @@ useEffect(() => {
                     }
                   : c,
               );
-              return [...updated].sort((a, b) => {
-                if (a.id === activeChatId) return -1;
-                if (b.id === activeChatId) return 1;
-                return (b.timestamp || 0) - (a.timestamp || 0);
-              });
+              return [...updated].sort(
+                (a, b) => (b.timestamp || 0) - (a.timestamp || 0),
+              );
             });
           }
         }
@@ -1385,19 +1458,7 @@ useEffect(() => {
             String(m.is_seen) === "0",
         ).length;
 
-        if (
-          chat.unreadCount !== unreadCount ||
-          chat.lastMsg !== newLastMsg ||
-          chat.time !== newTime
-        ) {
-          hasUpdates = true;
-          updates[chat.id] = {
-            lastMsg: newLastMsg,
-            time: newTime,
-            unreadCount,
-            timestamp: newTimestamp,
-          };
-        }
+        fetchShareData();
       });
 
       if (hasUpdates) {
@@ -1449,6 +1510,143 @@ useEffect(() => {
       if (bgPollingRef.current) clearInterval(bgPollingRef.current);
     };
   }, [chats.length, isInstituteApprovalPending]);
+
+  useEffect(() => {
+    const fetchShareData = async () => {
+      try {
+        const token = getAuthToken();
+        const headers = { Authorization: `Bearer ${token}` };
+
+        const userRes = await fetch(
+          `${API_CONFIG.BASE_URL}/user/get-all-users`,
+          { headers },
+        );
+        const userData = await userRes.json();
+        setAllUsers(
+          userData.data ||
+            userData.users ||
+            (Array.isArray(userData) ? userData : []),
+        );
+
+        try {
+          const groupRes = await fetch(
+            `${API_CONFIG.BASE_URL}/group/get-groups`,
+            {
+              headers: { "Content-Type": "application/json", ...headers },
+            },
+          );
+          const groupData = await groupRes.json();
+          if (groupData.status && Array.isArray(groupData.groups))
+            setShareGroups(groupData.groups);
+          else if (Array.isArray(groupData.data))
+            setShareGroups(groupData.data);
+          else if (Array.isArray(groupData)) setShareGroups(groupData);
+        } catch (e) {
+          console.error("Groups fetch error:", e);
+        }
+      } catch (err) {
+        console.error("Share data fetch error:", err);
+      }
+    };
+    fetchShareData();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (chatWidgetRef.current && !chatWidgetRef.current.contains(e.target)) {
+        setActiveChatId(null);
+        setIsChatListOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+  const handleShareClick = async (postId) => {
+    setSelectedSharePostId(postId);
+    setIsShareOpen(true);
+  };
+
+  const handleSendPost = async (postId) => {
+    if (selectedUserIds.length === 0) {
+      toast.error("Please select at least one chat/group to share.");
+      return;
+    }
+
+    try {
+      const token = getAuthToken();
+      let successCount = 0;
+      let failCount = 0;
+
+      const sharePromises = selectedUserIds.map(async (uid) => {
+        // Check karein ki ye ID group ki hai ya user ki
+        // Aapke code mein 'allUsers' aur 'shareGroups' alag states mein hain
+        const isGroup = shareGroups.some(
+          (g) => String(g.group_id || g.id) === String(uid),
+        );
+
+        let endpoint = `${API_CONFIG.BASE_URL}/message/message-send`;
+        let payload = {
+          receiver_id: String(uid), // Default user ke liye
+          type: "text",
+          message: `POST_SHARE_ID:${postId}`,
+        };
+
+        // Agar group hai, to API endpoint aur payload update karein
+        if (isGroup) {
+          endpoint = `${API_CONFIG.BASE_URL}/group/group-message-send/${uid}`;
+          payload = {
+            message: `POST_SHARE_ID:${postId}`,
+            // Agar backend file expect karta hai to yahan handle karein,
+            // abhi simple text message ja raha hai.
+          };
+        }
+
+        try {
+          const res = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+
+          if (
+            data &&
+            (data.status === true ||
+              data.status === "true" ||
+              data.status === 1)
+          ) {
+            successCount++;
+          } else {
+            failCount++;
+          }
+        } catch {
+          failCount++;
+        }
+      });
+
+      await Promise.all(sharePromises);
+
+      if (successCount > 0) {
+        toast.success(`Shared successfully with ${successCount} targets!`);
+      } else {
+        toast.error("Failed to share post.");
+      }
+
+      setIsShareOpen(false);
+      setSelectedSharePostId(null);
+      setSelectedUserIds([]);
+      setShareSearchQuery("");
+    } catch (err) {
+      toast.error("Something went wrong while sharing.");
+    }
+  };
 
   const toggleLike = async (postId) => {
     const token = getAuthToken();
@@ -1528,67 +1726,80 @@ useEffect(() => {
   };
 
   const toggleSave = async (postId) => {
-  const token = getAuthToken();
+    const token = getAuthToken();
 
-  const post = feedData.find((p) => {
-    if (p.isResearchPost) return p.researche_id === postId || p.id === postId;
-    return p.id === postId;
-  });
-
-  if (!post) return;
-
-  const isMockPost = post.author !== undefined;
-  const isResearchPost = post.isResearchPost === true;
-  const isCurrentlySaved = !!savedPosts[postId];
-
-  // ✅ Pehle UI + localStorage instantly update
-  setSavedPosts((prev) => {
-    const newSavedPosts = {
-      ...prev,
-      [postId]: !isCurrentlySaved,
-    };
-
-    localStorage.setItem("savedPosts", JSON.stringify(newSavedPosts));
-    return newSavedPosts;
-  });
-
-  // ✅ Toast bhi instantly show hoga
-  toast.success(
-    isCurrentlySaved
-      ? "Post removed from saved"
-      : "Post saved successfully"
-  );
-
-  // ✅ Agar unsave hua hai to saved page ko bhi notify karo
-  if (isCurrentlySaved) {
-    window.dispatchEvent(
-      new CustomEvent("postUnsaved", {
-        detail: { postId },
-      })
-    );
-  }
-
-  if (isMockPost) return;
-
-  try {
-    const actualId = isResearchPost ? post.researche_id || post.id : post.id;
-
-    const endpoint = isResearchPost
-      ? `${API_CONFIG.BASE_URL}/research/research-save/${actualId}`
-      : `${API_CONFIG.BASE_URL}/post/save-post/${actualId}`;
-
-    const res = await fetch(endpoint, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+    const post = feedData.find((p) => {
+      if (p.isResearchPost) return p.researche_id === postId || p.id === postId;
+      return p.id === postId;
     });
 
-    const result = await res.json();
+    if (!post) return;
 
-    if (!result.status) {
-      // ❌ API fail ho to old state wapas
+    const isMockPost = post.author !== undefined;
+    const isResearchPost = post.isResearchPost === true;
+    const isCurrentlySaved = !!savedPosts[postId];
+
+    // ✅ Pehle UI + localStorage instantly update
+    setSavedPosts((prev) => {
+      const newSavedPosts = {
+        ...prev,
+        [postId]: !isCurrentlySaved,
+      };
+
+      localStorage.setItem("savedPosts", JSON.stringify(newSavedPosts));
+      return newSavedPosts;
+    });
+
+    // ✅ Toast bhi instantly show hoga
+    toast.success(
+      isCurrentlySaved ? "Post removed from saved" : "Post saved successfully",
+    );
+
+    // ✅ Agar unsave hua hai to saved page ko bhi notify karo
+    if (isCurrentlySaved) {
+      window.dispatchEvent(
+        new CustomEvent("postUnsaved", {
+          detail: { postId },
+        }),
+      );
+    }
+
+    if (isMockPost) return;
+
+    try {
+      const actualId = isResearchPost ? post.researche_id || post.id : post.id;
+
+      const endpoint = isResearchPost
+        ? `${API_CONFIG.BASE_URL}/research/research-save/${actualId}`
+        : `${API_CONFIG.BASE_URL}/post/save-post/${actualId}`;
+
+      const res = await fetch(endpoint, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const result = await res.json();
+
+      if (!result.status) {
+        // ❌ API fail ho to old state wapas
+        setSavedPosts((prev) => {
+          const rollback = {
+            ...prev,
+            [postId]: isCurrentlySaved,
+          };
+
+          localStorage.setItem("savedPosts", JSON.stringify(rollback));
+          return rollback;
+        });
+
+        toast.error(result.message || "Failed to update save status");
+      }
+    } catch (err) {
+      console.error("Save API error:", err);
+
       setSavedPosts((prev) => {
         const rollback = {
           ...prev,
@@ -1599,24 +1810,9 @@ useEffect(() => {
         return rollback;
       });
 
-      toast.error(result.message || "Failed to update save status");
+      toast.error("Network error while saving.");
     }
-  } catch (err) {
-    console.error("Save API error:", err);
-
-    setSavedPosts((prev) => {
-      const rollback = {
-        ...prev,
-        [postId]: isCurrentlySaved,
-      };
-
-      localStorage.setItem("savedPosts", JSON.stringify(rollback));
-      return rollback;
-    });
-
-    toast.error("Network error while saving.");
-  }
-};
+  };
 
   const fetchComments = async (postId, post) => {
     const token = getAuthToken();
@@ -1683,7 +1879,6 @@ useEffect(() => {
       return;
     }
 
-    // ✅ Pehle instantly open karo (purani list ke saath)
     setCommentsState((prev) => ({
       ...prev,
       [postId]: {
@@ -1693,10 +1888,16 @@ useEffect(() => {
       },
     }));
 
+    setCommentsState((prev) => ({
+      ...prev,
+      [postId]: { ...prev[postId], loading: false },
+    }));
     if (isMockPost) return;
 
-    // ✅ Background me fetch — UI block nahi hoga
-    fetchComments(postId, post); // await hata diya
+    // ✅ Cache hit — already loaded hai to skip
+    if (commentsState[postId]?.list?.length > 0) return;
+
+    fetchComments(postId, post);
   };
   const addComment = async (postId, commentText) => {
     if (!commentText.trim()) return;
@@ -1842,7 +2043,7 @@ useEffect(() => {
     let normalized = String(timestamp).replace(" ", "T");
 
     if (!normalized.endsWith("Z") && !normalized.includes("+")) {
-      normalized += "Z";
+      normalized += "+05:30";
     }
 
     const date = new Date(normalized);
@@ -2287,25 +2488,26 @@ useEffect(() => {
 
                               <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                                 {!isCurrentUserPoll && (
-                               
-  <button
-    onClick={(e) => toggleConnect(pollUserId, e)}
-    disabled={connectedUsers[pollUserId] === 1}
-    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap border ${
-      connectedUsers[pollUserId] === 2
-        ? "bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-[#00ff88]/10 dark:text-[#00ff88] dark:border-[#00ff88]/40"
-        : connectedUsers[pollUserId] === 1
-          ? "bg-yellow-50 text-yellow-600 border-yellow-300 cursor-not-allowed dark:bg-yellow-500/10 dark:text-yellow-400 dark:border-yellow-500/40"
-          : "bg-[#00ff88] text-black border-[#00ff88] hover:bg-[#00dd77]"
-    }`}
-  >
-    {connectedUsers[pollUserId] === 2
-      ? "✓ CONNECTED"
-      : connectedUsers[pollUserId] === 1
-        ? "⏳ PENDING"
-        : "+ CONNECT"}
-  </button>
-)}
+                                  <button
+                                    onClick={(e) =>
+                                      toggleConnect(pollUserId, e)
+                                    }
+                                    disabled={connectedUsers[pollUserId] === 1}
+                                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap border ${
+                                      connectedUsers[pollUserId] === 2
+                                        ? "bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-[#00ff88]/10 dark:text-[#00ff88] dark:border-[#00ff88]/40"
+                                        : connectedUsers[pollUserId] === 1
+                                          ? "bg-yellow-50 text-yellow-600 border-yellow-300 cursor-not-allowed dark:bg-yellow-500/10 dark:text-yellow-400 dark:border-yellow-500/40"
+                                          : "bg-[#00ff88] text-black border-[#00ff88] hover:bg-[#00dd77]"
+                                    }`}
+                                  >
+                                    {connectedUsers[pollUserId] === 2
+                                      ? "✓ CONNECTED"
+                                      : connectedUsers[pollUserId] === 1
+                                        ? "⏳ PENDING"
+                                        : "+ CONNECT"}
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   disabled={isDeletingPoll}
@@ -3405,7 +3607,9 @@ useEffect(() => {
                               </span>
                             </button>
                             <button
-                              onClick={() => handleShare(postName, postContent)}
+                              onClick={() =>
+                                handleShareClick(post.id || post.researche_id)
+                              }
                               className="flex items-center gap-0.5 sm:gap-1 text-slate-500 hover:text-emerald-600 dark:text-[#00ff88] transition-colors text-xs sm:text-sm"
                             >
                               <span className="material-symbols-outlined text-base sm:text-lg">
@@ -3578,8 +3782,8 @@ useEffect(() => {
                     );
                   })
                 ) : (
-                  <div className="bg-[#141414] rounded-lg sm:rounded-xl border border-white/5 p-6 sm:p-8 text-center w-full">
-                    <p className="text-xs sm:text-sm text-slate-400">
+                  <div className="bg-white dark:bg-[#141414] rounded-lg sm:rounded-xl border border-gray-200 dark:border-white/5 p-6 sm:p-8 text-center w-full">
+                    <p className="text-xs sm:text-sm text-gray-500 dark:text-slate-400">
                       No posts found in the network yet.
                     </p>
                   </div>
@@ -3800,6 +4004,213 @@ useEffect(() => {
         </div>
       )}
 
+      {isShareOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeInScale"
+          style={{ zIndex: 999999 }}
+          onClick={() => {
+            setIsShareOpen(false);
+            setSelectedUserIds([]);
+            setShareSearchQuery("");
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-[440px] h-[550px] flex flex-col rounded-2xl bg-white dark:bg-[#13231a] border border-gray-200 dark:border-white/10 shadow-2xl overflow-hidden"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/5 shrink-0">
+              <h2 className="text-base font-extrabold text-black dark:text-white uppercase tracking-wide">
+                Share Post
+              </h2>
+              <button
+                onClick={() => {
+                  setIsShareOpen(false);
+                  setSelectedUserIds([]);
+                  setShareSearchQuery("");
+                }}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-200 dark:hover:bg-white/10 font-bold transition-all"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Search */}
+            <div className="p-3 bg-white dark:bg-[#13231a] border-b border-gray-100 dark:border-white/5 shrink-0">
+              <div className="flex items-center bg-gray-100 dark:bg-black/20 border border-gray-200 dark:border-white/5 rounded-xl px-3 py-2 transition-all duration-200 focus-within:border-[#00ff88] focus-within:ring-2 focus-within:ring-[#00ff88]/20 dark:focus-within:border-[#32ff99]">
+                {" "}
+                <span className="material-symbols-outlined text-gray-400 text-[20px] mr-3">
+                  search
+                </span>
+                <input
+                  type="text"
+                  placeholder="Search users to share..."
+                  value={shareSearchQuery}
+                  onChange={(e) => setShareSearchQuery(e.target.value)}
+                  className="
+        w-full
+        bg-transparent
+        text-sm
+        text-black dark:text-white
+        placeholder:text-slate-500
+        outline-none
+        border-none
+        focus:outline-none
+        focus:ring-0
+        shadow-none
+      "
+                />
+                {shareSearchQuery && (
+                  <button
+                    onClick={() => setShareSearchQuery("")}
+                    className="text-gray-400 hover:text-black dark:hover:text-white"
+                  >
+                    <span className="material-symbols-outlined text-sm">
+                      close
+                    </span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Users List */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-1.5 bg-white dark:bg-[#13231a]">
+              {[
+                ...(Array.isArray(allUsers) ? allUsers : [])
+                  .filter(
+                    (u) =>
+                      u && u.user_type !== "institute" && !u.institute_details,
+                  )
+                  .map((u) => ({
+                    ...u,
+                    displayType: "Individual",
+                    finalName: u.name || u.username || "No Name",
+                  })),
+                ...(Array.isArray(allUsers) ? allUsers : [])
+                  .filter(
+                    (u) =>
+                      u && (u.user_type === "institute" || u.institute_details),
+                  )
+                  .map((i) => ({
+                    ...i,
+                    displayType: "Institute",
+                    finalName:
+                      i.institute_details?.institute_name ||
+                      i.name ||
+                      "Institute",
+                  })),
+                ...(Array.isArray(shareGroups) ? shareGroups : [])
+                  .map((g) =>
+                    g
+                      ? {
+                          ...g,
+                          displayType: "Group",
+                          finalName: g.group_name || g.name || "Unnamed Group",
+                          finalId: String(g.group_id || g.id || g._id),
+                          finalImage: g.profile || g.image || null,
+                        }
+                      : null,
+                  )
+                  .filter(Boolean),
+              ]
+                .filter((a) =>
+                  a?.finalName
+                    ?.toLowerCase()
+                    .includes(shareSearchQuery.toLowerCase()),
+                )
+                .map((account) => {
+                  const uniqueId =
+                    account.displayType === "Group"
+                      ? account.finalId
+                      : String(account.id || account._id);
+                  const isChecked = selectedUserIds.includes(uniqueId);
+
+                  let finalAvatar = avatar;
+                  if (account.profile_image)
+                    finalAvatar = `${API_CONFIG.BASE_URL}/${account.profile_image}`;
+                  else if (
+                    account.displayType === "Group" &&
+                    account.finalImage
+                  )
+                    finalAvatar = `${API_CONFIG.BASE_URL}/${account.finalImage}`;
+
+                  return (
+                    <div
+                      key={`${account.displayType}-${uniqueId}`}
+                      onClick={() =>
+                        isChecked
+                          ? setSelectedUserIds(
+                              selectedUserIds.filter((id) => id !== uniqueId),
+                            )
+                          : setSelectedUserIds([...selectedUserIds, uniqueId])
+                      }
+                      className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer border transition-all ${isChecked ? "bg-emerald-500/10 border-emerald-500/30 dark:bg-[#00ff88]/10 dark:border-[#00ff88]/20" : "bg-transparent border-transparent hover:bg-gray-100 dark:hover:bg-[#1e3a2c]"}`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <img
+                          src={finalAvatar}
+                          className="w-10 h-10 rounded-full object-cover shrink-0 border border-gray-200 dark:border-white/5"
+                          alt={account.finalName}
+                          onError={(e) => {
+                            e.target.src = avatar;
+                          }}
+                        />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-bold text-sm text-black dark:text-white truncate max-w-[160px]">
+                              {account.finalName}
+                            </p>
+                            <span
+                              className={`text-[9px] px-1.5 py-0.5 rounded-md font-mono uppercase font-bold shrink-0 ${account.displayType === "Institute" ? "bg-blue-500/10 text-blue-500" : account.displayType === "Group" ? "bg-purple-500/10 text-purple-500" : "bg-gray-500/10 text-gray-500"}`}
+                            >
+                              {account.displayType}
+                            </span>
+                          </div>
+                          <p className="text-[11px] font-mono text-gray-400 truncate">
+                            {account.displayType === "Group"
+                              ? `${account.total_members || 0} Members`
+                              : account.registration_id || `#${uniqueId}`}
+                          </p>
+                        </div>
+                      </div>
+                      <span
+                        className={`material-symbols-outlined text-xl ${isChecked ? "text-[#00ff88]" : "text-gray-400"}`}
+                      >
+                        {isChecked ? "check_box" : "check_box_outline_blank"}
+                      </span>
+                    </div>
+                  );
+                })}
+            </div>
+
+            {/* Send Button */}
+            {selectedUserIds.length > 0 && (
+              <div className="p-3 border-t border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-black/20 flex items-center justify-between shrink-0">
+                <div>
+                  <span className="text-[11px] font-mono font-bold text-emerald-600 dark:text-[#00ff88]">
+                    {selectedUserIds.length} SELECTED
+                  </span>
+                  <span className="block text-[9px] text-gray-400">
+                    Ready to share
+                  </span>
+                </div>
+                <button
+                  onClick={() => handleSendPost(selectedSharePostId)}
+                  className="w-10 h-10 rounded-full bg-[#00ff88] text-black flex items-center justify-center hover:scale-105 transition-all shadow-[0_4px_12px_rgba(0,255,136,0.3)]"
+                >
+                  <span
+                    className="material-symbols-outlined text-lg"
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
+                    send
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* User Profile Modal */}
       {selectedProfileUser && (
         <div
@@ -3825,6 +4236,7 @@ useEffect(() => {
       {/* Chat Floating Widget */}
 
       <div
+        ref={chatWidgetRef}
         className="hidden sm:flex fixed bottom-2 right-2 sm:bottom-4 sm:right-4 md:bottom-6 md:right-6 items-end gap-3 sm:gap-4 pointer-events-none"
         style={{ zIndex: 60 }}
       >
@@ -3879,7 +4291,11 @@ useEffect(() => {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-2 sm:p-3 md:p-4 space-y-3 sm:space-y-4 hide-scrollbar bg-slate-50 dark:bg-[#121413]">
+            <div
+              ref={popupMessagesContainerRef}
+              onScroll={handlePopupScroll}
+              className="flex-1 overflow-y-auto p-2 sm:p-3 md:p-4 space-y-3 sm:space-y-4 hide-scrollbar bg-slate-50 dark:bg-[#121413]"
+            >
               {(chatMessages[activeChatId] || []).length === 0 ? (
                 <p className="text-[10px] text-slate-500 text-center mt-4 italic">
                   No messages yet. Say hi! 👋
@@ -3921,7 +4337,43 @@ useEffect(() => {
                               />
                             );
                           })()}
-                        {m.message && <span>{m.message}</span>}
+                        {m.message &&
+                          (m.message.startsWith("POST_SHARE_ID:") ? (
+                            <SharedPostCard
+                              postId={m.message.replace("POST_SHARE_ID:", "")}
+                              onOpen={(pid) => {
+                                setIsPostModalOpen(true);
+                                setSelectedPostIdForPopup(pid);
+                                setPopupPostData(null);
+                                setLoadingPostData(true);
+                                setIsExpanded(false);
+
+                                const token =
+                                  localStorage.getItem("auth_token") ||
+                                  localStorage.getItem("token") ||
+                                  sessionStorage.getItem("auth_token") ||
+                                  localStorage.getItem("authToken") ||
+                                  null;
+
+                                fetch(
+                                  `${API_CONFIG.BASE_URL}/post/get-posts-id/${pid}`,
+                                  {
+                                    headers: {
+                                      Authorization: `Bearer ${token}`,
+                                    },
+                                  },
+                                )
+                                  .then((r) => r.json())
+                                  .then((res) => {
+                                    if (res.status) setPopupPostData(res.data);
+                                    setLoadingPostData(false);
+                                  })
+                                  .catch(() => setLoadingPostData(false));
+                              }}
+                            />
+                          ) : (
+                            <span>{m.message}</span>
+                          ))}
                       </div>
                     </div>
                   ) : (
@@ -3945,8 +4397,8 @@ useEffect(() => {
                         </div>
                         <div
                           className="bg-slate-100 dark:bg-[#1e201f] 
-text-slate-900 dark:text-[#e2e3e0]
-border border-slate-200 dark:border-white/5 text-xs sm:text-sm p-2.5 sm:p-3 rounded-2xl rounded-tl-none border border-white/5 relative break-words"
+                         text-slate-900 dark:text-[#e2e3e0]
+                          border border-slate-200 dark:border-white/5 text-xs sm:text-sm p-2.5 sm:p-3 rounded-2xl rounded-tl-none border border-white/5 relative break-words"
                         >
                           {m.file?.path &&
                             (() => {
@@ -3972,13 +4424,51 @@ border border-slate-200 dark:border-white/5 text-xs sm:text-sm p-2.5 sm:p-3 roun
                                 />
                               );
                             })()}
-                          {m.message && <span>{m.message}</span>}
+                          {m.message &&
+                            (m.message.startsWith("POST_SHARE_ID:") ? (
+                              <SharedPostCard
+                                postId={m.message.replace("POST_SHARE_ID:", "")}
+                                onOpen={(pid) => {
+                                  setIsPostModalOpen(true);
+                                  setSelectedPostIdForPopup(pid);
+                                  setPopupPostData(null);
+                                  setLoadingPostData(true);
+                                  setIsExpanded(false);
+
+                                  const token =
+                                    localStorage.getItem("auth_token") ||
+                                    localStorage.getItem("token") ||
+                                    sessionStorage.getItem("auth_token") ||
+                                    localStorage.getItem("authToken") ||
+                                    null;
+
+                                  fetch(
+                                    `${API_CONFIG.BASE_URL}/post/get-posts-id/${pid}`,
+                                    {
+                                      headers: {
+                                        Authorization: `Bearer ${token}`,
+                                      },
+                                    },
+                                  )
+                                    .then((r) => r.json())
+                                    .then((res) => {
+                                      if (res.status)
+                                        setPopupPostData(res.data);
+                                      setLoadingPostData(false);
+                                    })
+                                    .catch(() => setLoadingPostData(false));
+                                }}
+                              />
+                            ) : (
+                              <span>{m.message}</span>
+                            ))}
                         </div>
                       </div>
                     </div>
                   ),
                 )
               )}
+              <div ref={popupMessagesEndRef} />
             </div>
 
             {/* Input */}
@@ -4043,13 +4533,24 @@ border border-slate-200 dark:border-white/5 text-xs sm:text-sm p-2.5 sm:p-3 roun
                   <div
                     key={chat.id}
                     // ✅ SAHI — ye karo
+                    // Chat list item click handler mein
                     onClick={() => {
                       if (isInstituteApprovalPending) {
                         openApprovalModal();
                         return;
                       }
-                      setActiveChatId(chat.id); // ← yeh add karo
+                      setActiveChatId(chat.id);
                       setIsChatListOpen(true);
+
+                      // ✅ Yeh add karo
+                      const seen = JSON.parse(
+                        localStorage.getItem("recentlySeenChats") || "{}",
+                      );
+                      seen[String(chat.id)] = Date.now();
+                      localStorage.setItem(
+                        "recentlySeenChats",
+                        JSON.stringify(seen),
+                      );
                     }}
                     className={`flex items-center justify-between p-2 sm:p-2.5 rounded-lg cursor-pointer transition-colors gap-2 ${activeChatId === chat.id ? "bg-slate-50 dark:bg-[#1e201f] border-l-2 border-[#00ff85]" : "hover:bg-slate-100 dark:hover:bg-[#2a2d2b] dark:bg-[#1e201f]"}`}
                   >
@@ -4121,7 +4622,7 @@ border border-slate-200 dark:border-white/5 text-xs sm:text-sm p-2.5 sm:p-3 roun
                   openApprovalModal();
                   return;
                 }
-               // ← yeh add karo
+                // ← yeh add karo
                 setIsChatListOpen(true);
               }}
             >
@@ -4226,6 +4727,169 @@ border border-slate-200 dark:border-white/5 text-xs sm:text-sm p-2.5 sm:p-3 roun
             >
               Got it
             </button>
+          </div>
+        </div>
+      )}
+
+      {isPostModalOpen && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fadeIn">
+          {/* Width badhakar max-w-2xl kar di hai aur light/dark mode dono ke liye colors set hain */}
+          <div className="bg-white dark:bg-[#121214] border border-gray-200 dark:border-white/10 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl relative text-left transition-colors duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/5">
+              <div className="flex items-center gap-2 text-[#00ff85]">
+                <span className="material-symbols-outlined text-lg">
+                  description
+                </span>
+                <h3 className="font-bold text-sm tracking-wide uppercase text-gray-900 dark:text-white">
+                  Shared Post Details
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setIsPostModalOpen(false);
+                  setSelectedPostIdForPopup(null);
+                  setPopupPostData(null);
+                  setIsExpanded(false); // Reset expand state on close
+                }}
+                className="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-all flex items-center justify-center"
+              >
+                <span className="material-symbols-outlined text-xl">close</span>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 flex flex-col gap-4 max-h-[75vh] overflow-y-auto custom-scrollbar">
+              {loadingPostData ? (
+                /* API loading State */
+                <div className="flex flex-col items-center justify-center py-12 gap-3">
+                  <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-[#00ff85]"></div>
+                  <span className="text-xs text-gray-500 dark:text-slate-500 font-mono">
+                    FETCHING POST DATA...
+                  </span>
+                </div>
+              ) : popupPostData ? (
+                /* Actual Data Loaded State */
+                <div className="flex flex-col gap-4">
+                  {/* 1. AUTHOR NAME / TITLE (Pele Name Aaye) */}
+                  <div>
+                    <span className="text-[10px] uppercase font-mono text-gray-400 dark:text-slate-500 block mb-0.5">
+                      Posted By
+                    </span>
+                    <h4 className="text-gray-900 dark:text-white font-extrabold text-lg tracking-tight">
+                      {popupPostData.institute_name ||
+                        popupPostData.name ||
+                        "No Name Available"}
+                    </h4>
+                  </div>
+
+                  {/* 2. POST TEXT / CONTENT WITH DYNAMIC INLINE LINE CLAMP */}
+                  <div className="bg-gray-50 dark:bg-black/20 p-4 rounded-xl border border-gray-200 dark:border-white/5">
+                    <span className="text-[10px] uppercase font-mono text-gray-400 dark:text-slate-500 block mb-1.5">
+                      Description
+                    </span>
+
+                    {popupPostData.post_text ? (
+                      <div>
+                        {/* 💡 FIX: Yahan humne Tailwind class ki jagah inline style (-webkit-line-clamp) use kiya hai, 
+                jo image hone par 3 lines aur image na hone par direct 10 lines strict apply karega */}
+                        <p
+                          className="text-gray-800 dark:text-slate-300 text-sm leading-relaxed whitespace-pre-wrap break-words"
+                          style={
+                            !isExpanded
+                              ? {
+                                  display: "-webkit-box",
+                                  WebkitBoxOrient: "vertical",
+                                  WebkitLineClamp:
+                                    popupPostData.image &&
+                                    popupPostData.image.trim() !== ""
+                                      ? 3
+                                      : 11,
+                                  overflow: "hidden",
+                                }
+                              : {}
+                          }
+                        >
+                          {popupPostData.post_text}
+                        </p>
+
+                        {/* Dynamic Read More / Show Less Button logic */}
+                        {((popupPostData.image &&
+                          popupPostData.image.trim() !== "" &&
+                          popupPostData.post_text.length > 150) ||
+                          ((!popupPostData.image ||
+                            popupPostData.image.trim() === "") &&
+                            popupPostData.post_text.length > 400)) && (
+                          <button
+                            onClick={() => setIsExpanded(!isExpanded)}
+                            className="mt-2 text-xs font-bold text-[#00ff85] hover:underline flex items-center gap-0.5"
+                          >
+                            {isExpanded ? (
+                              <>
+                                Show Less{" "}
+                                <span className="material-symbols-outlined text-xs">
+                                  expand_less
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                Read More{" "}
+                                <span className="material-symbols-outlined text-xs">
+                                  expand_more
+                                </span>
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-gray-400 dark:text-slate-500 text-xs italic">
+                        No text description provided for this post.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* 3. POST IMAGE CONTAINER (Fir Image Aaye) */}
+                  {popupPostData.image && (
+                    <div className="w-full border border-gray-200 dark:border-white/5 rounded-xl overflow-hidden bg-gray-100 dark:bg-black/40">
+                      <span className="text-[10px] uppercase font-mono text-gray-400 dark:text-slate-500 block p-3 pb-0">
+                        Attached Media
+                      </span>
+                      <div className="p-3">
+                        <img
+                          src={`${API_CONFIG.BASE_URL}/${popupPostData.image.replace(/^\//, "")}`}
+                          alt="Shared Content"
+                          className="w-full max-h-80 object-contain rounded-lg bg-gray-50 dark:bg-[#1a1a1a]"
+                          onError={(e) => {
+                            e.target.parentNode.style.display = "none";
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Error or Empty State */
+                <div className="text-center py-6 text-xs text-gray-500 dark:text-slate-500 font-mono">
+                  FAILED TO LOAD POST CONTENT.
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3 border-t border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-black/20 flex justify-end">
+              <button
+                onClick={() => {
+                  setIsPostModalOpen(false);
+                  setSelectedPostIdForPopup(null);
+                  setPopupPostData(null);
+                  setIsExpanded(false);
+                }}
+                className="px-6 py-2 bg-[#00ff85] text-[#003919] font-bold text-xs rounded-lg hover:bg-[#00e676] hover:scale-[1.03] transition-all duration-200 shadow-md hover:shadow-[0_0_15px_rgba(0,255,133,0.45)] active:scale-95"
+              >
+                Close Preview
+              </button>
+            </div>
           </div>
         </div>
       )}

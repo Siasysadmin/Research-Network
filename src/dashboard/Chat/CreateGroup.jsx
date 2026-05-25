@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import DashboardLayout from "./DashboardLayout";
+import DashboardLayout from "../DashboardLayout";
 import { useNavigate, useParams } from "react-router-dom";
-import API_CONFIG from "../config/api.config";
+import API_CONFIG from "../../config/api.config";
 import { toast } from "react-toastify";
-import defaultAvatar from "../assets/images/avatar.jpg";
+import defaultAvatar from "../../assets/images/avatar.jpg";
 
 const MaterialIcon = ({ name, className = "", style = {} }) => (
   <span className={`material-symbols-outlined ${className}`} style={style}>

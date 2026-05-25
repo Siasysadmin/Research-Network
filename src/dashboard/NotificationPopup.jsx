@@ -59,12 +59,12 @@ const NotificationItem = ({
   onReject,
 }) => {
   // ✅ States ab parent se aa rahi hain - reset nahi hongi
-const {
-  accepting = false,
-  rejecting = false,
-  accepted = false,
-  rejected = false,
-} = actionState || {};
+  const {
+    accepting = false,
+    rejecting = false,
+    accepted = false,
+    rejected = false,
+  } = actionState || {};
 
   const type = notif.type?.toLowerCase() || "general";
   const meta = typeMeta[type] || typeMeta.general;
@@ -208,14 +208,14 @@ const NotificationPopup = ({ onClose }) => {
   });
 
   const updateAction = (notifId, update) => {
-  setConnectionActions((prev) => ({
-    ...prev,
-    [notifId]: {
-      ...(prev[notifId] || {}),
-      ...update,
-    },
-  }));
-};
+    setConnectionActions((prev) => ({
+      ...prev,
+      [notifId]: {
+        ...(prev[notifId] || {}),
+        ...update,
+      },
+    }));
+  };
 
   // ✅ Accept handler - parent mein
   const handleAccept = async (notif) => {
@@ -316,26 +316,25 @@ const NotificationPopup = ({ onClose }) => {
     }
   };
 
- useEffect(() => {
-  const loadNotifications = async () => {
-    await fetchNotifications();
+  useEffect(() => {
+    const loadNotifications = async () => {
+      await fetchNotifications();
 
-    // LinkedIn jaisa: popup open hote hi unread notifications read ho jaye
-    setTimeout(() => {
-      markAllRead();
-    }, 500);
-  };
+      // LinkedIn jaisa: popup open hote hi unread notifications read ho jaye
+      setTimeout(() => {
+        markAllRead();
+      }, 500);
+    };
 
-  loadNotifications();
-}, []);
+    loadNotifications();
+  }, []);
 
   return (
     <div
       className="
 fixed sm:absolute right-2 sm:right-0 top-[80px] sm:top-auto sm:mt-3 
 w-[calc(100vw-16px)] sm:w-[340px] md:w-[360px] lg:w-[380px] 
-max-h-[420px] md:max-h-[480px]
-bg-white text-slate-800 
+max-h-[480px] bg-white text-slate-800 
 border border-gray-200 
 rounded-[18px] shadow-2xl overflow-hidden z-[60]
 
@@ -375,16 +374,16 @@ dark:bg-[#32ff9906] dark:border-[#32ff9912] dark:text-white"
         </div>
       </div>
 
-     <div
-  className="
-    max-h-[480px]
+      <div
+        className="
+    h-[340px]
     overflow-y-auto
     scrollbar-thin
     scrollbar-thumb-gray-300
     dark:scrollbar-thumb-[#1e3a2c]
     scrollbar-track-transparent
   "
->
+      >
         {loading ? (
           <div className="flex items-center justify-center py-10 gap-3">
             <div className="w-5 h-5 border-2 border-[#32ff99]/30 border-t-[#32ff99] rounded-full animate-spin" />
@@ -416,7 +415,7 @@ dark:bg-[#32ff9906] dark:border-[#32ff9912] dark:text-white"
               notif={notif}
               onClose={onClose}
               navigate={navigate}
-actionState={connectionActions[notif.id] || {}}
+              actionState={connectionActions[notif.id] || {}}
               onAccept={handleAccept}
               onReject={handleReject}
             />

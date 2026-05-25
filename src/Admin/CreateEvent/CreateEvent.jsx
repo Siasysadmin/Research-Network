@@ -381,7 +381,7 @@ const CreateEvent = () => {
                   onChange={handleChange}
                   className="w-full bg-gray-50 dark:bg-[#0a120e] border border-gray-300 dark:border-[#1e3a2c] rounded-lg p-3 focus:border-[#00ff88] dark:focus:border-[#00ff88] focus:outline-none focus:ring-0 transition-all text-gray-900 dark:text-white outline-none"
                   type="email"
-                  placeholder="Enter Organizer's email"
+                  placeholder="Enter organizer's email"
                 />
               </div>
             </div>
