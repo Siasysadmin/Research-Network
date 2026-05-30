@@ -15,7 +15,9 @@ const ResearchAllRequestsTable = ({
   if (!requests.length) {
     return (
       <div className="flex items-center justify-center h-64 bg-white dark:bg-[#13231a] border border-gray-200 dark:border-[#1e3a2c] rounded-xl">
-        <p className="text-gray-500 dark:text-slate-500">No research requests found</p>
+        <p className="text-gray-500 dark:text-slate-500">
+          No research requests found
+        </p>
       </div>
     );
   }
@@ -29,92 +31,111 @@ const ResearchAllRequestsTable = ({
     return "bg-gray-500/10 text-gray-400 border border-gray-500/20";
   };
 
- const getStatusStyle = (status) => {
-  if (status === "1" || status === 1 || status === "pending")
-    return "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20";
+  const getStatusStyle = (status) => {
+    if (status === "1" || status === 1 || status === "pending")
+      return "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20";
 
-  if (status === "2" || status === 2 || status === "approved")
-    return "bg-green-500/10 text-green-400 border border-green-500/20";
+    if (status === "2" || status === 2 || status === "approved")
+      return "bg-green-500/10 text-green-400 border border-green-500/20";
 
- if (status === "3" || status === 3 || status === "published")
-    return "bg-[#00ff88]/10 text-[#00ff88] border border-[#00ff88]/30";
+    if (status === "3" || status === 3 || status === "published")
+      return "bg-[#00ff88]/10 text-[#00ff88] border border-[#00ff88]/30";
 
-  if (status === "4" || status === 4 || status === "rejected")
-    return "bg-red-500/10 text-red-400 border border-red-500/20";
+    if (status === "4" || status === 4 || status === "rejected")
+      return "bg-red-500/10 text-red-400 border border-red-500/20";
 
-  return "bg-slate-500/10 text-gray-500 dark:text-slate-400 border border-slate-500/20";
-};
+    return "bg-slate-500/10 text-gray-500 dark:text-slate-400 border border-slate-500/20";
+  };
 
- const getDisplayStatus = (status) => {
-  if (status === "1" || status === 1 || status === "pending")
+  const getDisplayStatus = (status) => {
+    if (status === "1" || status === 1 || status === "pending")
+      return "Pending";
+
+    if (status === "2" || status === 2 || status === "approved")
+      return "Approved";
+
+    if (status === "3" || status === 3 || status === "published")
+      return "Published";
+
+    if (status === "4" || status === 4 || status === "rejected")
+      return "Rejected";
+
     return "Pending";
-
-  if (status === "2" || status === 2 || status === "approved")
-    return "Approved";
-  
-if (status === "3" || status === 3 || status === "published") return "Published";
-
-  if (status === "4" || status === 4 || status === "rejected")
-    return "Rejected";
-
-  return "Pending";
-};
+  };
   const formatUserType = (type) =>
     type ? type.charAt(0).toUpperCase() + type.slice(1).toLowerCase() : "N/A";
 
   const getDisplayName = (request) => {
     if (request.displayName) return request.displayName;
-    
+
     const userType = request.user_type || request.user_id?.user_type;
-    
+
     if (userType?.toLowerCase() === "individual") {
       return request.name || "N/A";
     } else if (userType?.toLowerCase() === "institute") {
       return request.institute_name || request.name || "N/A";
     }
-    
+
     return request.name || "N/A";
   };
 
+  const getResearchMode = (updateCount) => {
+    return Number(updateCount) === 0 ? "New" : "Resubmitted";
+  };
+
+  const getResearchModeStyle = (updateCount) => {
+    return Number(updateCount) === 0
+      ? "bg-blue-500/10 text-blue-500 border border-blue-500/20"
+      : "bg-orange-500/10 text-orange-500 border border-orange-500/20";
+  };
   // Generate page numbers for pagination
   const getPageNumbers = () => {
-  return Array.from({ length: totalPages }, (_, i) => i + 1);
-};
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  };
 
-  
   return (
     <div className="bg-white dark:bg-[#13231a] border border-gray-200 dark:border-[#1e3a2c] rounded-xl overflow-hidden flex flex-col h-full">
       {/* Table with Fixed Header */}
-      <div className="overflow-auto flex-1" style={{ maxHeight: '600px' }}>
+      <div className="overflow-auto flex-1" style={{ maxHeight: "600px" }}>
         <table className="w-full table-fixed">
           <thead className="sticky top-0 z-20 bg-gray-100 dark:bg-[#0e1a14]">
             <tr className="bg-gray-100 dark:bg-[#0e1a14] text-gray-500 dark:text-slate-400 text-xs uppercase">
-              <th className="py-4 px-4 text-left w-[120px]">REGISTRATION ID</th>
-              <th className="py-4 px-4 text-left w-[150px]">USERNAME</th>
+              <th className="py-4 px-4 text-left w-[100px]">REGISTRATION ID</th>
+              <th className="py-4 px-4 text-left w-[120px]">USERNAME</th>
               <th className="py-4 px-4 text-left w-[100px]">USER TYPE</th>
               <th className="py-4 px-4 text-left w-[250px]">RESEARCH TITLE</th>
               <th className="py-4 px-4 text-left w-[100px]">STATUS</th>
-              <th className="py-4 px-6 text-right w-[120px]">ACTIONS</th>
+              <th className="py-4 px-4 text-left w-[100px]">MODE</th>
+              <th className="py-4 px-6 text-right w-[90px]">ACTIONS</th>
             </tr>
           </thead>
 
           <tbody className="divide-y divide-gray-100 dark:divide-[#1e3a2c]">
             {requests.map((request) => {
-              const id = request.id ;
+              const id = request.id;
               const registrationId = request.registration_id || "N/A";
               const username = getDisplayName(request);
               const paperTitle = request.research_title || "Untitled";
-              const userType = request.user_type || request.user_id?.user_type || "N/A";
+              const userType =
+                request.user_type || request.user_id?.user_type || "N/A";
               const status = request.status || "1";
-
+              const updateCount = request.update_count || "0";
               return (
-                <tr key={id} className="hover:bg-gray-50 dark:hover:bg-[#1e3a2c]/30">
+                <tr
+                  key={id}
+                  className="hover:bg-gray-50 dark:hover:bg-[#1e3a2c]/30"
+                >
                   <td className="py-4 px-4 font-mono text-gray-500 dark:text-slate-400 truncate">
                     {registrationId}
                   </td>
 
-                  <td className="py-4 px-4 text-gray-900 dark:text-white truncate" title={username}>
-                    {username}
+                  <td
+                    className="py-4 px-4 text-gray-900 dark:text-white"
+                    title={username}
+                  >
+                    <div className="whitespace-normal break-words leading-5">
+                      {username}
+                    </div>
                   </td>
 
                   <td className="py-4 px-4">
@@ -126,11 +147,15 @@ if (status === "3" || status === 3 || status === "published") return "Published"
                       {formatUserType(userType)}
                     </span>
                   </td>
-                  
-                  <td className="py-4 px-4 text-gray-600 dark:text-slate-300 truncate" title={paperTitle}>
-                    {paperTitle}
-                  </td>
 
+                  <td
+                    className="py-4 px-4 text-gray-600 dark:text-slate-300"
+                    title={paperTitle}
+                  >
+                    <div className="whitespace-normal break-words leading-5">
+                      {paperTitle}
+                    </div>
+                  </td>
                   <td className="py-4 px-4 relative">
                     <span
                       className={`cursor-pointer text-xs px-2 py-1 rounded ${getStatusStyle(
@@ -138,6 +163,13 @@ if (status === "3" || status === 3 || status === "published") return "Published"
                       )}`}
                     >
                       {getDisplayStatus(status)}
+                    </span>
+                  </td>
+                  <td className="py-4 px-4">
+                    <span
+                      className={`text-xs px-2 py-1 rounded ${getResearchModeStyle(updateCount)}`}
+                    >
+                      {getResearchMode(updateCount)}
                     </span>
                   </td>
 
@@ -156,48 +188,45 @@ if (status === "3" || status === 3 || status === "published") return "Published"
         </table>
       </div>
 
-     {/* Pagination Section */}
-<div className="bg-gray-100 dark:bg-[#0e1a14] border-t border-gray-200 dark:border-[#1e3a2c] px-6 py-4 flex items-center justify-end">
+      {/* Pagination Section */}
+      <div className="bg-gray-100 dark:bg-[#0e1a14] border-t border-gray-200 dark:border-[#1e3a2c] px-6 py-4 flex items-center justify-end">
+        <div className="flex items-center gap-2">
+          {/* Previous Button */}
+          <button
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="p-2 rounded-lg bg-white dark:bg-[#13231a] border border-gray-200 dark:border-[#1e3a2c] text-gray-500 dark:text-slate-400 hover:text-[#00ff88] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <MaterialIcon name="west" className="text-lg" />
+          </button>
 
-  <div className="flex items-center gap-2">
-    
-    {/* Previous Button */}
-    <button
-      onClick={() => onPageChange(currentPage - 1)}
-      disabled={currentPage === 1}
-      className="p-2 rounded-lg bg-white dark:bg-[#13231a] border border-gray-200 dark:border-[#1e3a2c] text-gray-500 dark:text-slate-400 hover:text-[#00ff88] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-    >
-      <MaterialIcon name="west" className="text-lg" />
-    </button>
+          {/* Page Numbers */}
+          <div className="flex gap-1">
+            {getPageNumbers().map((pageNum) => (
+              <button
+                key={pageNum}
+                onClick={() => onPageChange(pageNum)}
+                className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
+                  currentPage === pageNum
+                    ? "bg-[#00ff88] text-[#0a0f0c]"
+                    : "text-gray-500 dark:text-slate-500 hover:bg-gray-200 dark:hover:bg-[#1e3a2c]"
+                }`}
+              >
+                {pageNum}
+              </button>
+            ))}
+          </div>
 
-    {/* Page Numbers */}
-    <div className="flex gap-1">
-      {getPageNumbers().map((pageNum) => (
-        <button
-          key={pageNum}
-          onClick={() => onPageChange(pageNum)}
-          className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
-            currentPage === pageNum
-              ? "bg-[#00ff88] text-[#0a0f0c]"
-              : "text-gray-500 dark:text-slate-500 hover:bg-gray-200 dark:hover:bg-[#1e3a2c]"
-          }`}
-        >
-          {pageNum}
-        </button>
-      ))}
-    </div>
-
-    {/* Next Button */}
-    <button
-      onClick={() => onPageChange(currentPage + 1)}
-      disabled={currentPage === totalPages}
-      className="p-2 rounded-lg bg-white dark:bg-[#13231a] border border-gray-200 dark:border-[#1e3a2c] text-gray-500 dark:text-slate-400 hover:text-[#00ff88] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-    >
-      <MaterialIcon name="east" className="text-lg" />
-    </button>
-
-  </div>
-</div>
+          {/* Next Button */}
+          <button
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="p-2 rounded-lg bg-white dark:bg-[#13231a] border border-gray-200 dark:border-[#1e3a2c] text-gray-500 dark:text-slate-400 hover:text-[#00ff88] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <MaterialIcon name="east" className="text-lg" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

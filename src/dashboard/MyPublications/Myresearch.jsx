@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import API_CONFIG from "../../config/api.config";
 import { toast } from "react-toastify";
 
@@ -90,7 +91,9 @@ const PublicationCard = ({
   abstract,
   pdfPath,
   onPublish,
+  onEdit,
   updatedAt,
+  updateCount,
 }) => {
   const fullPdfUrl = pdfPath ? `${API_CONFIG.BASE_URL}/${pdfPath}` : null;
   const [showFullAbstract, setShowFullAbstract] = useState(false);
@@ -212,6 +215,23 @@ dark:bg-[#00ff85] dark:text-[#003919] dark:hover:brightness-110
             <MaterialIcon name="publish" className="text-base sm:text-lg" />
           </button>
         )}
+
+        {statusCode === "4" && Number(updateCount || 0) < 2 && (
+          <button
+            onClick={onEdit}
+            className="
+      flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all
+      bg-amber-500 text-white hover:bg-amber-600
+      dark:bg-[#333534] dark:border dark:border-[#3b4b3d]/30 dark:text-[#e2e3e0]
+      dark:hover:bg-[#00ff85] dark:hover:text-[#003919]
+    "
+          >
+            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">
+              Edit
+            </span>
+            <MaterialIcon name="edit" className="text-base sm:text-lg" />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -219,6 +239,7 @@ dark:bg-[#00ff85] dark:text-[#003919] dark:hover:brightness-110
 
 // ✅ MAIN MyResearch COMPONENT
 const MyResearch = () => {
+  const navigate = useNavigate();
   const [publications, setPublications] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -359,8 +380,15 @@ const MyResearch = () => {
               category={pub.research_type || "Research"}
               abstract={pub.abstract}
               pdfPath={pub.research_file}
+              updateCount={pub.update_count}
               onPublish={() => openPublishConfirm(pub.id)}
-              updatedAt={updateDate}
+              onEdit={() =>
+                navigate("/dashboard/research-resubmission", {
+                  state: {
+                    researchId: pub.researche_id || pub.id,
+                  },
+                })
+              }
             />
           );
         })

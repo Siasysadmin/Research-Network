@@ -1,4 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import avatar from "../../assets/images/avatar.jpg";
+import API_CONFIG from "../../config/api.config";
+import { toast } from "react-toastify";
 
 const MaterialIcon = ({ name, className = "", style = {} }) => (
   <span className={`material-symbols-outlined ${className}`} style={style}>
@@ -6,152 +9,106 @@ const MaterialIcon = ({ name, className = "", style = {} }) => (
   </span>
 );
 
-// Dummy avatar
-const AVATAR = "https://api.dicebear.com/7.x/avataaars/svg?seed=roshni";
+const getAuthToken = () =>
+  localStorage.getItem("token") || localStorage.getItem("authToken");
 
-const DUMMY_POSTS = [
-  {
-    id: 1,
-    author: "Roshni",
-    date: "24 Apr 2026",
-    text: "exam ka time table aa gaya kya sabka?",
-    image: null,
-    video: null,
-    poll: null,
-    likes: 12,
-    comments: 4,
-    type: "text",
-  },
-  {
-    id: 2,
-    author: "Roshni",
-    date: "23 Apr 2026",
-    text: "Sunset view from my campus 🌅",
-    image:
-      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=80",
-    video: null,
-    poll: null,
-    likes: 28,
-    comments: 7,
-    type: "image",
-  },
-  {
-    id: 3,
-    author: "Roshni",
-    date: "21 Apr 2026",
-    text: "Climate change awareness event highlights 🎬",
-    image:
-      "https://images.unsplash.com/photo-1464746133101-a2c3f88e0dd9?w=600&q=80",
-    video: true,
-    videoDuration: "01:24",
-    poll: null,
-    likes: 36,
-    comments: 9,
-    type: "video",
-  },
-  {
-    id: 4,
-    author: "Roshni",
-    date: "19 Apr 2026",
-    text: "Great discussion in today's research meeting. Learned so much!",
-    image: null,
-    video: null,
-    poll: null,
-    likes: 18,
-    comments: 3,
-    type: "text",
-  },
-  {
-    id: 5,
-    author: "Roshni",
-    date: "18 Apr 2026",
-    text: "Some clicks from the sustainability workshop 📸",
-    image:
-      "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&q=80",
-    extraImages: [
-      "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=200&q=80",
-      "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=200&q=80",
-    ],
-    video: null,
-    poll: null,
-    likes: 22,
-    comments: 5,
-    type: "multi-image",
-  },
-  {
-    id: 6,
-    author: "Roshni",
-    date: "17 Apr 2026",
-    text: "Which topic should be our next research focus?",
-    image: null,
-    video: null,
-    poll: {
-      options: [
-        { label: "Renewable Energy", percent: 45 },
-        { label: "Sustainable Cities", percent: 35 },
-        { label: "Waste Management", percent: 20 },
-      ],
-      totalVotes: 20,
-    },
-    likes: 0,
-    comments: 0,
-    type: "poll",
-  },
-];
-
-// ✅ SINGLE POST CARD (with onClick handler)
-const PostCard = ({ post, isGrid, onPostClick }) => {
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(post.likes);
+// ✅ SINGLE POST CARD
+const PostCard = ({ post, onPostClick, onDeletePost }) => {
+  const [liked, setLiked] = useState(post.is_liked === "1");
+  const [likeCount, setLikeCount] = useState(parseInt(post.like_count || 0));
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    };
 
-  const handleLike = (e) => {
-    e.stopPropagation(); // ✅ Prevent modal from opening when clicking like
-    setLiked(!liked);
-    setLikeCount(liked ? likeCount - 1 : likeCount + 1);
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const avatarSrc =
+    post.profile_image && post.profile_image !== ""
+      ? `${API_CONFIG.BASE_URL}/${post.profile_image}`
+      : avatar;
+  const hasImage = post.image && post.image !== "";
+  const hasVideo = post.video && post.video !== "";
+
+  const handleLike = async (e) => {
+    e.stopPropagation();
+    const wasLiked = liked;
+    setLiked(!wasLiked);
+    setLikeCount(wasLiked ? Math.max(0, likeCount - 1) : likeCount + 1);
+    try {
+      const res = await fetch(
+        `${API_CONFIG.BASE_URL}/post/like-post/${post.id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAuthToken()}`,
+          },
+        },
+      );
+      const result = await res.json();
+      if (!result.status) {
+        setLiked(wasLiked);
+        setLikeCount(wasLiked ? likeCount : likeCount - 1);
+        toast.error("Failed to like");
+      }
+    } catch {
+      setLiked(wasLiked);
+      toast.error("Network error");
+    }
   };
 
   const handleMenuClick = (e) => {
-    e.stopPropagation(); // ✅ Prevent modal from opening when clicking menu
+    e.stopPropagation();
     setMenuOpen(!menuOpen);
-  };
-
-  const handleCardClick = () => {
-    if (onPostClick) {
-      onPostClick(post); // ✅ Open modal with full post
-    }
   };
 
   return (
     <div
-      onClick={handleCardClick}
+      onClick={() => onPostClick && onPostClick(post)}
       className="
-        bg-white dark:bg-[#141414]
-        border border-gray-200 dark:border-white/10
-        rounded-2xl overflow-hidden
-        flex flex-col
-        transition-all duration-200
-        hover:border-gray-300 dark:hover:border-white/20
-        hover:shadow-xl
-        cursor-pointer
-      "
+  bg-white dark:bg-[#141414]
+  border border-gray-200 dark:border-white/10
+  rounded-xl sm:rounded-2xl overflow-hidden flex flex-col h-full
+  transition-all duration-200
+  hover:border-gray-300 dark:hover:border-white/20
+  hover:shadow-xl cursor-pointer
+"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-2">
+      <div className="flex items-center justify-between px-3 sm:px-4 pt-3 sm:pt-4 pb-2">
         <div className="flex items-center gap-3">
           <img
-            src={AVATAR}
-            alt={post.author}
+            src={avatarSrc}
+            alt={post.name}
             className="w-9 h-9 rounded-full border-2 border-[#00ff85]/30 object-cover bg-gray-200"
+            onError={(e) => {
+              e.target.src = avatar;
+            }}
           />
           <div>
             <p className="text-sm font-bold text-slate-800 dark:text-white capitalize">
-              {post.author}
+              {post.institute_name || post.name}
             </p>
-            <p className="text-[11px] text-slate-400">{post.date}</p>
+            <p className="text-[11px] text-slate-400">
+              {new Date(post.created_at).toLocaleDateString("en-IN", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+            </p>
           </div>
         </div>
-        <div className="relative">
+        <div className="relative" ref={menuRef}>
           <button
             onClick={handleMenuClick}
             className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors p-1 rounded-lg"
@@ -161,13 +118,13 @@ const PostCard = ({ post, isGrid, onPostClick }) => {
           {menuOpen && (
             <div className="absolute right-0 top-8 z-20 bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl py-1 min-w-[130px]">
               <button
-                onClick={(e) => e.stopPropagation()}
-                className="w-full text-left px-4 py-2 text-xs text-slate-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2"
-              >
-                <MaterialIcon name="edit" className="text-base" /> Edit
-              </button>
-              <button
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onDeletePost) {
+                    onDeletePost(post.id);
+                  }
+                  setMenuOpen(false);
+                }}
                 className="w-full text-left px-4 py-2 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-2"
               >
                 <MaterialIcon name="delete" className="text-base" /> Delete
@@ -178,28 +135,33 @@ const PostCard = ({ post, isGrid, onPostClick }) => {
       </div>
 
       {/* Text */}
-      <div className="px-4 pb-3">
-        <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-          {post.text}
-        </p>
-      </div>
+      {post.post_text && (
+        <div className="px-4 pb-3">
+          <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed line-clamp-3">
+            {post.post_text}
+          </p>
+        </div>
+      )}
 
-      {/* Media - Thumbnail version for card */}
-      {post.type === "image" && post.image && (
+      {/* Image */}
+      {hasImage && (
         <div className="w-full bg-gray-100 dark:bg-black">
           <img
-            src={post.image}
+            src={`${API_CONFIG.BASE_URL}/${post.image}`}
             alt="post"
             className="w-full object-cover max-h-[280px]"
+            onError={(e) => {
+              e.target.src = post.image;
+            }}
           />
         </div>
       )}
 
-      {post.type === "video" && post.image && (
+      {/* Video */}
+      {hasVideo && (
         <div className="relative w-full bg-black">
-          <img
-            src={post.image}
-            alt="video thumb"
+          <video
+            src={`${API_CONFIG.BASE_URL}/${post.video}`}
             className="w-full object-cover max-h-[280px] opacity-80"
           />
           <div className="absolute inset-0 flex items-center justify-center">
@@ -210,222 +172,275 @@ const PostCard = ({ post, isGrid, onPostClick }) => {
               />
             </div>
           </div>
-          <div className="absolute bottom-2 right-3 bg-black/70 text-white text-xs px-2 py-0.5 rounded-md font-mono">
-            {post.videoDuration}
-          </div>
-        </div>
-      )}
-
-      {post.type === "multi-image" && post.image && (
-        <div className="grid grid-cols-3 gap-0.5">
-          <img
-            src={post.image}
-            alt="post"
-            className="w-full h-32 object-cover col-span-1"
-          />
-          {post.extraImages?.map((img, i) => (
-            <img
-              key={i}
-              src={img}
-              alt="post"
-              className="w-full h-32 object-cover"
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Poll - Thumbnail version */}
-      {post.type === "poll" && post.poll && (
-        <div className="px-4 pb-3 space-y-2">
-          {post.poll.options.map((opt, i) => (
-            <div key={i} className="space-y-1">
-              <div className="flex justify-between text-xs text-slate-700 dark:text-slate-300 font-medium">
-                <span>{opt.label}</span>
-                <span>{opt.percent}%</span>
-              </div>
-              <div className="w-full bg-gray-100 dark:bg-white/10 rounded-full h-1.5 overflow-hidden">
-                <div
-                  className="h-1.5 rounded-full bg-[#00ff85]"
-                  style={{ width: `${opt.percent}%` }}
-                />
-              </div>
-            </div>
-          ))}
-          <p className="text-[11px] text-slate-400 pt-1">
-            {post.poll.totalVotes} votes •{" "}
-            <button
-              onClick={(e) => e.stopPropagation()}
-              className="text-[#00ff85] hover:underline font-semibold"
-            >
-              View results
-            </button>
-          </p>
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-5 px-4 py-3 border-t border-gray-100 dark:border-white/5 mt-auto">
-        <button
-          onClick={handleLike}
-          className={`flex items-center gap-1.5 text-xs font-bold transition-all ${
-            liked ? "text-[#00ff85]" : "text-slate-400 hover:text-[#00ff85]"
-          }`}
-        >
-          <MaterialIcon
-            name="favorite"
-            className="text-lg"
-            style={{ fontVariationSettings: liked ? "'FILL' 1" : "'FILL' 0" }}
-          />
-          {likeCount > 0 && <span>{likeCount}</span>}
-        </button>
+      {/* Actions */}
+      <div className="mt-auto flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-white/5">
+        {" "}
+        <div className="flex items-center gap-5">
+          <button
+            onClick={handleLike}
+            className={`flex items-center gap-1 transition-all ${
+              liked
+                ? "text-[#00ff85]"
+                : "text-slate-500 dark:text-slate-400 hover:text-[#00ff85]"
+            }`}
+          >
+            <MaterialIcon
+              name="favorite"
+              className="text-[22px]"
+              style={{
+                fontVariationSettings: liked ? "'FILL' 1" : "'FILL' 0",
+              }}
+            />
 
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-[#00ff85] transition-all"
-        >
-          <MaterialIcon name="chat_bubble" className="text-lg" />
-          {post.comments > 0 && <span>{post.comments}</span>}
-        </button>
+            <span className="text-sm font-semibold">{likeCount}</span>
+          </button>
 
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-[#00ff85] transition-all ml-auto"
-        >
-          <MaterialIcon name="share" className="text-lg" />
-          <span className="hidden sm:inline">Share</span>
-        </button>
+          <button
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-[#00ff85]"
+          >
+            <MaterialIcon
+              name="chat_bubble"
+              className="text-[21px]"
+              style={{ fontVariationSettings: "'FILL' 0" }}
+            />
+
+            {parseInt(post.comment_count) > 0 && (
+              <span className="text-sm font-semibold">
+                {post.comment_count}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
 };
 
-// ✅ POST MODAL COMPONENT (Full size view)
+// ✅ POST MODAL
 const PostModal = ({ post, onClose }) => {
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(post?.likes || 0);
+  const [liked, setLiked] = useState(post?.is_liked === "1");
+  const [likeCount, setLikeCount] = useState(parseInt(post?.like_count || 0));
   const [commentText, setCommentText] = useState("");
-  const [comments, setComments] = useState([
-    {
-      id: 1,
-      author: "Amit Kumar",
-      text: "Great post! 🔥",
-      time: "2 hours ago",
-    },
-    {
-      id: 2,
-      author: "Priya Singh",
-      text: "Very informative 👍",
-      time: "5 hours ago",
-    },
-  ]);
+  const [comments, setComments] = useState([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const currentUserId =
+    currentUser?.id || currentUser?.user_id || localStorage.getItem("user_id");
+  const avatarSrc =
+    post.profile_image && post.profile_image !== ""
+      ? `${API_CONFIG.BASE_URL}/${post.profile_image}`
+      : avatar;
+  const hasImage = post?.image && post.image !== "";
+  const hasVideo = post?.video && post.video !== "";
 
-  if (!post) return null;
-
-  const handleLike = () => {
-    setLiked(!liked);
-    setLikeCount(liked ? likeCount - 1 : likeCount + 1);
-  };
-
-  const handleAddComment = (e) => {
-    e.preventDefault();
-    if (commentText.trim()) {
-      setComments([
-        ...comments,
-        {
-          id: Date.now(),
-          author: "You",
-          text: commentText,
-          time: "Just now",
-        },
-      ]);
-      setCommentText("");
-    }
-  };
-
-  // Close modal on Escape key
-  React.useEffect(() => {
+  useEffect(() => {
+    if (!post) return;
+    fetchComments();
     const handleEsc = (e) => {
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", handleEsc);
     return () => document.removeEventListener("keydown", handleEsc);
-  }, [onClose]);
+  }, [post]);
+
+  const fetchComments = async () => {
+    setLoadingComments(true);
+    try {
+      const res = await fetch(
+        `${API_CONFIG.BASE_URL}/post/get-comments/${post.id}`,
+        {
+          headers: { Authorization: `Bearer ${getAuthToken()}` },
+        },
+      );
+      const result = await res.json();
+      if (result.status && result.data) {
+        setComments(
+          result.data.map((c) => ({
+            id: c.id,
+            user_id: c.user_id,
+            author: c.name,
+            text: c.comment,
+            time: c.created_at,
+            avatar: c.profile_image
+              ? `${API_CONFIG.BASE_URL}/${c.profile_image}`
+              : null,
+          })),
+        );
+      }
+    } catch {
+      // silent
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  const handleLike = async () => {
+    const wasLiked = liked;
+    setLiked(!wasLiked);
+    setLikeCount(wasLiked ? Math.max(0, likeCount - 1) : likeCount + 1);
+    try {
+      const res = await fetch(
+        `${API_CONFIG.BASE_URL}/post/like-post/${post.id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAuthToken()}`,
+          },
+        },
+      );
+      const result = await res.json();
+      if (!result.status) {
+        setLiked(wasLiked);
+        toast.error("Failed to like");
+      }
+    } catch {
+      setLiked(wasLiked);
+    }
+  };
+
+  const handleAddComment = async (e) => {
+    e.preventDefault();
+    if (!commentText.trim()) return;
+    const text = commentText.trim();
+    setCommentText("");
+    try {
+      const res = await fetch(
+        `${API_CONFIG.BASE_URL}/post/add-comment/${post.id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAuthToken()}`,
+          },
+          body: JSON.stringify({ comment: text }),
+        },
+      );
+      const result = await res.json();
+      if (result.status) fetchComments();
+      else toast.error("Failed to add comment");
+    } catch {
+      toast.error("Network error");
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    try {
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}/post/delete-comment/${commentId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${getAuthToken()}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      const result = await response.json();
+
+      if (result.status) {
+        toast.success(result.msg || "Comment deleted successfully");
+
+        setComments((prev) =>
+          prev.filter((comment) => String(comment.id) !== String(commentId)),
+        );
+
+        return;
+      }
+
+      toast.error(result.msg || "Failed to delete comment");
+    } catch (error) {
+      console.error("Delete Comment Error:", error);
+      toast.error("Something went wrong");
+    }
+  };
+
+  const formatCommentTime = (time) => {
+    if (!time) return "JUST NOW";
+
+    const now = new Date();
+    const commentDate = new Date(time.replace(" ", "T"));
+
+    if (isNaN(commentDate.getTime())) return "JUST NOW";
+
+    const diffMs = now - commentDate;
+    const minutes = Math.floor(diffMs / (1000 * 60));
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (minutes < 1) return "JUST NOW";
+    if (minutes < 60) return `${minutes}m`;
+    if (hours < 24) return `${hours}h`;
+    return `${days}d`;
+  };
+
+  if (!post) return null;
 
   return (
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+        className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* Modal */}
-      <div className="fixed inset-0 z-[101] flex items-center justify-center p-4">
+      {/* Modal wrapper - bottom nav ke upar se shuru */}
+      <div className="fixed inset-x-0 top-0 bottom-16 md:top-[90px] md:bottom-0 z-[101] flex items-end md:items-center justify-center md:p-6">
         <div
-          className="relative max-w-5xl w-full max-h-[90vh] bg-white dark:bg-[#0a0a0a] rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200"
+          className="
+      relative
+      w-full md:w-[min(980px,calc(100vw-310px))]
+      h-full md:h-auto md:max-h-[88vh]
+      md:ml-[275px]
+      bg-white dark:bg-[#0a0a0a]
+      rounded-t-2xl md:rounded-2xl
+      overflow-hidden shadow-2xl
+      flex flex-col
+    "
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Close Button */}
+          {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-black/50 text-white hover:bg-black/70 transition-all flex items-center justify-center"
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/50 text-white hover:bg-black/70 transition-all flex items-center justify-center"
           >
-            <MaterialIcon name="close" className="text-2xl" />
+            <MaterialIcon name="close" className="text-xl sm:text-2xl" />
           </button>
 
-          <div className="flex flex-col md:flex-row h-full max-h-[90vh]">
-            {/* Left Side - Media */}
-            <div className="flex-1 bg-black/5 dark:bg-black/50 flex items-center justify-center p-4 md:p-6 min-h-[300px] md:min-h-0">
-              {post.type === "image" && post.image && (
+          {/* ── Content: phone=column, desktop=row ── */}
+          {/* phone=column, desktop=row — FULL HEIGHT */}
+          <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
+            {/* Left - Media: phone pe fixed height, desktop pe flex */}
+            <div className="w-full md:w-[540px] bg-gray-100 dark:bg-black flex items-center justify-center p-3 shrink-0 max-h-[38vh] md:max-h-none md:min-h-[300px]">
+              {hasImage && (
                 <img
-                  src={post.image}
+                  src={`${API_CONFIG.BASE_URL}/${post.image}`}
                   alt="Post"
-                  className="max-w-full max-h-[60vh] object-contain rounded-lg"
+                  className="max-w-full max-h-[35vh] md:max-h-[72vh] object-contain rounded-lg"
+                  onError={(e) => {
+                    e.target.src = post.image;
+                  }}
                 />
               )}
-
-              {post.type === "video" && post.image && (
-                <div className="relative w-full max-h-[60vh] flex items-center justify-center">
-                  <img
-                    src={post.image}
-                    alt="Video thumbnail"
-                    className="max-w-full max-h-[60vh] object-contain rounded-lg opacity-80"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-20 h-20 bg-[#00ff85] rounded-full flex items-center justify-center shadow-xl cursor-pointer hover:scale-110 transition-transform">
-                      <MaterialIcon
-                        name="play_arrow"
-                        className="text-5xl text-black ml-1"
-                      />
-                    </div>
-                  </div>
-                </div>
+              {hasVideo && (
+                <video
+                  src={`${API_CONFIG.BASE_URL}/${post.video}`}
+                  controls
+                  className="max-w-full max-h-[35vh] md:max-h-[60vh] rounded-lg"
+                />
               )}
-
-              {post.type === "multi-image" && post.image && (
-                <div className="grid grid-cols-2 gap-2 max-h-[60vh] overflow-auto">
-                  <img
-                    src={post.image}
-                    alt="Post"
-                    className="w-full object-cover rounded-lg"
-                  />
-                  {post.extraImages?.map((img, i) => (
-                    <img
-                      key={i}
-                      src={img}
-                      alt="Post"
-                      className="w-full object-cover rounded-lg"
-                    />
-                  ))}
-                </div>
-              )}
-
-              {post.type === "text" && (
-                <div className="flex flex-col items-center justify-center text-center p-8">
-                  <div className="w-20 h-20 bg-[#00ff85]/20 rounded-full flex items-center justify-center mb-4">
+              {!hasImage && !hasVideo && (
+                <div className="flex flex-col items-center justify-center text-center p-6">
+                  <div className="w-14 h-14 bg-[#00ff85]/20 rounded-full flex items-center justify-center mb-3">
                     <MaterialIcon
                       name="article"
-                      className="text-4xl text-[#00ff85]"
+                      className="text-3xl text-[#00ff85]"
                     />
                   </div>
                   <p className="text-slate-600 dark:text-slate-400 text-sm">
@@ -433,278 +448,665 @@ const PostModal = ({ post, onClose }) => {
                   </p>
                 </div>
               )}
-
-              {post.type === "poll" && post.poll && (
-                <div className="w-full max-h-[60vh] overflow-auto p-4">
-                  <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">
-                    {post.text}
-                  </h3>
-                  <div className="space-y-3">
-                    {post.poll.options.map((opt, i) => (
-                      <div key={i} className="space-y-1">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-slate-700 dark:text-slate-300">
-                            {opt.label}
-                          </span>
-                          <span className="text-[#00ff85] font-bold">
-                            {opt.percent}%
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-200 dark:bg-white/10 rounded-full h-2 overflow-hidden">
-                          <div
-                            className="h-2 rounded-full bg-[#00ff85] transition-all"
-                            style={{ width: `${opt.percent}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-sm text-slate-500 mt-4">
-                    {post.poll.totalVotes} total votes
-                  </p>
-                </div>
-              )}
             </div>
 
-            {/* Right Side - Comments & Interactions */}
-            <div className="w-full md:w-96 flex flex-col bg-white dark:bg-[#111111] border-t md:border-t-0 md:border-l border-gray-200 dark:border-white/10">
-              {/* Post Info Header */}
-              <div className="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-white/10">
+            {/* Right - Comments: FLEX-1 + MIN-H-0 zaroori hai */}
+            <div
+              className="
+    flex-1 flex flex-col min-h-0
+    bg-white dark:bg-[#111111]
+    border-t md:border-t-0 md:border-l
+    border-gray-200 dark:border-white/10
+  "
+            >
+              {/* Author header - shrink nahi hoga */}
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-white/10 shrink-0">
                 <img
-                  src={AVATAR}
-                  alt={post.author}
-                  className="w-10 h-10 rounded-full border-2 border-[#00ff85]/30"
+                  src={avatarSrc}
+                  alt={post.name}
+                  className="w-9 h-9 rounded-full border-2 border-[#00ff85]/30 object-cover shrink-0"
+                  onError={(e) => {
+                    e.target.src = avatar;
+                  }}
                 />
                 <div>
                   <p className="text-sm font-bold text-slate-800 dark:text-white">
-                    {post.author}
+                    {post.institute_name || post.name}
                   </p>
-                  <p className="text-xs text-slate-400">{post.date}</p>
+                  <p className="text-xs text-slate-400">
+                    {new Date(post.created_at).toLocaleDateString()}
+                  </p>
                 </div>
               </div>
 
-              {/* Post Text */}
-              <div className="p-4 border-b border-gray-200 dark:border-white/10">
-                <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                  {post.text}
-                </p>
-              </div>
-
-              {/* Like & Share Actions */}
-              <div className="flex items-center gap-6 p-4 border-b border-gray-200 dark:border-white/10">
-                <button
-                  onClick={handleLike}
-                  className={`flex items-center gap-2 text-sm font-bold transition-all ${
-                    liked
-                      ? "text-[#00ff85]"
-                      : "text-slate-500 hover:text-[#00ff85]"
-                  }`}
-                >
-                  <MaterialIcon
-                    name="favorite"
-                    className="text-2xl"
-                    style={{
-                      fontVariationSettings: liked ? "'FILL' 1" : "'FILL' 0",
-                    }}
-                  />
-                  <span>{likeCount} likes</span>
-                </button>
-                <button className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-[#00ff85] transition-all">
-                  <MaterialIcon name="share" className="text-2xl" />
-                  <span>Share</span>
-                </button>
-              </div>
-
-              {/* Comments Section */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[200px]">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Comments ({comments.length + (post.comments || 0)})
-                </p>
-                {comments.map((comment) => (
-                  <div key={comment.id} className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex-shrink-0" />
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-slate-800 dark:text-white">
-                        {comment.author}
+              {/* Scrollable area - yeh scroll karega, baaki fixed rahega */}
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5 min-h-0">
+                {post.post_text && (
+                  <div className="flex gap-3">
+                    <img
+                      src={avatarSrc}
+                      alt={post.name}
+                      className="w-8 h-8 rounded-full object-cover border border-[#00ff85]/30 shrink-0"
+                      onError={(e) => {
+                        e.target.src = avatar;
+                      }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
+                        <span className="font-bold text-slate-900 dark:text-white mr-1">
+                          {post.institute_name || post.name}
+                        </span>
+                        {post.post_text}
                       </p>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        {comment.text}
-                      </p>
-                      <p className="text-xs text-slate-400 mt-1">
-                        {comment.time}
-                      </p>
+                      {post.hash_tag && post.hash_tag.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {post.hash_tag.map((tag, index) => (
+                            <span
+                              key={index}
+                              className="text-sm font-medium text-[#00b86b] dark:text-[#00ff85] hover:underline cursor-pointer"
+                            >
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <button className="text-slate-400 hover:text-[#00ff85]">
-                      <MaterialIcon name="favorite" className="text-sm" />
-                    </button>
                   </div>
-                ))}
+                )}
+
+                {loadingComments ? (
+                  <div className="flex justify-center py-6">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#00ff85]" />
+                  </div>
+                ) : comments.length > 0 ? (
+                  comments.map((comment) => (
+                    <div key={comment.id} className="flex gap-3">
+                      <img
+                        src={comment.avatar ? comment.avatar : avatar}
+                        alt={comment.author}
+                        className="w-8 h-8 rounded-full object-cover bg-gray-200 shrink-0"
+                        onError={(e) => {
+                          e.target.src = avatar;
+                        }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                            {comment.author}
+                          </span>
+                          <span className="flex items-center gap-2 text-[11px] uppercase text-slate-400 whitespace-nowrap shrink-0">
+                            {formatCommentTime(comment.time)}
+                            {String(comment.user_id) ===
+                              String(currentUserId) && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteComment(comment.id);
+                                }}
+                                className="text-red-400 hover:text-red-500 transition-colors"
+                              >
+                                <MaterialIcon
+                                  name="delete"
+                                  className="text-base"
+                                />
+                              </button>
+                            )}
+                          </span>
+                        </div>
+                        <span className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
+                          {comment.text}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="pt-8 text-center">
+                    <p className="text-sm text-slate-500">No comments yet.</p>
+                  </div>
+                )}
               </div>
 
-              {/* Add Comment Input */}
-              <form
-                onSubmit={handleAddComment}
-                className="p-4 border-t border-gray-200 dark:border-white/10"
-              >
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    placeholder="Add a comment..."
-                    className="flex-1 px-4 py-2 rounded-xl text-sm bg-gray-100 dark:bg-white/10 border-0 focus:ring-2 focus:ring-[#00ff85] outline-none text-slate-800 dark:text-white"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!commentText.trim()}
-                    className="px-4 py-2 rounded-xl bg-[#00ff85] text-black font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#00ff85]/90 transition-all"
-                  >
-                    Post
+              {/* Like count - shrink nahi hoga */}
+              <div className="px-4 py-3 border-t border-gray-200 dark:border-white/10 shrink-0">
+                <div className="flex items-center gap-4">
+                  <button onClick={handleLike}>
+                    <MaterialIcon
+                      name="favorite"
+                      className={`text-3xl ${liked ? "text-[#00ff85]" : "text-slate-700 dark:text-white"}`}
+                      style={{
+                        fontVariationSettings: liked ? "'FILL' 1" : "'FILL' 0",
+                      }}
+                    />
+                  </button>
+                  <button>
+                    <MaterialIcon
+                      name="chat_bubble"
+                      className="text-3xl text-slate-700 dark:text-white"
+                      style={{ fontVariationSettings: "'FILL' 0" }}
+                    />
                   </button>
                 </div>
+                <p className="mt-2 text-sm font-bold text-slate-900 dark:text-white">
+                  {likeCount} likes
+                </p>
+              </div>
+
+              {/* Comment input - hamesha visible rahega */}
+              <form
+                onSubmit={handleAddComment}
+                className="flex items-center gap-2 px-3 py-3 pb-4 border-t border-gray-200 dark:border-white/10 bg-white dark:bg-[#0b0b0b] shrink-0"
+              >
+                <input
+                  type="text"
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  placeholder="Add a comment..."
+                  className="flex-1 px-3 py-2 rounded-xl text-sm bg-gray-100 dark:bg-white/10 border-0 focus:ring-2 focus:ring-[#00ff85] outline-none text-slate-800 dark:text-white min-w-0"
+                />
+                <button
+                  type="submit"
+                  disabled={!commentText.trim()}
+                  className="px-4 py-2 rounded-full bg-[#00ff85] text-black font-bold text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#00ff85]/90 transition-all shrink-0"
+                >
+                  Post
+                </button>
               </form>
             </div>
           </div>
         </div>
       </div>
-
-      <style>{`
-        @keyframes fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes zoom-in-95 {
-          from { opacity: 0; transform: scale(0.95); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        .animate-in {
-          animation-duration: 0.2s;
-          animation-fill-mode: both;
-        }
-        .fade-in {
-          animation-name: fade-in;
-        }
-        .zoom-in-95 {
-          animation-name: zoom-in-95;
-        }
-      `}</style>
     </>
   );
 };
 
+
+// ✅ POLL MODAL
+const PollModal = ({ poll, onClose }) => {
+  if (!poll) return null;
+
+  const avatarSrc =
+    poll.profile_image && poll.profile_image !== ""
+      ? `${API_CONFIG.BASE_URL}/${poll.profile_image}`
+      : avatar;
+
+  const totalVotes = parseInt(poll.total_votes || 0);
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Modal wrapper */}
+      <div className="fixed inset-x-0 top-0 bottom-16 md:top-[90px] md:bottom-0 z-[101] flex items-end md:items-center justify-center md:p-6">
+        <div
+          className="
+            relative
+            w-full md:w-[min(620px,calc(100vw-310px))]
+            h-auto md:max-h-[88vh]
+            md:ml-[275px]
+            bg-white dark:bg-[#0a0a0a]
+            rounded-t-2xl md:rounded-2xl
+            overflow-hidden shadow-2xl
+            flex flex-col
+          "
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Close */}
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/50 text-white hover:bg-black/70 transition-all flex items-center justify-center"
+          >
+            <MaterialIcon name="close" className="text-xl sm:text-2xl" />
+          </button>
+
+          {/* Header */}
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-white/10">
+            <img
+              src={avatarSrc}
+              alt={poll.name}
+              className="w-10 h-10 rounded-full border-2 border-[#00ff85]/30 object-cover bg-gray-200"
+              onError={(e) => {
+                e.target.src = avatar;
+              }}
+            />
+
+            <div>
+              <p className="text-sm font-bold text-slate-800 dark:text-white capitalize">
+                {poll.name}
+              </p>
+
+              <p className="text-xs text-slate-400">
+                {new Date(String(poll.created_at).replace(" ", "T")).toLocaleDateString("en-IN", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </p>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="px-4 py-4 space-y-4">
+            <div className="flex gap-3">
+              <img
+                src={avatarSrc}
+                alt={poll.name}
+                className="w-8 h-8 rounded-full object-cover border border-[#00ff85]/30 shrink-0"
+                onError={(e) => {
+                  e.target.src = avatar;
+                }}
+              />
+
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                  <span className="font-bold text-slate-900 dark:text-white mr-1">
+                    {poll.name}
+                  </span>
+                  {poll.question}
+                </p>
+              </div>
+            </div>
+
+            {/* Poll Options */}
+            <div className="space-y-3 pt-2">
+              {Array.isArray(poll.options) &&
+                poll.options.map((option) => {
+                  const isVoted = Number(option.is_voted_by_me) === 1;
+                  const percentage = parseInt(option.percentage || 0);
+
+                  return (
+                    <div
+                      key={option.id}
+                      className={`
+                        relative overflow-hidden rounded-xl border px-4 py-3
+                        ${
+                          isVoted
+                            ? "border-[#00ff85]/60 bg-[#00ff85]/10"
+                            : "border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5"
+                        }
+                      `}
+                    >
+                      <div
+                        className={`
+                          absolute left-0 top-0 h-full transition-all duration-300
+                          ${isVoted ? "bg-[#00ff85]/20" : "bg-white/5"}
+                        `}
+                        style={{ width: `${percentage}%` }}
+                      />
+
+                      <div className="relative z-10 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {isVoted && (
+                            <MaterialIcon
+                              name="check_circle"
+                              className="text-[20px] text-[#00ff85] shrink-0"
+                              style={{ fontVariationSettings: "'FILL' 1" }}
+                            />
+                          )}
+
+                          <span className="text-sm font-semibold text-slate-800 dark:text-white">
+                            {option.option_text}
+                          </span>
+                        </div>
+
+                        <span
+                          className={`text-sm font-bold shrink-0 ${
+                            isVoted
+                              ? "text-[#00ff85]"
+                              : "text-slate-500 dark:text-slate-400"
+                          }`}
+                        >
+                          {percentage}%
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+
+            <p className="pt-1 text-[11px] uppercase tracking-[0.22em] text-slate-400">
+              {totalVotes} {totalVotes === 1 ? "Vote" : "Votes"}
+            </p>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+// ✅ POLL CARD
+const PollCard = ({ poll, onPollClick }) => {
+  const avatarSrc =
+    poll.profile_image && poll.profile_image !== ""
+      ? `${API_CONFIG.BASE_URL}/${poll.profile_image}`
+      : avatar;
+
+  const totalVotes = parseInt(poll.total_votes || 0);
+
+  return (
+    <div
+      onClick={() => onPollClick && onPollClick(poll)}
+      className="
+        bg-white dark:bg-[#141414]
+        border border-gray-200 dark:border-white/10
+        rounded-xl sm:rounded-2xl overflow-hidden flex flex-col h-full
+        transition-all duration-200
+        hover:border-gray-300 dark:hover:border-white/20
+        hover:shadow-xl cursor-pointer
+      "
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between px-3 sm:px-4 pt-3 sm:pt-4 pb-2">
+        <div className="flex items-center gap-3">
+          <img
+            src={avatarSrc}
+            alt={poll.name}
+            className="w-9 h-9 rounded-full border-2 border-[#00ff85]/30 object-cover bg-gray-200"
+            onError={(e) => {
+              e.target.src = avatar;
+            }}
+          />
+
+          <div>
+            <p className="text-sm font-bold text-slate-800 dark:text-white capitalize">
+              {poll.name}
+            </p>
+
+            <p className="text-[11px] text-slate-400">
+              {new Date(String(poll.created_at).replace(" ", "T")).toLocaleDateString("en-IN", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+            </p>
+          </div>
+        </div>
+
+        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-[#00ff85]/10 text-[#00ff85] border border-[#00ff85]/20">
+          Poll
+        </span>
+      </div>
+
+      {/* Question */}
+      <div className="px-4 pb-3">
+        <p className="text-sm font-semibold text-slate-800 dark:text-white leading-relaxed line-clamp-2">
+          {poll.question}
+        </p>
+      </div>
+
+      {/* Options */}
+      <div className="px-4 pb-4 space-y-2">
+        {Array.isArray(poll.options) &&
+          poll.options.map((option) => {
+            const isVoted = Number(option.is_voted_by_me) === 1;
+            const percentage = parseInt(option.percentage || 0);
+
+            return (
+              <div
+                key={option.id}
+                className={`
+                  relative overflow-hidden rounded-xl border px-3 py-2.5
+                  ${
+                    isVoted
+                      ? "border-[#00ff85]/50 bg-[#00ff85]/10"
+                      : "border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/30"
+                  }
+                `}
+              >
+                <div
+                  className={`
+                    absolute left-0 top-0 h-full transition-all duration-300
+                    ${isVoted ? "bg-[#00ff85]/20" : "bg-white/5"}
+                  `}
+                  style={{ width: `${percentage}%` }}
+                />
+
+                <div className="relative z-10 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {isVoted && (
+                      <MaterialIcon
+                        name="check_circle"
+                        className="text-[18px] text-[#00ff85] shrink-0"
+                        style={{ fontVariationSettings: "'FILL' 1" }}
+                      />
+                    )}
+
+                    <span className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 line-clamp-1">
+                      {option.option_text}
+                    </span>
+                  </div>
+
+                  <span
+                    className={`text-xs font-bold shrink-0 ${
+                      isVoted
+                        ? "text-[#00ff85]"
+                        : "text-slate-500 dark:text-slate-400"
+                    }`}
+                  >
+                    {percentage}%
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+      </div>
+
+      {/* Footer */}
+      <div className="mt-auto flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-white/5">
+        <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+          <MaterialIcon name="how_to_vote" className="text-[20px]" />
+          <span className="text-xs font-semibold uppercase tracking-widest">
+            {totalVotes} {totalVotes === 1 ? "Vote" : "Votes"}
+          </span>
+        </div>
+
+        {poll.my_vote_option_id && (
+          <span className="text-[11px] font-bold text-[#00ff85] uppercase tracking-widest">
+            Voted
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
 // ✅ MAIN Myposts COMPONENT
-const Myposts = () => {
-  const [viewMode, setViewMode] = useState("grid"); // "grid" | "list"
-  const [filter, setFilter] = useState("All Posts");
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [selectedPost, setSelectedPost] = useState(null); // ✅ For modal
+const Myposts = ({ viewMode = "grid", filter = "All Posts" }) => {
+  const [feedItems, setFeedItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedPost, setSelectedPost] = useState(null);
+  const [selectedPoll, setSelectedPoll] = useState(null);
 
-  const filters = ["All Posts", "Images", "Videos", "Polls", "Text"];
+  useEffect(() => {
+    fetchFeed();
+  }, []);
 
-  const filteredPosts = DUMMY_POSTS.filter((p) => {
+  const normalizeDate = (dateValue) => {
+    if (!dateValue) return 0;
+
+    const date = new Date(String(dateValue).replace(" ", "T"));
+    return isNaN(date.getTime()) ? 0 : date.getTime();
+  };
+
+  const fetchFeed = async () => {
+    setLoading(true);
+
+    try {
+      const [postRes, pollRes] = await Promise.all([
+        fetch(`${API_CONFIG.BASE_URL}/post/get-posts-auth`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAuthToken()}`,
+          },
+        }),
+
+        fetch(`${API_CONFIG.BASE_URL}/poll/my-poll-list`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAuthToken()}`,
+          },
+        }),
+      ]);
+
+      const postResult = await postRes.json();
+      const pollResult = await pollRes.json();
+
+      const posts =
+        postResult.status && Array.isArray(postResult.data)
+          ? postResult.data.map((post) => ({
+              ...post,
+              feed_type: "post",
+              feed_id: `post-${post.id}`,
+            }))
+          : [];
+
+      const polls =
+        pollResult.status && Array.isArray(pollResult.data)
+          ? pollResult.data.map((poll) => ({
+              ...poll,
+              feed_type: "poll",
+              feed_id: `poll-${poll.poll_id}`,
+            }))
+          : [];
+
+      const mergedFeed = [...posts, ...polls].sort(
+        (a, b) => normalizeDate(b.created_at) - normalizeDate(a.created_at),
+      );
+
+      setFeedItems(mergedFeed);
+    } catch (error) {
+      console.error("Feed Load Error:", error);
+      toast.error("Failed to load posts and polls");
+      setFeedItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getPostType = (post) => {
+    if (post.video && post.video !== "") return "video";
+    if (post.image && post.image !== "") return "image";
+    return "text";
+  };
+
+  const filteredItems = feedItems.filter((item) => {
     if (filter === "All Posts") return true;
-    if (filter === "Images")
-      return p.type === "image" || p.type === "multi-image";
-    if (filter === "Videos") return p.type === "video";
-    if (filter === "Polls") return p.type === "poll";
-    if (filter === "Text") return p.type === "text";
+
+    // ✅ Poll filter optional future ke liye
+    if (filter === "Polls") return item.feed_type === "poll";
+
+    // ✅ Images/Videos/Text sirf posts par apply honge
+    if (item.feed_type !== "post") return false;
+
+    const type = getPostType(item);
+
+    if (filter === "Images") return type === "image";
+    if (filter === "Videos") return type === "video";
+    if (filter === "Text") return type === "text";
+
     return true;
   });
 
   const handlePostClick = (post) => {
     setSelectedPost(post);
-    // Prevent body scroll when modal is open
+    document.body.style.overflow = "hidden";
+  };
+  
+  const handlePollClick = (poll) => {
+    setSelectedPoll(poll);
     document.body.style.overflow = "hidden";
   };
 
   const handleCloseModal = () => {
     setSelectedPost(null);
+    setSelectedPoll(null);
     document.body.style.overflow = "auto";
   };
 
+
+
+  const handleDeletePost = async (postId) => {
+    try {
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}/post/delete-post/${postId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${getAuthToken()}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      const result = await response.json();
+
+      if (result.status) {
+        toast.success(result.msg || "Post deleted successfully");
+
+        setFeedItems((prev) =>
+          prev.filter(
+            (item) =>
+              !(
+                item.feed_type === "post" &&
+                String(item.id) === String(postId)
+              ),
+          ),
+        );
+
+        setSelectedPost(null);
+        return;
+      }
+
+      toast.error(result.msg || "Failed to delete post");
+    } catch (error) {
+      console.error(error);
+      toast.error("Something went wrong");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00ff85]" />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
-      {/* Toolbar */}
-      <div className="flex items-center justify-end gap-3 mb-5">
-        {/* Filter Dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => setFilterOpen(!filterOpen)}
-            className="
-              flex items-center gap-2 px-4 py-2 rounded-xl
-              bg-white dark:bg-[#1a1a1a]
-              border border-gray-200 dark:border-white/10
-              text-xs font-bold text-slate-700 dark:text-slate-300
-              hover:border-[#00ff85]/50 transition-all
-            "
-          >
-            {filter}
-            <MaterialIcon name="keyboard_arrow_down" className="text-base" />
-          </button>
-          {filterOpen && (
-            <div className="absolute right-0 top-10 z-20 bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl py-1 min-w-[130px]">
-              {filters.map((f) => (
-                <button
-                  key={f}
-                  onClick={() => {
-                    setFilter(f);
-                    setFilterOpen(false);
-                  }}
-                  className={`w-full text-left px-4 py-2 text-xs transition-all ${
-                    filter === f
-                      ? "text-[#00ff85] font-bold"
-                      : "text-slate-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/5"
-                  }`}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* View Toggle */}
-        <div className="flex items-center border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden">
-          <button
-            onClick={() => setViewMode("list")}
-            className={`p-2 transition-all ${
-              viewMode === "list"
-                ? "bg-[#00ff85] text-black"
-                : "bg-white dark:bg-[#1a1a1a] text-slate-400 hover:text-slate-600 dark:hover:text-white"
-            }`}
-          >
-            <MaterialIcon name="view_list" className="text-xl" />
-          </button>
-          <button
-            onClick={() => setViewMode("grid")}
-            className={`p-2 transition-all ${
-              viewMode === "grid"
-                ? "bg-[#00ff85] text-black"
-                : "bg-white dark:bg-[#1a1a1a] text-slate-400 hover:text-slate-600 dark:hover:text-white"
-            }`}
-          >
-            <MaterialIcon name="grid_view" className="text-xl" />
-          </button>
-        </div>
-      </div>
-
-      {/* Posts Grid/List */}
-      {filteredPosts.length > 0 ? (
+      {filteredItems.length > 0 ? (
         <div
           className={
             viewMode === "grid"
-              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+              ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4"
               : "flex flex-col gap-4"
           }
         >
-          {filteredPosts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              isGrid={viewMode === "grid"}
-              onPostClick={handlePostClick} // ✅ Pass click handler
-            />
-          ))}
+          {filteredItems.map((item) => {
+            if (item.feed_type === "poll") {
+              return (
+                <PollCard
+                  key={item.feed_id}
+                  poll={item}
+                  onPollClick={handlePollClick}
+                />
+              );
+            }
+
+            return (
+              <PostCard
+                key={item.feed_id}
+                post={item}
+                onPostClick={handlePostClick}
+                onDeletePost={handleDeletePost}
+              />
+            );
+          })}
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-xl opacity-60">
@@ -713,14 +1115,17 @@ const Myposts = () => {
             className="text-5xl text-slate-300 dark:text-white/20 mb-3"
           />
           <p className="text-xs text-slate-400 uppercase tracking-widest font-medium">
-            No posts found
+            No posts or polls found
           </p>
         </div>
       )}
 
-      {/* ✅ Post Modal */}
       {selectedPost && (
         <PostModal post={selectedPost} onClose={handleCloseModal} />
+      )}
+
+      {selectedPoll && (
+        <PollModal poll={selectedPoll} onClose={handleCloseModal} />
       )}
     </div>
   );

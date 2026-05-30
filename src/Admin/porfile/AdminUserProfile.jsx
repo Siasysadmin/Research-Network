@@ -3,6 +3,7 @@ import avatar from "../../assets/images/avatar.jpg";
 import API_CONFIG from "../../config/api.config";
 import { toast } from "react-toastify";
 
+
 // ✅ FIX 1: Module-level cache — component unmount hone pe bhi survive karta hai
 // Pehle cacheRef = useRef tha jo har baar component close hone pe destroy ho jata tha
 const profileCache = new Map();

@@ -1,39 +1,32 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Logo from "../../assets/Logo";
-import avatar from "../../assets/images/avatar.jpg"
+import avatar from "../../assets/images/avatar.jpg";
 import axios from "axios";
 import API_CONFIG from "../../config/api.config";
+import UserProfile from "../porfile/AdminUserProfile";
 
 const MaterialIcon = ({ name, className = "" }) => (
   <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
 const getNavStyle = (isActive, isDark) => ({
-  color: isActive
-    ? "#00ff88"
-    : (isDark ? "#94a3b8" : "#334155"),
-  background: isActive
-    ? "rgba(0,255,136,0.1)"
-    : "transparent",
-  borderLeft: isActive ? "4px solid #00ff88" : "4px solid transparent"
+  color: isActive ? "#00ff88" : isDark ? "#94a3b8" : "#334155",
+  background: isActive ? "rgba(0,255,136,0.1)" : "transparent",
+  borderLeft: isActive ? "4px solid #00ff88" : "4px solid transparent",
 });
 
 const handleHover = (e, isActive, isDark) => {
   if (isActive) return;
-
   e.currentTarget.style.background = isDark ? "#ffffff10" : "#f1f5f9";
   e.currentTarget.style.color = isDark ? "#ffffff" : "#0f172a";
 };
 
 const handleLeave = (e, isActive, isDark) => {
   if (isActive) return;
-
   e.currentTarget.style.background = "transparent";
   e.currentTarget.style.color = isDark ? "#94a3b8" : "#334155";
 };
-
-
 
 const HeaderNav = ({ user, toggleSidebar, isSidebarOpen, isDark }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -45,321 +38,271 @@ const HeaderNav = ({ user, toggleSidebar, isSidebarOpen, isDark }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+const [showProfile, setShowProfile] = useState(false);
   const navigate = useNavigate();
   const profileRef = useRef(null);
   const searchRef = useRef(null);
 
-
-
   const SearchDropdown = ({ results }) => {
-  if (results.length === 0) return null;
+    if (results.length === 0) return null;
 
-  return (
-    <div
-      className="
-        absolute top-full mt-2 left-0 w-[13.5rem] rounded-xl shadow-xl overflow-hidden z-[200]
-        max-h-64 overflow-y-auto
-        bg-white border border-gray-200
-        dark:bg-[#111f17] dark:border-[#32ff9920]
-      "
-    >
-      {results.map((u) => {
-        const name =
-          u.user_type === "institute"
-            ? u.institute_details?.institute_name || u.name || "Institute"
-            : u.name || "User";
+    return (
+      <div
+        className="
+          absolute top-full mt-2 left-0 w-[13.5rem] rounded-xl shadow-xl overflow-hidden z-[200]
+          max-h-64 overflow-y-auto
+          bg-white border border-gray-200
+          dark:bg-[#111f17] dark:border-[#32ff9920]
+        "
+      >
+        {results.map((u) => {
+          const name =
+            u.user_type === "institute"
+              ? u.institute_details?.institute_name || u.name || "Institute"
+              : u.name || "User";
 
-        const img =
-          u.user_type === "institute"
-            ? u.profile_institute_details?.profile_image
-            : u.profile_individual_details?.profile_image;
+          const img =
+            u.user_type === "institute"
+              ? u.profile_institute_details?.profile_image
+              : u.profile_individual_details?.profile_image;
 
-        const imgUrl = img
-          ? `${API_CONFIG.BASE_URL}/${img}`
-          : avatar;
+          const imgUrl = img ? `${API_CONFIG.BASE_URL}/${img}` : avatar;
 
-        return (
-          <div
-            key={u.id}
-            onMouseDown={() => navigate(`/user/${u.id}`)}
-            className="
-              flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors
+          return (
+            <div
+              key={u.id}
+              onClick={() => {
+  setSelectedUser(u);
+  setShowProfile(true);
+  setIsSearchFocused(false);
+}}
+              className="
+                flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors
+                hover:bg-gray-100
+                dark:hover:bg-[#32ff9910]
+              "
+            >
+              <img
+                src={imgUrl}
+                onError={(e) => {
+                  e.target.src = avatar;
+                }}
+                className="w-8 h-8 rounded-full object-cover"
+                alt={name}
+              />
 
-              hover:bg-gray-100
-              dark:hover:bg-[#32ff9910]
-            "
-          >
-            <img
-              src={imgUrl}
-              onError={(e) => {
-                e.target.src = avatar;
-              }}
-              className="w-8 h-8 rounded-full object-cover"
-              alt={name}
-            />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                  {name}
+                </p>
 
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                {name}
-              </p>
-
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 capitalize">
-  {u.user_type || "individual"} • Reg ID: {u.registration_id}
-</p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 capitalize">
+                  {u.user_type || "individual"} • Reg ID: {u.registration_id}
+                </p>
+              </div>
             </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-};
-
-
-
-
-useEffect(() => {
-  const handleClickOutside = (event) => {
-    if (
-      profileRef.current &&
-      !profileRef.current.contains(event.target)
-    ) {
-      setIsProfileOpen(false);
-    }
-
-    if (
-      searchRef.current &&
-      !searchRef.current.contains(event.target)
-    ) {
-      setIsSearchFocused(false);
-    }
+          );
+        })}
+      </div>
+    );
   };
 
-  document.addEventListener("mousedown", handleClickOutside);
+  // Click Outside Wrapper (Dono Dropdown aur Profile Menu ke liye)
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setIsProfileOpen(false);
+      }
 
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-  };
-}, []);
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setIsSearchFocused(false);
+      }
+    };
 
-
-
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleCreateEvent = () => {
     navigate("/admin/create-event");
     setIsMobileMenuOpen(false);
   };
 
-  const handleLogout = async () => {
-  try {
-    const token = localStorage.getItem("token");
+ const handleLogout = async () => {
+    // 💡 1. theme ko TRY block se BAHAR nikala taaki FINALLY ise use kar sake
+    const currentTheme = localStorage.getItem("theme") || "light"; 
 
-    await axios.post(
-      "https://sasedge.org/research-network/back-end/auth/logout",
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-  } catch (error) {
-    console.log(error);
-  } finally {
-    localStorage.clear();
-    navigate("/login");
-  }
-};
-
-const handleLogoutClick = async (e) => {
-    e.stopPropagation();
-    setIsProfileOpen(false);
-    await handleLogout();
-  };
-  const handleSettings = () => {
-    navigate("/admin/settings");
-    setIsMobileMenuOpen(false);
-  };
-
-  const handleProfile = () => {
-  navigate("/admin/profile");
-  setIsProfileOpen(false);
-};
-
-
-useEffect(() => {
-  const handleClickOutside = (event) => {
-  if (
-    profileRef.current &&
-    !profileRef.current.contains(event.target)
-  ) {
-    setIsProfileOpen(false);
-  }
-};
-document.addEventListener("click", handleClickOutside);
-  return () => {
-    document.removeEventListener("click", handleClickOutside);
-  };
-}, []);
-
-
-
-useEffect(() => {
-  const fetchAllUsers = async () => {
     try {
-      const token = localStorage.getItem("token");
-
-      const res = await fetch(
-        `${API_CONFIG.BASE_URL}/user/get-all-users`,
-        {
+      // Token nikalen
+      const token = localStorage.getItem("auth_token") || localStorage.getItem("token");
+      
+      // Agar token hai, toh hi backend ko logout request bhejein
+      if (token) {
+        await fetch("https://sasedge.org/research-network/back-end/auth/logout", {
+          method: "POST",
           headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Logout API Error:", error);
+    } finally {
+      // 💡 2. Local storage ko clear karo
+      localStorage.clear();
+      
+      // 💡 3. Ab 'currentTheme' yahan aaram se milega bina kisi error ke
+      localStorage.setItem("theme", currentTheme); 
 
-      const data = await res.json();
+      // DOM Par theme set karein
+      document.documentElement.setAttribute("data-theme", currentTheme);
+      if (currentTheme === "dark") {
+        document.body.classList.add("dark-theme");
+        document.body.classList.remove("light-theme");
+      } else {
+        document.body.classList.add("light-theme");
+        document.body.classList.remove("dark-theme");
+      }
 
-      const list =
-        data.data || data.users || (Array.isArray(data) ? data : []);
-
-      setAllUsers(list);
-
-    } catch (err) {
-      console.error("Users fetch error:", err);
+      // 💡 4. Ab bina ruke user automatic login page par chala jayega
+      window.location.href = "/login";
     }
   };
 
-  fetchAllUsers();
-}, []);
+  const handleLogoutClick = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await handleLogout();
+  };
 
+  useEffect(() => {
+    const fetchAllUsers = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_CONFIG.BASE_URL}/user/get-all-users`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
+        const data = await res.json();
+        const list = data.data || data.users || (Array.isArray(data) ? data : []);
+        setAllUsers(list);
+      } catch (err) {
+        console.error("Users fetch error:", err);
+      }
+    };
 
-const handleSearch = (query) => {
-  setSearchQuery(query);
+    fetchAllUsers();
+  }, []);
 
-  if (!query.trim()) {
-    setSearchResults([]);
-    return;
-  }
+  const handleSearch = (query) => {
+    setSearchQuery(query);
 
-  const q = query.toLowerCase().trim();
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
 
-  const filtered = allUsers.filter((u) => {
+    const q = query.toLowerCase().trim();
 
-    const isBlocked =
-      Array.isArray(blockedUserIds) &&
-      blockedUserIds.includes(String(u.id));
+    const filtered = allUsers.filter((u) => {
+      const isBlocked =
+        Array.isArray(blockedUserIds) && blockedUserIds.includes(String(u.id));
 
-    if (isBlocked) return false;
+      if (isBlocked) return false;
 
-    const userType = (u.user_type || "").toLowerCase();
+      const userType = (u.user_type || "").toLowerCase();
 
-    const name =
-      userType === "institute" || userType === "institution"
-        ? u.institute_details?.institute_name || u.name || ""
-        : u.name || "";
+      const name =
+        userType === "institute" || userType === "institution"
+          ? u.institute_details?.institute_name || u.name || ""
+          : u.name || "";
 
-    const email = u.email || "";
-    const id = String(u.id || "");
-    const registrationId = String(u.registration_id || "");
+      const email = u.email || "";
+      const id = String(u.id || "");
+      const registrationId = String(u.registration_id || "");
 
- if (q === "individual" || q === "indivual") {
-  return userType.includes("individual");
-}
+      if (q === "individual" || q === "indivual") {
+        return userType.includes("individual");
+      }
 
-if (
-  q === "institute" ||
-  q === "institution" ||
-  q === "innstiute"
-) {
-  return (
-    userType.includes("institute") ||
-    userType.includes("institution")
-  );
-}
-    return (
-      name.toLowerCase().includes(q) ||
-      email.toLowerCase().includes(q) ||
-      id.includes(q) ||
-      registrationId.toLowerCase().includes(q) ||
-      userType.includes(q)
-    );
-  });
+      if (q === "institute" || q === "institution" || q === "innstiute") {
+        return userType.includes("institute") || userType.includes("institution");
+      }
+      return (
+        name.toLowerCase().includes(q) ||
+        email.toLowerCase().includes(q) ||
+        id.includes(q) ||
+        registrationId.toLowerCase().includes(q) ||
+        userType.includes(q)
+      );
+    });
 
-  setSearchResults(filtered);
-};
-
-
+    setSearchResults(filtered);
+  };
 
   return (
     <header
-  className="fixed top-0 left-0 right-0 h-16 flex items-center justify-between px-4 md:px-6 z-[100]"
-  style={{
-    background: isDark ? "#13231a" : "#ffffff",
-    borderBottom: isDark ? "1px solid #1e3a2c" : "1px solid #e2e8f0"
-  }}
->
+      className="fixed top-0 left-0 right-0 h-16 flex items-center justify-between px-4 md:px-6 z-[100]"
+      style={{
+        background: isDark ? "#13231a" : "#ffffff",
+        borderBottom: isDark ? "1px solid #1e3a2c" : "1px solid #e2e8f0",
+      }}
+    >
       <div className="flex items-center gap-3">
         <button
           onClick={toggleSidebar}
           className="lg:hidden p-2 hover:text-[#00ff88] transition-colors"
           aria-label="Toggle sidebar"
-          style={{ transform: 'translateY(6px)' }}
+          style={{ transform: "translateY(6px)" }}
         >
-          <MaterialIcon
-            name={isSidebarOpen ? "close" : "menu"}
-            className="text-2xl"
-          />
+          <MaterialIcon name={isSidebarOpen ? "close" : "menu"} className="text-2xl" />
         </button>
 
         <Logo />
       </div>
+
       <div className="relative ml-auto mr-4" ref={searchRef}>
-  <MaterialIcon
-    name="search"
-    className="
-    absolute left-3 top-1/2 -translate-y-1/2
-    text-slate-400 text-lg pointer-events-none
-    "
-  />
+        <MaterialIcon
+          name="search"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none"
+        />
 
-  <input
-    type="text"
-    value={searchQuery}
-    onChange={(e) => handleSearch(e.target.value)}
-    onFocus={() => setIsSearchFocused(true)}
-    placeholder="Search users..."
-    className="
-    pl-9 pr-4 py-2 rounded-xl text-sm transition-all w-48
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => handleSearch(e.target.value)}
+          onFocus={() => setIsSearchFocused(true)}
+          placeholder="Search users..."
+          className="
+            pl-9 pr-4 py-2 rounded-xl text-sm transition-all w-48
+            bg-gray-100 text-slate-800
+            border border-gray-300
+            placeholder:text-gray-400
+            focus:border-[#00ff88]
+            focus:ring-2
+            focus:ring-[#00ff88]/20
+            outline-none
+            dark:bg-white/5
+            dark:text-white
+            dark:border-[#5bf9aa20]
+            dark:placeholder:text-slate-500
+            dark:focus:border-[#32ff99]
+          "
+        />
 
-    bg-gray-100 text-slate-800
-    border border-gray-300
-    placeholder:text-gray-400
+        {isSearchFocused && searchResults.length > 0 && (
+          <SearchDropdown results={searchResults} />
+        )}
+      </div>
 
-    focus:border-[#00ff88]
-    focus:ring-2
-    focus:ring-[#00ff88]/20
-    outline-none
-
-    dark:bg-white/5
-    dark:text-white
-    dark:border-[#5bf9aa20]
-
-    dark:placeholder:text-slate-500
-    dark:focus:border-[#32ff99]
-    "
-  />
-
-  {isSearchFocused && searchResults.length > 0 && (
-    <SearchDropdown results={searchResults} />
-  )}
-</div>
-      <div
-  ref={profileRef}
-  className="relative flex items-center gap-3 md:gap-6"
->
-
+      {/* Main Profile Control Div - ref lagaya taaki pure area ko track kare */}
+      <div ref={profileRef} className="relative flex items-center gap-3 md:gap-6">
         <button
           onClick={handleCreateEvent}
           onMouseEnter={() => setIsButtonHovered(true)}
@@ -374,27 +317,18 @@ if (
         </button>
 
         <button
-  onClick={() => {
-    const newTheme = isDark ? "light" : "dark";
+          onClick={() => {
+            const newTheme = isDark ? "light" : "dark";
+            localStorage.setItem("theme", newTheme);
+            document.documentElement.classList.toggle("dark", newTheme === "dark");
+            window.location.reload();
+          }}
+          className="w-10 h-10 flex items-center justify-center rounded-xl border border-gray-200 dark:border-[#1e3a2c] bg-gray-100 dark:bg-[#1a2b21] text-gray-700 dark:text-[#00ff88] hover:scale-105 hover:border-[#00ff88]/40 transition-all duration-300"
+        >
+          <MaterialIcon name={isDark ? "light_mode" : "dark_mode"} className="text-xl" />
+        </button>
 
-    localStorage.setItem("theme", newTheme);
-
-    document.documentElement.classList.toggle(
-      "dark",
-      newTheme === "dark"
-    );
-
-    window.location.reload();
-  }}
-  className="w-10 h-10 flex items-center justify-center rounded-xl border border-gray-200 dark:border-[#1e3a2c] bg-gray-100 dark:bg-[#1a2b21] text-gray-700 dark:text-[#00ff88] hover:scale-105 hover:border-[#00ff88]/40 transition-all duration-300"
->
-  <MaterialIcon
-    name={isDark ? "light_mode" : "dark_mode"}
-    className="text-xl"
-  />
-</button>
-
-       <div className="relative flex items-center gap-2 md:gap-3 border-l border-[#1e3a2c] pl-3 md:pl-6">
+        <div className="relative flex items-center gap-2 md:gap-3 border-l border-[#1e3a2c] pl-3 md:pl-6">
           <div className="text-right hidden md:block">
             <p className="text-xs font-bold leading-none truncate max-w-[120px]" style={{ color: isDark ? "#ffffff" : "#0f172a" }}>
               {user?.name || "User Name"}
@@ -408,131 +342,103 @@ if (
             style={{
               backgroundImage: `url('${user?.avatar || avatar}')`,
             }}
-            onClick={(e) => {
-  e.stopPropagation();
-  setIsProfileOpen((prev) => !prev);
-}}
+            onClick={() => setIsProfileOpen((prev) => !prev)}
           />
         </div>
-      </div>
 
-   {isProfileOpen && (
-  <div
-    onClick={(e) => e.stopPropagation()}
-    className="absolute top-[72px] right-0 w-72 rounded-3xl overflow-hidden z-[999] animate-slideDown"
-    style={{
-      background: isDark
-        ? "linear-gradient(180deg,#16271d 0%, #13231a 100%)"
-        : "#ffffff",
-      border: isDark
-        ? "1px solid rgba(0,255,136,0.12)"
-        : "1px solid #e2e8f0",
-      boxShadow: isDark
-        ? "0 25px 50px -12px rgba(0,0,0,0.45)"
-        : "0 20px 45px rgba(15,23,42,0.12)",
-      backdropFilter: "blur(14px)",
-    }}
-  >
-
-    {/* TOP PROFILE SECTION */}
-    <div
-  className="px-6 pt-6 pb-5 flex flex-col items-center text-center"
-  style={{
-    background: isDark ? "#13231a" : "#ffffff",
-    borderBottom: isDark
-      ? "1px solid rgba(255,255,255,0.06)"
-      : "1px solid #edf2f7",
-  }}
->
-      <div
-        className="w-20 h-20 rounded-full border-4 overflow-hidden"
-        style={{
-          borderColor: "rgba(0,255,136,0.55)",
-          boxShadow: "0 0 30px rgba(0,255,136,0.18)",
-        }}
-      >
-        <img
-          src={user?.avatar || avatar}
-          alt="profile"
-          className="w-full h-full object-cover"
-        />
-      </div>
-
-      <h3
-        className="mt-4 text-lg font-bold"
-        style={{ color: isDark ? "#ffffff" : "#0f172a" }}
-      >
-        {user?.name || "Admin"}
-      </h3>
-
-      <p
-        className="text-sm mt-1"
-        style={{ color: isDark ? "#94a3b8" : "#64748b" }}
-      >
-        {user?.email || "admin@gmail.com"}
-      </p>
-
-      <div
-        className="mt-3 px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider"
-        style={{
-          background: "rgba(0,255,136,0.12)",
-          color: "#00ff88",
-          border: "1px solid rgba(0,255,136,0.18)",
-        }}
-      >
-        {user?.role || "ADMIN"}
-      </div>
-    </div>
-
-    {/* ACTIONS */}
-    <div className="p-3">
-
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsProfileOpen(false);
-          handleLogout();
-        }}
-        className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group"
-        style={{
-          color: isDark ? "#cbd5e1" : "#475569",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = isDark
-            ? "rgba(255,255,255,0.06)"
-            : "#f8fafc";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = "transparent";
-        }}
-      >
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{
-            background: "rgba(255,59,59,0.12)",
-            color: "#ff4d4f",
-          }}
-        >
-          <MaterialIcon name="logout" className="text-[20px]" />
-        </div>
-
-        <div className="flex flex-col items-start">
-          <span className="text-sm font-semibold">
-            Logout
-          </span>
-
-          <span
-            className="text-xs"
+        {/* Dropdown Profile Menu - Isko wrapper ke andar le liya taaki click-outside track ho ske */}
+        {isProfileOpen && (
+          <div
+            className="absolute top-[56px] right-0 w-72 rounded-3xl overflow-hidden z-[999] animate-slideDown"
             style={{
-              color: isDark ? "#64748b" : "#94a3b8",
+              background: isDark ? "linear-gradient(180deg,#16271d 0%, #13231a 100%)" : "#ffffff",
+              border: isDark ? "1px solid rgba(0,255,136,0.12)" : "1px solid #e2e8f0",
+              boxShadow: isDark ? "0 25px 50px -12px rgba(0,0,0,0.45)" : "0 20px 45px rgba(15,23,42,0.12)",
+              backdropFilter: "blur(14px)",
             }}
           >
-            End your current session
-          </span>
-        </div>
-      </button>
+            {/* TOP PROFILE SECTION */}
+            <div
+              className="px-6 pt-6 pb-5 flex flex-col items-center text-center"
+              style={{
+                background: isDark ? "#13231a" : "#ffffff",
+                borderBottom: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid #edf2f7",
+              }}
+            >
+              <div
+                className="w-20 h-20 rounded-full border-4 overflow-hidden"
+                style={{
+                  borderColor: "rgba(0,255,136,0.55)",
+                  boxShadow: "0 0 30px rgba(0,255,136,0.18)",
+                }}
+              >
+                <img src={user?.avatar || avatar} alt="profile" className="w-full h-full object-cover" />
+              </div>
 
+              <h3 className="mt-4 text-lg font-bold" style={{ color: isDark ? "#ffffff" : "#0f172a" }}>
+                {user?.name || "Admin"}
+              </h3>
+
+              <p className="text-sm mt-1" style={{ color: isDark ? "#94a3b8" : "#64748b" }}>
+                {user?.email || "admin@gmail.com"}
+              </p>
+
+              <div
+                className="mt-3 px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider"
+                style={{
+                  background: "rgba(0,255,136,0.12)",
+                  color: "#00ff88",
+                  border: "1px solid rgba(0,255,136,0.18)",
+                }}
+              >
+                {user?.role || "ADMIN"}
+              </div>
+            </div>
+
+            {/* ACTIONS */}
+            <div className="p-3">
+              <button
+                type="button"
+                onClick={handleLogoutClick}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group"
+                style={{
+                  color: isDark ? "#cbd5e1" : "#475569",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.06)" : "#f8fafc";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                }}
+              >
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{
+                    background: "rgba(255,59,59,0.12)",
+                    color: "#ff4d4f",
+                  }}
+                >
+                  <MaterialIcon name="logout" className="text-[20px]" />
+                </div>
+
+                <div className="flex flex-col items-start">
+                  <span className="text-sm font-semibold">Logout</span>
+                  <span className="text-xs" style={{ color: isDark ? "#64748b" : "#94a3b8" }}>
+                    End your current session
+                  </span>
+                </div>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+      {showProfile && selectedUser && (
+  <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center p-4">
+    <div className="w-full max-w-5xl h-[90vh]">
+      <UserProfile
+        user={selectedUser}
+        onClose={() => setShowProfile(false)}
+      />
     </div>
   </div>
 )}
@@ -540,28 +446,19 @@ if (
   );
 };
 
-
+/* Rest of your Sidebar and Layout Component remains exactly the same */
 const Sidebar = ({ activeNav, setActiveNav, isOpen, onClose, isDark }) => {
   const [isUserAppsOpen, setIsUserAppsOpen] = useState(false);
-  const [isEventsOpen, setIsEventsOpen] = useState(false); // ✅ Events dropdown ki nayi state
+  const [isEventsOpen, setIsEventsOpen] = useState(false);
   const navigate = useNavigate();
 
-
   const handleNavigation = (path, navItem) => {
-  setActiveNav(navItem);
-  navigate(path);
-
-  if (window.innerWidth < 1024) {
-    onClose();
-  }
-};
-
-  {isOpen && (
-  <div
-    className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-    onClick={onClose}
-  />
-)}
+    setActiveNav(navItem);
+    navigate(path);
+    if (window.innerWidth < 1024) {
+      onClose();
+    }
+  };
 
   const handleHomeClick = () => {
     handleNavigation("/admin", "home");
@@ -570,7 +467,6 @@ const Sidebar = ({ activeNav, setActiveNav, isOpen, onClose, isDark }) => {
   const handleUserAppClick = (type) => {
     setActiveNav("users");
     setIsUserAppsOpen(false);
-
     if (type === "institute" || type === "admin/institute-applications") {
       handleNavigation("/admin/institute-applications", "users");
     } else if (type === "individual") {
@@ -580,59 +476,53 @@ const Sidebar = ({ activeNav, setActiveNav, isOpen, onClose, isDark }) => {
 
   return (
     <>
-      
-
+      {isOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={onClose} />}
       <aside
-  id="sidebar"
-  className={`fixed left-0 top-16 bottom-0 w-64 lg:w-61 flex flex-col z-[50] transition-transform duration-300 ease-in-out ${
-    isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-  }`}
-  style={{
-    background: isDark ? "#13231a" : "#ffffff",
-    borderRight: isDark ? "1px solid #1e3a2c" : "1px solid #e2e8f0"
-  }}
->
-        {/* mobile close handled by header toggle; removed duplicate button */}
+        id="sidebar"
+        className={`fixed left-0 top-16 bottom-0 w-64 lg:w-61 flex flex-col z-[50] transition-transform duration-300 ease-in-out ${
+          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        }`}
+        style={{
+          background: isDark ? "#13231a" : "#ffffff",
+          borderRight: isDark ? "1px solid #1e3a2c" : "1px solid #e2e8f0",
+        }}
+      >
         <nav className="flex-1 px-2 md:px-3 py-4 space-y-1 overflow-y-auto custom-scrollbar">
           <button
-  onClick={handleHomeClick}
-  className="w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all"
-  style={getNavStyle(activeNav === "home", isDark)}
-  onMouseEnter={(e) => handleHover(e, activeNav === "home", isDark)}
-  onMouseLeave={(e) => handleLeave(e, activeNav === "home", isDark)}
->
-  <MaterialIcon name="home" className="text-m" />
-  <span className="text-sm font-medium">Home</span>
-</button>
+            onClick={handleHomeClick}
+            className="w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all"
+            style={getNavStyle(activeNav === "home", isDark)}
+            onMouseEnter={(e) => handleHover(e, activeNav === "home", isDark)}
+            onMouseLeave={(e) => handleLeave(e, activeNav === "home", isDark)}
+          >
+            <MaterialIcon name="home" className="text-m" />
+            <span className="text-sm font-medium">Home</span>
+          </button>
 
           <button
             onClick={() => handleNavigation("/admin/board-members", "board")}
             className="w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all"
- style={getNavStyle(activeNav === "board", isDark)}
-onMouseEnter={(e) => handleHover(e, activeNav === "board", isDark)}
-onMouseLeave={(e) => handleLeave(e, activeNav === "board", isDark)}
+            style={getNavStyle(activeNav === "board", isDark)}
+            onMouseEnter={(e) => handleHover(e, activeNav === "board", isDark)}
+            onMouseLeave={(e) => handleLeave(e, activeNav === "board", isDark)}
           >
             <MaterialIcon name="groups" className="text-m" />
             <span className="text-sm font-medium">Board Members</span>
           </button>
-          
-          {/* USER APPLICATIONS DROPDOWN */}
+
           <div>
             <button
               onClick={() => setIsUserAppsOpen(!isUserAppsOpen)}
               className="w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all"
-style={getNavStyle(activeNav === "users", isDark)}
-onMouseEnter={(e) => handleHover(e, activeNav === "users", isDark)}
-onMouseLeave={(e) => handleLeave(e, activeNav === "users", isDark)}
+              style={getNavStyle(activeNav === "users", isDark)}
+              onMouseEnter={(e) => handleHover(e, activeNav === "users", isDark)}
+              onMouseLeave={(e) => handleLeave(e, activeNav === "users", isDark)}
             >
               <div className="flex items-center gap-3">
                 <MaterialIcon name="person_add" className="text-m" />
                 <span className="text-sm font-medium">User Applications</span>
               </div>
-              <MaterialIcon
-                name={`expand_${isUserAppsOpen ? "less" : "more"}`}
-                className="text-lg transition-transform"
-              />
+              <MaterialIcon name={`expand_${isUserAppsOpen ? "less" : "more"}`} className="text-lg transition-transform" />
             </button>
 
             {isUserAppsOpen && (
@@ -661,61 +551,51 @@ onMouseLeave={(e) => handleLeave(e, activeNav === "users", isDark)}
           </div>
 
           <button
-            onClick={() =>
-              handleNavigation("/admin/research-upload-requests", "research")
-            }
-           className="w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all"
-style={getNavStyle(activeNav === "research", isDark)}
-onMouseEnter={(e) => handleHover(e, activeNav === "research", isDark)}
-onMouseLeave={(e) => handleLeave(e, activeNav === "research", isDark)}
+            onClick={() => handleNavigation("/admin/research-upload-requests", "research")}
+            className="w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all"
+            style={getNavStyle(activeNav === "research", isDark)}
+            onMouseEnter={(e) => handleHover(e, activeNav === "research", isDark)}
+            onMouseLeave={(e) => handleLeave(e, activeNav === "research", isDark)}
           >
             <MaterialIcon name="menu_book" className="text-m" />
             <span className="text-sm font-medium">Research Applications</span>
           </button>
-          
+
           <button
-            onClick={() =>
-              handleNavigation("/admin/chat", "chats")
-            }
+            onClick={() => handleNavigation("/admin/chat", "chats")}
             className="w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all"
-style={getNavStyle(activeNav === "chats", isDark)}
-onMouseEnter={(e) => handleHover(e, activeNav === "chats", isDark)}
-onMouseLeave={(e) => handleLeave(e, activeNav === "chats", isDark)}
+            style={getNavStyle(activeNav === "chats", isDark)}
+            onMouseEnter={(e) => handleHover(e, activeNav === "chats", isDark)}
+            onMouseLeave={(e) => handleLeave(e, activeNav === "chats", isDark)}
           >
             <MaterialIcon name="chat" className="text-m" />
             <span className="text-sm font-medium">Chats</span>
           </button>
 
           <button
-            onClick={() =>
-              handleNavigation("/admin/save", "save")
-            }
-           className="w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all"
-style={getNavStyle(activeNav === "save", isDark)}
-onMouseEnter={(e) => handleHover(e, activeNav === "save", isDark)}
-onMouseLeave={(e) => handleLeave(e, activeNav === "save", isDark)}
+            onClick={() => handleNavigation("/admin/save", "save")}
+            className="w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all"
+            style={getNavStyle(activeNav === "save", isDark)}
+            onMouseEnter={(e) => handleHover(e, activeNav === "save", isDark)}
+            onMouseLeave={(e) => handleLeave(e, activeNav === "save", isDark)}
           >
             <MaterialIcon name="bookmark" className="text-m" />
             <span className="text-sm font-medium">Save</span>
           </button>
 
-          {/* ✅ EVENTS DROPDOWN (NEW) */}
           <div>
             <button
               onClick={() => setIsEventsOpen(!isEventsOpen)}
               className="w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all"
-style={getNavStyle(activeNav === "events", isDark)}
-onMouseEnter={(e) => handleHover(e, activeNav === "events", isDark)}
-onMouseLeave={(e) => handleLeave(e, activeNav === "events", isDark)}
+              style={getNavStyle(activeNav === "events", isDark)}
+              onMouseEnter={(e) => handleHover(e, activeNav === "events", isDark)}
+              onMouseLeave={(e) => handleLeave(e, activeNav === "events", isDark)}
             >
               <div className="flex items-center gap-3">
                 <MaterialIcon name="event" className="text-m" />
                 <span className="text-sm font-medium">Events</span>
               </div>
-              <MaterialIcon
-                name={`expand_${isEventsOpen ? "less" : "more"}`}
-                className="text-lg transition-transform"
-              />
+              <MaterialIcon name={`expand_${isEventsOpen ? "less" : "more"}`} className="text-lg transition-transform" />
             </button>
 
             {isEventsOpen && (
@@ -742,7 +622,6 @@ onMouseLeave={(e) => handleLeave(e, activeNav === "events", isDark)}
               </div>
             )}
           </div>
-          
         </nav>
       </aside>
     </>
@@ -751,25 +630,22 @@ onMouseLeave={(e) => handleLeave(e, activeNav === "events", isDark)}
 
 const Layout = ({ children, activeNav, setActiveNav }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [windowWidth, setWindowWidth] = useState(
-    typeof window !== "undefined" ? window.innerWidth : 0,
-  );
-
- const [isDark, setIsDark] = useState(true);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 0);
+  const [isDark, setIsDark] = useState(true);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
     setIsDark(savedTheme === "dark");
   }, []);
 
-const [user, setUser] = useState(null);
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (storedUser) {
+      setUser(storedUser);
+    }
+  }, []);
 
-useEffect(() => {
-  const storedUser = JSON.parse(localStorage.getItem("user"));
-  if (storedUser) {
-    setUser(storedUser);
-  }
-}, []);
   useEffect(() => {
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
@@ -777,7 +653,6 @@ useEffect(() => {
         setIsSidebarOpen(false);
       }
     };
-
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -790,78 +665,33 @@ useEffect(() => {
 
   return (
     <div
-  className="h-screen overflow-hidden antialiased flex flex-col"
-  style={{
-    background: isDark ? "#0a120e" : "#f8fafc",
-    color: isDark ? "#f1f5f9" : "#0f172a"
-  }}
->
-      <HeaderNav
-        user={user}
-        toggleSidebar={toggleSidebar}
-        isSidebarOpen={isSidebarOpen}
-        isDark={isDark}
-      />
+      className="h-screen overflow-hidden antialiased flex flex-col"
+      style={{
+        background: isDark ? "#0a120e" : "#f8fafc",
+        color: isDark ? "#f1f5f9" : "#0f172a",
+      }}
+    >
+      <HeaderNav user={user} toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} isDark={isDark} />
 
       <div className="flex flex-1 overflow-hidden pt-16">
-        <Sidebar
-          activeNav={activeNav}
-          setActiveNav={setActiveNav}
-          isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
-          isDark={isDark}
-        />
-
-        <main
-          className={`${mainMargin} flex-1 overflow-hidden transition-all duration-300`}
-        >
-          <div className="h-full overflow-y-auto custom-scrollbar px-4 md:px-6 pt-2 pb-6">
-            {children}
-          </div>
+        <Sidebar activeNav={activeNav} setActiveNav={setActiveNav} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} isDark={isDark} />
+        <main className={`${mainMargin} flex-1 overflow-hidden transition-all duration-300`}>
+          <div className="h-full overflow-y-auto custom-scrollbar px-4 md:px-6 pt-2 pb-6">{children}</div>
         </main>
       </div>
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-        body { 
-          font-family: 'Inter', sans-serif; 
-          background-color: #0a120e; 
-          margin: 0; 
-          padding: 0; 
-          overflow: hidden; 
-        }
-
-        .custom-scrollbar::-webkit-scrollbar { 
-          width: 4px; 
-        }
-        .custom-scrollbar::-webkit-scrollbar-track { 
-          background: #0a120e; 
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb { 
-          background: #1e3a2c; 
-          border-radius: 10px; 
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { 
-          background: #00ff88; 
-        }
-
-        @keyframes slideDown {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-slideDown {
-          animation: slideDown 0.2s ease-out;
-        }
-
-        @media (min-width: 320px) {
-          .xs\\:inline { display: inline; }
-        }
-
-        @media (max-width: 768px) {
-          button { min-height: 44px; }
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #0a120e; margin: 0; padding: 0; overflow: hidden; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0a120e; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e3a2c; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #00ff88; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-slideDown { animation: slideDown 0.2s ease-out; }
+        @media (min-width: 320px) { .xs\\:inline { display: inline; } }
+        @media (max-width: 768px) { button { min-height: 44px; } }
       `}</style>
     </div>
   );

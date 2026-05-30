@@ -3,7 +3,6 @@ import Layout from "../Admin/Layout/Layout";
 import avatar from "../assets/images/avatar.jpg";
 import API_CONFIG from "../config/api.config";
 
-
 const MaterialIcon = ({ name, className = "" }) => (
   <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
@@ -15,11 +14,13 @@ const Toast = ({ message, type, onClose }) => {
   }, [onClose]);
 
   return (
-    <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-white ${
-      type === "success"
+    <div
+      className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-white ${
+        type === "success"
           ? "bg-green-500 dark:bg-green-600"
           : "bg-red-500 dark:bg-red-600"
-    }`}>
+      }`}
+    >
       {message}
     </div>
   );
@@ -74,22 +75,19 @@ const BoardMembers = () => {
     const fetchBoardMembers = async () => {
       try {
         const token = localStorage.getItem("authToken");
-        const response = await fetch(
-          `${baseUrl}/research/get-board-member`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        const response = await fetch(`${baseUrl}/research/get-board-member`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
         const result = await response.json();
         if (result.status) {
           result.data.forEach((member) => {
             if (!stableIds.current.has(member.registration_id)) {
               stableIds.current.set(
                 member.registration_id,
-                `stable-${member.registration_id}-${Date.now()}-${Math.random()}`
+                `stable-${member.registration_id}-${Date.now()}-${Math.random()}`,
               );
             }
           });
@@ -122,7 +120,7 @@ const BoardMembers = () => {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-        }
+        },
       );
       const result = await response.json();
       if (result.status) {
@@ -183,22 +181,18 @@ const BoardMembers = () => {
 
     try {
       const token = localStorage.getItem("authToken");
-      const response = await fetch(
-        `${baseUrl}/research/board-member-update`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            board_member_id: replaceMemberId,
-            new_board_member_id: registrationId,
-            new_member_email:
-              searchedUser?.email || searchedUser?.email_id || "",
-          }),
-        }
-      );
+      const response = await fetch(`${baseUrl}/research/board-member-update`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          board_member_id: replaceMemberId,
+          new_board_member_id: registrationId,
+          new_member_email: searchedUser?.email || searchedUser?.email_id || "",
+        }),
+      });
       const result = await response.json();
 
       if (result.status) {
@@ -216,15 +210,19 @@ const BoardMembers = () => {
 
               if (searchedUser.user_type === "individual") {
                 updatedMember.name = searchedUser.name;
-                updatedMember.individual_details = searchedUser.individual_details || null;
+                updatedMember.individual_details =
+                  searchedUser.individual_details || null;
                 updatedMember.institute_details = null;
                 delete updatedMember.institute_name;
               } else {
                 updatedMember.name = searchedUser.name;
-                updatedMember.institute_details = searchedUser.institute_details || {
-                  institute_name: searchedUser.institute_name || searchedUser.name,
-                  profile_image: searchedUser.institute_details?.profile_image || "",
-                };
+                updatedMember.institute_details =
+                  searchedUser.institute_details || {
+                    institute_name:
+                      searchedUser.institute_name || searchedUser.name,
+                    profile_image:
+                      searchedUser.institute_details?.profile_image || "",
+                  };
                 updatedMember.institute_name =
                   searchedUser.institute_name || searchedUser.name;
                 updatedMember.individual_details = null;
@@ -251,23 +249,23 @@ const BoardMembers = () => {
   // =========================
   // AVATAR COMPONENT
   // =========================
-const MemberAvatar = ({ member, displayName }) => {
-  const [imgSrc, setImgSrc] = useState(
-    getProfileImageUrl(member) || avatar
-  );
-
-  return (
-    <img
-      src={imgSrc}
-      alt={displayName}
-      className="w-full h-full object-cover rounded-full"
-      onError={() => setImgSrc(avatar)}
-    />
-  );
-
+  const MemberAvatar = ({ member, displayName }) => {
+    const [imgSrc, setImgSrc] = useState(getProfileImageUrl(member) || avatar);
 
     return (
-      <MaterialIcon name="account_circle" className="text-5xl text-gray-500 dark:text-slate-400" />
+      <img
+        src={imgSrc}
+        alt={displayName}
+        className="w-full h-full object-cover rounded-full"
+        onError={() => setImgSrc(avatar)}
+      />
+    );
+
+    return (
+      <MaterialIcon
+        name="account_circle"
+        className="text-5xl text-gray-500 dark:text-slate-400"
+      />
     );
   };
 
@@ -298,7 +296,9 @@ const MemberAvatar = ({ member, displayName }) => {
 
         {/* LOADING */}
         {loading ? (
-          <p className="text-center text-gray-600 dark:text-gray-400">Loading board members...</p>
+          <p className="text-center text-gray-600 dark:text-gray-400">
+            Loading board members...
+          </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
             {filteredMembers.map((member) => {
@@ -341,7 +341,27 @@ const MemberAvatar = ({ member, displayName }) => {
                       setRegistrationId("");
                       setSearchedUser(null);
                     }}
-                    className="w-full py-2 px-2 bg-[#00ff88]/10 hover:bg-[#00ff88] text-[#00aa66] dark:text-[#00ff88] hover:text-[#0a120e] text-xs font-bold rounded-lg border border-[#00ff88]/20 transition-all flex items-center justify-center gap-2"
+                    className="
+w-full py-2 px-2
+bg-[#00ff88]/10
+hover:bg-[#00ff88]
+
+text-[#00aa66]
+dark:text-[#00ff88]
+
+hover:text-[#0a120e]
+
+text-xs font-bold rounded-lg
+border border-[#00ff88]/20
+
+dark:hover:bg-[#00ff88]
+dark:hover:text-[#08110d]
+dark:hover:border-[#00ff88]
+dark:hover:shadow-[0_0_18px_rgba(0,255,136,0.35)]
+
+transition-all duration-200
+flex items-center justify-center gap-2
+"
                   >
                     <MaterialIcon name="cached" className="text-sm" />
                     REPLACE MEMBER
@@ -378,11 +398,15 @@ const MemberAvatar = ({ member, displayName }) => {
             />
 
             {searchLoading && (
-              <p className="text-center text-gray-600 dark:text-gray-400">Searching user...</p>
+              <p className="text-center text-gray-600 dark:text-gray-400">
+                Searching user...
+              </p>
             )}
 
             {registrationId && !searchLoading && !searchedUser && (
-              <p className="text-center text-gray-600 dark:text-gray-400 text-sm">No user found</p>
+              <p className="text-center text-gray-600 dark:text-gray-400 text-sm">
+                No user found
+              </p>
             )}
 
             {searchedUser && (

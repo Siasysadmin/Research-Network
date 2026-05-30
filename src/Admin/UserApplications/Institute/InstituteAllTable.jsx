@@ -27,10 +27,11 @@ const InstituteAllTable = ({ applications }) => {
   const currentData = applications.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage,
+    
   );
 
  return (
-  <div className="bg-white dark:bg-[#111814] border border-gray-200 dark:border-[#1e3a2c] flex flex-col h-full rounded-2xl overflow-hidden min-h-[300px]">
+  <div className="bg-white dark:bg-[#111814] border border-gray-200 dark:border-[#1e3a2c] flex flex-col h-full rounded-2xl overflow-hidden">
 
     {/* TABLE */}
     <div className="flex-1 overflow-auto custom-scrollbar bg-white dark:bg-[#111814]">

@@ -67,8 +67,25 @@ const Settings = () => {
   // ── Helper: Clear Auth Data ──
   const clearAuthData = () => {
     try {
+      // 💡 JAADU YAHAN HAI: LocalStorage clear karne se PEHLE hi theme nikal li
+      const currentTheme = localStorage.getItem("theme") || "light";
+
+      // Ab sab clear kar do, koi tension nahi hai
       localStorage.clear();
       sessionStorage.clear();
+
+      // Clear karne ke baad, usi variable se theme wapas daal di
+      localStorage.setItem("theme", currentTheme);
+      document.documentElement.setAttribute("data-theme", currentTheme);
+
+      if (currentTheme === "dark") {
+        document.body.classList.add("dark-theme");
+        document.body.classList.remove("light-theme");
+      } else {
+        document.body.classList.add("light-theme");
+        document.body.classList.remove("dark-theme");
+      }
+
     } catch (err) {
       console.error("Error clearing storage:", err);
     }
@@ -303,11 +320,13 @@ const Settings = () => {
   };
 
   // ── Logout API ──
-  const handleLogout = async () => {
+ const handleLogout = async () => {
     setLogoutLoading(true);
 
     try {
       const token = getAuthToken();
+      
+      // Logout API call
       const res = await fetch(`${API_CONFIG.BASE_URL}/auth/logout`, {
         method: "POST",
         headers: {
@@ -316,7 +335,10 @@ const Settings = () => {
         },
       });
 
-      const data = await res.json();
+      // Response read karna safe hai
+      await res.json();
+      
+      // 💡 Data clear karo aur fir navigate karo
       clearAuthData();
       navigate("/login");
     } catch (err) {

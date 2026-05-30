@@ -43,15 +43,16 @@ import InstituteEditProfile from "./dashboard/InstituteEditProfile";
 import Library from "./dashboard/Library";
 import LibraryViewDetails from "./dashboard/LibraryViewDetails";
 import CreatePost from "./dashboard/createpost";
-import Chats from "./dashboard/Chats";
+import Chats from "./dashboard/Chat/Chats";
 import Events from "./dashboard/Events";
 import UserProfile from "./dashboard/UserProfile";
-import CreateGroup from "./dashboard/CreateGroup";
+import CreateGroup from "./dashboard/Chat/CreateGroup";
 import GroupDetails from "./dashboard/GroupDetails";
 import BoardMember from "./dashboard/BoardMember/BoardMember";
-import Event from "./dashboard/Event/Event";
+import Event from "./dashboard/Event/CreateEvent";
 import MyEvents from "./dashboard/Event/MyEvents";
 import NotificationPopup from "./dashboard/NotificationPopup";
+import ResearchReSubmited from "./dashboard/MyPublications/ResearchReSubmited";
 
 // settings
 import Settings from "./settings/setting";
@@ -60,20 +61,32 @@ import PrivacyPolicy from "./Legals/PrivacyPolicy";
 import AdminSavedPosts from "./Admin/save/AdminSavedPosts";
 import { ThemeProvider } from "./context/ThemeContext";
 
+//ROUTES COMPONENT {/*added by vijay */}
+import ProtectedRoute from "./routes/ProtectedRoute";
+import PublicRoute from "./routes/PublicRoute";
+
+
 const App = () => {
   return (
     <ThemeProvider>
       <Routes>
         {/* Home */}
-        <Route path="/" element={<Home />} />
-
+        
+         
         {/* Auth Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/forgot" element={<ForgotPassword />} />
-        <Route path="/verify" element={<VerifyOTP />} />
-        <Route path="/reset" element={<ResetPassword />} />
-        <Route path="/individual" element={<IndividualRegister />} />
-        <Route path="/institute" element={<InstituteRegister />} />
+        <Route element={<PublicRoute />}>  {/*added by vijay start */}
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgot" element={<ForgotPassword />} />
+          <Route path="/verify" element={<VerifyOTP />} />
+          <Route path="/reset" element={<ResetPassword />} />
+          <Route path="/individual" element={<IndividualRegister />} />
+          <Route path="/institute" element={<InstituteRegister />} />
+        </Route>  {/*added by vijay end */}
+
+        {/* Protected Routes */}
+        <Route element={<ProtectedRoute />}> {/*added by vijay strat */}
+
         <Route path="/application-approved" element={<ApplicationApproved />} />
 
         {/* Individual Profile Flow - WITH STEP PARAM */}
@@ -129,6 +142,7 @@ const App = () => {
         />
         <Route path="/dashboard/board-review" element={<BoardReviewPortal />} />
         <Route path="/dashboard/publications" element={<Mypublication />} />
+<Route path="/dashboard/research-resubmission" element={<ResearchReSubmited />} />
         <Route
           path="/dashboard/individual-profile"
           element={<IndividualResearcherProfile />}
@@ -166,8 +180,14 @@ const App = () => {
 
         {/* Settings */}
         <Route path="/settings" element={<Settings />} />
+        
+
+
+        </Route> {/*added by vijay end */}
         <Route path="/terms" element={<TermsConditions />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
+
+
       </Routes>
 
       <ToastContainer

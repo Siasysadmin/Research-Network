@@ -21,7 +21,7 @@ const InstituteApprovedTable = ({ applications }) => {
   );
 
   return (
-    <div className="bg-white dark:bg-[#111814] border border-gray-200 dark:border-[#1e3a2c] flex flex-col rounded-2xl h-full relative overflow-hidden min-h-[300px]">
+    <div className="bg-white dark:bg-[#111814] border border-gray-200 dark:border-[#1e3a2c] flex flex-col h-full  rounded-2xl relative overflow-hidden min-h-[300px]">
       
       {/* Table Container with Fixed Header */}
       <div
