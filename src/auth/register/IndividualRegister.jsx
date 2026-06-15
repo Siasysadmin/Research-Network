@@ -89,6 +89,51 @@ const IndividualRegister = () => {
     return Object.keys(errors).length === 0;
   };
 
+  //sync Common User Api start vijay
+  const syncCommonUserApi = async (userId) => {
+    try {
+      const commonUserPayload = {
+        name: formData.fullName,
+        email: formData.email,
+        mobile: "",
+        address: "",
+        country: formData.country,
+        state: formData.state,
+        city: formData.city,
+        pincode: formData.pincode,
+        age: null,
+        category: "Individual",
+        platform: "RESEARCH_NETWORK",
+        platform_user_id: String(userId || formData.email),
+      };
+
+      const commonResponse = await fetch(
+        "https://common-users.onrender.com/api/users/register",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "x-api-key": "beej_bhandar_common_secret_123",
+          },
+          body: JSON.stringify(commonUserPayload),
+        }
+      );
+
+      const commonData = await commonResponse.json();
+
+      if (!commonResponse.ok) {
+        console.error("Common User API Sync Failed:", commonData);
+      }
+
+      return commonData;
+    } catch (error) {
+      console.error("Common User API Error:", error);
+      return null;
+    }
+  };
+  //sync Common User Api end vijay
+
   // API CALL
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -131,6 +176,10 @@ const IndividualRegister = () => {
           data.status === "success" ||
           data.message?.toLowerCase().includes("success"))
       ) {
+
+        await syncCommonUserApi(data?.user_id || data?.id || data?.user?.id);   //added by vijay sync Common User Api
+
+
         toast.success(" Registration successful!");
         localStorage.removeItem("formData");
         // ✅ Token

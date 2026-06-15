@@ -21,6 +21,7 @@ const IndividualEditProfile = () => {
   const pendingSdgIdsRef = useRef(null);
   // Form states
   const [profileData, setProfileData] = useState({
+    user_id: "",
     name: "",
     describes: "",
     registration_id: "",
@@ -104,6 +105,7 @@ const IndividualEditProfile = () => {
       if (profileResult.status && profileResult.data) {
         const data = profileResult.data;
         setProfileData({
+          user_id: data.id || data.user_id || "",   //added by vijay sync Common User Api
           name: data.name || "",
           describes: data.describes || "",
           registration_id: data.registration_id || "",
@@ -203,6 +205,7 @@ const IndividualEditProfile = () => {
         const data = result.data;
 
         setProfileData({
+          user_id: data.id || data.user_id || "",   //added by vijay sync Common User Api
           name: data.name || "",
           describes: data.describes || "",
           registration_id: data.registration_id || "",
@@ -319,6 +322,204 @@ const IndividualEditProfile = () => {
       console.error("SDG fetch error:", err);
     }
   };
+
+  // sync Common User Api start vijay
+  // const syncCommonUserApi_right = async (userId) => {
+  //   try {
+  //     const localUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+  //     const finalUserId =
+  //       userId ||
+  //       profileData.user_id ||
+  //       localStorage.getItem("user_id") ||
+  //       localUser.user_id ||
+  //       localUser.id;
+
+  //     if (!finalUserId) {
+  //       console.error("Common User Sync Failed: local user id not found");
+  //       return false;
+  //     }
+
+  //     const commonUserPayload = {
+  //       name: profileData.name,
+  //       email: profileData.email,
+  //       mobile: "",
+  //       address: "",
+  //       country: profileData.country,
+  //       state: profileData.state,
+  //       city: profileData.city,
+  //       pincode: profileData.pincode,
+  //       age: null,
+  //       category: "Individual",
+  //       platform: "RESEARCH_NETWORK",
+  //       platform_user_id: String(finalUserId),
+  //     };
+
+  //     const commonResponse = await fetch(
+  //       "https://common-users.onrender.com/api/users/register",
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Accept: "application/json",
+  //           "x-api-key": "beej_bhandar_common_secret_123",
+  //         },
+  //         body: JSON.stringify(commonUserPayload),
+  //       }
+  //     );
+
+  //     const commonText = await commonResponse.text();
+
+  //     let commonData = {};
+  //     try {
+  //       commonData = commonText ? JSON.parse(commonText) : {};
+  //     } catch (err) {
+  //       commonData = { rawResponse: commonText };
+  //     }
+
+  //     if (!commonResponse.ok || commonData.status === false) {
+  //       console.error("Common User API Sync Failed:", commonData);
+  //       return false;
+  //     }
+
+  //     return true;
+  //   } catch (error) {
+  //     console.error("Common User API Error:", error);
+  //     return false;
+  //   }
+  // };
+
+
+
+
+  // sync Common User Api start vijay
+const syncCommonUserApi = async (userId) => {
+  try {
+    const localUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+    const finalUserId =
+      userId ||
+      profileData.user_id ||
+      localStorage.getItem("user_id") ||
+      localUser.user_id ||
+      localUser.id;
+
+    if (!finalUserId) {
+      console.error("Common User Sync Failed: local user id not found");
+      return false;
+    }
+
+    const selectedSdgGoals = sdgGoals.map((id) => {
+      const goal = SDG_GOALS.find((g) => g.id === id);
+      return goal ? goal.label : String(id);
+    });
+
+    const jobRoles = experiences
+      .map((exp) => exp.role)
+      .filter((value) => value && value.trim() !== "");
+
+    const companies = experiences
+      .map((exp) => exp.company)
+      .filter((value) => value && value.trim() !== "");
+
+    const durations = experiences
+      .map((exp) => exp.duration)
+      .filter((value) => value && value.trim() !== "");
+
+    const descriptions = experiences
+      .map((exp) => exp.description)
+      .filter((value) => value && value.trim() !== "");
+
+    const extraData = {
+      describes: profileData.describes,
+      registration_id: profileData.registration_id,
+      date_of_birth: profileData.date_of_birth,
+      location: profileData.location,
+      language: profileData.language,
+      short_bio: profileData.short_bio,
+      current_research: profileData.current_research,
+      linkedin: profileData.linkedin,
+      research_gate: profileData.research_gate,
+      orc_id: profileData.orc_id,
+      personal_website: profileData.personal_website,
+      profile_image: profileData.profile_image,
+
+      interest: tags,
+      job_role: jobRoles,
+      company: companies,
+      duration: durations,
+      description: descriptions,
+      developement_goals: selectedSdgGoals,
+    };
+
+    Object.keys(extraData).forEach((key) => {
+      const value = extraData[key];
+
+      if (
+        value === "" ||
+        value === null ||
+        value === undefined ||
+        (Array.isArray(value) && value.length === 0)
+      ) {
+        delete extraData[key];
+      }
+    });
+
+    const commonUserPayload = {
+      name: profileData.name,
+      email: profileData.email,
+      mobile: "",
+      address: "",
+      country: profileData.country,
+      state: profileData.state,
+      city: profileData.city,
+      pincode: profileData.pincode,
+      age: null,
+      category: "Individual",
+      platform: "RESEARCH_NETWORK",
+      platform_user_id: String(finalUserId),
+      extra_data: extraData,
+    };
+
+    const commonResponse = await fetch(
+      "https://common-users.onrender.com/api/users/register",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "x-api-key": "beej_bhandar_common_secret_123",
+        },
+        body: JSON.stringify(commonUserPayload),
+      }
+    );
+
+    const commonText = await commonResponse.text();
+
+    let commonData = {};
+    try {
+      commonData = commonText ? JSON.parse(commonText) : {};
+    } catch (err) {
+      commonData = { rawResponse: commonText };
+    }
+
+    if (!commonResponse.ok || commonData.status === false) {
+      console.error("Common User API Sync Failed:", commonData);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Common User API Error:", error);
+    return false;
+  }
+};
+
+  
+  // sync Common User Api end vijay
+
+
+
   const handleSaveChanges = async () => {
     try {
       setSaving(true);
@@ -396,6 +597,8 @@ const IndividualEditProfile = () => {
       const result = await response.json();
 
       if (result.status) {
+        await syncCommonUserApi();   //added by vijay sync Common User Api
+
         setSuccessMessage("Profile updated successfully!");
         setTimeout(() => {
           navigate("/dashboard/individual-profile");

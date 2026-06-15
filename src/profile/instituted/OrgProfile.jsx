@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { calculateInstituteProfileCompletion } from "../../utils/profileCompletion";
+import API_CONFIG from "../../config/api.config";
 
 const OrgProfile = ({ isOpen = true, onClose }) => {
   const navigate = useNavigate();
@@ -41,59 +42,103 @@ const OrgProfile = ({ isOpen = true, onClose }) => {
   }, []);
 
   useEffect(() => {
-    // Step 1: Organization Name (20%)
+  const calculateFinalPercent = async () => {
+    // Step 1
     const step1Data = JSON.parse(localStorage.getItem("orgStep1") || "{}");
     setStep1(step1Data);
 
-    // Step 2: Location (20% - all 3 fields required for full 20%)
+    // Step 2
     const step2Data = JSON.parse(localStorage.getItem("orgStep2") || "{}");
     setStep2(step2Data);
 
-    // Step 3: Research Focus (20%)
+    // Step 3
     const step3Data = JSON.parse(localStorage.getItem("orgStep3") || "{}");
     setStep3(step3Data);
 
-    // Step 4: Goals (20%)
+    // Step 4
     const step4Data = JSON.parse(localStorage.getItem("orgStep4") || "{}");
     setStep4(step4Data);
 
-    // Step 5: Profile Links (20% divided into 4 parts - 5% each)
+    // Step 5
     const step5Data = JSON.parse(localStorage.getItem("orgStep5") || "{}");
     setStep5(step5Data);
+
     const linksData = step5Data.links || {};
     setLinks(linksData);
 
+    const userDataString = localStorage.getItem("user");
+    const user = userDataString ? JSON.parse(userDataString) : {};
+
+    let apiProfile = {};
+
+    try {
+      const token =
+        localStorage.getItem("auth_token") ||
+        localStorage.getItem("token") ||
+        sessionStorage.getItem("auth_token");
+
+      if (token) {
+        const response = await fetch(
+          `${API_CONFIG.BASE_URL}/profile/get-profile-institute`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const result = await response.json();
+
+        if (result.status && result.data) {
+          apiProfile = result.data;
+        }
+      }
+    } catch (error) {
+      console.log("Profile API error:", error);
+    }
+
     const profile = {
-      organization_type: step1Data.organization_name || "",
+      organization_name: apiProfile.organization_name || apiProfile.institute_name || "",
+      organization_type: apiProfile.organization_type || "",
 
-      research_focus: step3Data.research_focus || [],
+      country: apiProfile.country || "",
+      state: apiProfile.state || "",
+      city: apiProfile.city || "",
 
-      developement_goals: step4Data.platform || [],
+      address: apiProfile.address || "",
+      email: apiProfile.email || "",
+      contact_no: apiProfile.contact_no || "",
+      name: apiProfile.name || "",
+      professional_role: apiProfile.professional_role || "",
+      establishment_year: apiProfile.establishment_year || "",
+      institute_description: apiProfile.institute_description || "",
 
-      interest:
-        step2Data.country && step2Data.state && step2Data.city
-          ? ["location"]
-          : [],
+      research_focus: apiProfile.research_focus || [],
+      platform: apiProfile.platform || [],
 
-      linkedin: linksData.linkedin || "",
-      research_gate: linksData.researchGate || "",
-      orc_id: linksData.orcid || "",
-      personal_website: linksData.website || "",
+      linkedin: apiProfile.linkedin || "",
+      research_gate: apiProfile.research_gate || "",
+      orc_id: apiProfile.orc_id || "",
+      personal_website: apiProfile.personal_website || apiProfile.website || "",
 
-      profile_image: "",
-      short_bio: "",
-      establishment_year: "",
+      profile_image: apiProfile.profile_image || "",
     };
 
+    //localStorage.setItem("latestInstituteProfile", JSON.stringify(profile));
+
+    // ✅ Dashboard jaisa same function
     const totalPercentage = calculateInstituteProfileCompletion(profile);
 
     setCompletion(totalPercentage);
 
-    // Animate 0 → totalPercentage
     let current = 0;
     const increment = totalPercentage / 60;
+
     const timer = setInterval(() => {
       current += increment;
+
       if (current >= totalPercentage) {
         setAnimatedValue(totalPercentage);
         clearInterval(timer);
@@ -103,7 +148,10 @@ const OrgProfile = ({ isOpen = true, onClose }) => {
     }, 16);
 
     return () => clearInterval(timer);
-  }, []);
+  };
+
+  calculateFinalPercent();
+}, []);
 
   const handleCloseAndNavigate = () => {
     // Cleanup after user sees progress

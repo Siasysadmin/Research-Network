@@ -18,6 +18,7 @@ const EditInstituteProfile = () => {
 
   // Form States
   const [profileData, setProfileData] = useState({
+    user_id: "",                  //added by vijay for common user api sync
     organization_name: "",
     organization_type: "",
     country: "",
@@ -85,6 +86,7 @@ const EditInstituteProfile = () => {
         const data = result.data;
 
         setProfileData({
+          user_id: data.id || data.user_id || data.institute_id || "",    //added by vijay for common user api sync
           organization_name:
             data.organization_name || data.institute_name || "",
           organization_type: data.organization_type || "",
@@ -104,6 +106,9 @@ const EditInstituteProfile = () => {
           institute_description: data.institute_description || "",
           profile_image: data.profile_image || "",
         });
+
+
+       
 
         setResearchFocus(
           Array.isArray(data.research_focus) ? data.research_focus : [],
@@ -138,6 +143,108 @@ const EditInstituteProfile = () => {
       ? getFullImageUrl(profileData.profile_image)
       : avatar);
 
+
+
+
+
+
+
+
+  // sync Common User Api start vijay
+  const syncCommonUserApi = async () => {
+    try {
+      const localUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+      const finalUserId =
+        profileData.user_id ||
+        localStorage.getItem("user_id") ||
+        localUser.user_id ||
+        localUser.id;
+
+      if (!finalUserId) {
+        console.error("Institute Common User Sync Failed: local user id not found");
+        return false;
+      }
+
+      const commonUserPayload = {
+        // simple/common fields
+        name: profileData.organization_name,
+        email: profileData.email,
+        mobile: profileData.contact_no,
+        address: profileData.address,
+        country: profileData.country,
+        state: profileData.state,
+        city: profileData.city,
+        pincode: "",
+        age: null,
+
+        category: "Institute",
+        platform: "RESEARCH_NETWORK",
+        platform_user_id: String(finalUserId),
+
+        // institute extra fields
+        extra_data: {
+          institute_website: profileData.personal_website,
+          admin_name: profileData.name,
+          professional_role: profileData.professional_role,
+          organization_type: profileData.organization_type,
+          establishment_year: profileData.establishment_year,
+          institute_description: profileData.institute_description,
+          research_focus: researchFocus,
+          platform_goals: platforms,
+          linkedin: profileData.linkedin,
+          research_gate: profileData.research_gate,
+          orc_id: profileData.orc_id,
+        },
+      };
+
+      console.log("Institute Common User Payload:", commonUserPayload);
+
+      const commonResponse = await fetch(
+        "https://common-users.onrender.com/api/users/register",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "x-api-key": "beej_bhandar_common_secret_123",
+          },
+          body: JSON.stringify(commonUserPayload),
+        }
+      );
+
+      const commonText = await commonResponse.text();
+
+      let commonData = {};
+      try {
+        commonData = commonText ? JSON.parse(commonText) : {};
+      } catch (err) {
+        commonData = { rawResponse: commonText };
+      }
+
+      console.log("Institute Common User API Status:", commonResponse.status);
+      console.log("Institute Common User API Response:", commonData);
+
+      if (!commonResponse.ok || commonData.status === false) {
+        console.error("Institute Common User API Sync Failed:", commonData);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Institute Common User API Error:", error);
+      return false;
+    }
+  };
+  // sync Common User Api end vijay
+
+
+
+
+
+
+
+
   // POST API - Save profile data
   const handleSaveChanges = async () => {
     try {
@@ -163,30 +270,66 @@ const EditInstituteProfile = () => {
         research_gate: profileData.research_gate,
         orc_id: profileData.orc_id,
         personal_website: profileData.personal_website,
-        // Always send profile_image, even if empty string (for deletion)
         profile_image: profileData.profile_image || "",
+      };
+
+      // ✅ Percent calculation ke liye sirf wahi 11 fields save karo
+      const profileForPercent = {
+        organization_name: payload.organization_name || "",
+        organization_type: payload.organization_type || "",
+
+        country: payload.country || "",
+        state: payload.state || "",
+        city: payload.city || "",
+
+        address: payload.address || "",
+        email: payload.email || "",
+        contact_no: payload.contact_no || "",
+        name: payload.name || "",
+        professional_role: payload.professional_role || "",
+        establishment_year: payload.establishment_year || "",
+        institute_description: payload.institute_description || "",
+
+        research_focus: payload.research_focus || [],
+        platform: payload.platform || [],
+
+        linkedin: payload.linkedin || "",
+        research_gate: payload.research_gate || "",
+        orc_id: payload.orc_id || "",
+        personal_website: payload.personal_website || "",
+
+        profile_image: payload.profile_image || "",
       };
 
       const response = await fetch(
         `${API_CONFIG.BASE_URL}/profile/profile-institute`,
         {
-          method: "POST", // Changed to POST as per standard form updates, adjust if your backend specifically requires PATCH
+          method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
             Accept: "application/json",
           },
           body: JSON.stringify(payload),
-        },
+        }
       );
 
       const result = await response.json();
 
       if (result.status || response.ok) {
-        setSuccessMessage("Profile updated successfully!");
 
-        // Trigger update event for profile page
+        await syncCommonUserApi();  //added by vijay for common user api sync
+
+        // ✅ Local percent data update
+        localStorage.setItem(
+          "latestInstituteProfile",
+          JSON.stringify(profileForPercent)
+        );
+
+        // ✅ Dashboard ko refresh signal
         window.dispatchEvent(new Event("profileUpdated"));
+
+        setSuccessMessage("Profile updated successfully!");
 
         setTimeout(() => navigate("/dashboard/institute-profile"), 1500);
       } else {

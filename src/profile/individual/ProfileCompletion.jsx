@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { calculateIndividualProfileCompletion } from "../../utils/profileCompletion";
+import API_CONFIG from "../../config/api.config";
 
 const ProfileCompletion = () => {
   const navigate = useNavigate();
@@ -31,46 +32,95 @@ const ProfileCompletion = () => {
   }, []);
 
   useEffect(() => {
-    const step1 = JSON.parse(localStorage.getItem("step1") || "{}");
-    const step2 = JSON.parse(localStorage.getItem("step2") || "{}");
-    const step3 = JSON.parse(localStorage.getItem("step3") || "{}");
-    const step4 = JSON.parse(localStorage.getItem("step4") || "[]");
-    const step5 = JSON.parse(localStorage.getItem("step5") || "{}");
-    const step6 = JSON.parse(localStorage.getItem("step6") || "{}");
+    let timer = null;
 
-    const profile = {
-      describes: step1.describes || "",
-      developement_goals: step2.selectedGoals || [],
-      current_research: step3.research || "",
-      job_role: Array.isArray(step4)
-        ? step4.map((exp) => exp.jobRole || "")
-        : [],
-      interest: step5.selectedGoals || [],
-      linkedin: step6.linkedin || "",
+    const calculateFinalPercent = async () => {
+      let apiProfile = {};
 
-      profile_image: "",
-      date_of_birth: "",
-      short_bio: "",
+      try {
+        const token =
+          localStorage.getItem("auth_token") ||
+          localStorage.getItem("token") ||
+          sessionStorage.getItem("auth_token");
+
+        if (token) {
+          const response = await fetch(
+            `${API_CONFIG.BASE_URL}/profile/get-profile-individual`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
+            }
+          );
+
+          const result = await response.json();
+
+          if (result.status && result.data) {
+            apiProfile = result.data;
+          }
+        }
+      } catch (error) {
+        console.log("Individual profile API error:", error);
+      }
+
+      const profile = {
+        name: apiProfile.name || "",
+        email: apiProfile.email || "",
+        country: apiProfile.country || "",
+        state: apiProfile.state || "",
+        city: apiProfile.city || "",
+        pincode: apiProfile.pincode || "",
+
+        describes: apiProfile.describes || "",
+        developement_goals: apiProfile.developement_goals || [],
+        current_research: apiProfile.current_research || "",
+
+        job_role: apiProfile.job_role || [],
+        company: apiProfile.company || [],
+        duration: apiProfile.duration || [],
+        description: apiProfile.description || [],
+
+        interest: apiProfile.interest || [],
+
+        linkedin: apiProfile.linkedin || "",
+        research_gate: apiProfile.research_gate || "",
+        orc_id: apiProfile.orc_id || "",
+        personal_website: apiProfile.personal_website || apiProfile.website || "",
+
+        date_of_birth: apiProfile.date_of_birth || "",
+        short_bio: apiProfile.short_bio || "",
+        language: apiProfile.language || "",
+        location: apiProfile.location || "",
+        profile_image: apiProfile.profile_image || "",
+      };
+
+      const totalPercentage = calculateIndividualProfileCompletion(profile);
+
+      setCompletion(totalPercentage);
+
+      let current = 0;
+      const increment = totalPercentage / 60;
+
+      timer = setInterval(() => {
+        current += increment;
+
+        if (current >= totalPercentage) {
+          setAnimatedValue(totalPercentage);
+          clearInterval(timer);
+        } else {
+          setAnimatedValue(Math.floor(current));
+        }
+      }, 16);
     };
 
-    const totalPercentage = calculateIndividualProfileCompletion(profile);
-    setCompletion(totalPercentage);
+    calculateFinalPercent();
 
-    let current = 0;
-    const increment = totalPercentage / 60;
-
-    const timer = setInterval(() => {
-      current += increment;
-
-      if (current >= totalPercentage) {
-        setAnimatedValue(totalPercentage);
-        clearInterval(timer);
-      } else {
-        setAnimatedValue(current);
-      }
-    }, 16);
-
-    return () => clearInterval(timer);
+    return () => {
+      if (timer) clearInterval(timer);
+    };
   }, []);
 
   const handleClose = () => {

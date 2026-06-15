@@ -49,8 +49,6 @@ const toArrayValue = (value) => {
   return [];
 };
 
-
-
 /* ✅ Individual Profile ke full fields */
 export const INDIVIDUAL_PROFILE_FIELDS = [
   "name",
@@ -59,28 +57,20 @@ export const INDIVIDUAL_PROFILE_FIELDS = [
   "state",
   "city",
   "pincode",
-
   "describes",
   "developement_goals",
   "current_research",
-
   "job_role",
   "company",
   "duration",
   "description",
-
   "interest",
-
   "linkedin",
   "research_gate",
   "orc_id",
   "personal_website",
-
   "date_of_birth",
   "short_bio",
-  // "language",
-  // "location",
-  "profile_image",
 ];
 
 /* ✅ Institute Dashboard + Modal + Edit Profile sabke liye same fields */
@@ -180,9 +170,6 @@ export const normalizeIndividualProfile = (profile = {}) => {
 
     date_of_birth: profile.date_of_birth || "",
     short_bio: profile.short_bio || "",
-    // language: profile.language || "",
-    // location: profile.location || "",
-    profile_image: profile.profile_image || "",
   };
 };
 

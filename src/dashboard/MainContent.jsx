@@ -1589,46 +1589,26 @@ const MainContent = () => {
               Authorization: `Bearer ${token}`,
               Accept: "application/json",
             },
-          },
+          }
         );
 
         const result = await response.json();
-        const profile = result.data || {};
+        const apiProfile = result.data || {};
 
         let percent = 0;
 
         if (userType === "institute") {
-          const instituteProfile = {
-            organization_type: profile.organization_type || "",
-
-            research_focus: Array.isArray(profile.research_focus)
-              ? profile.research_focus
-              : [],
-
-            developement_goals: Array.isArray(profile.platform)
-              ? profile.platform
-              : [],
-
-            interest: Array.isArray(profile.interest) ? profile.interest : [],
-
-            linkedin: profile.linkedin || "",
-            research_gate: profile.research_gate || "",
-            orc_id: profile.orc_id || "",
-            personal_website: profile.personal_website || "",
-
-            profile_image: "",
-            short_bio: "",
-            establishment_year: "",
-          };
-
-          percent = calculateInstituteProfileCompletion(instituteProfile);
+          percent = calculateInstituteProfileCompletion(apiProfile);
         } else {
-          percent = calculateIndividualProfileCompletion(profile);
+          percent = calculateIndividualProfileCompletion(apiProfile);
         }
 
         setProfilePercent(percent);
 
-        console.log("PROFILE DATA:", profile);
+        console.log("PROFILE FOR PERCENT:", userType === "institute"
+          ? JSON.parse(localStorage.getItem("latestInstituteProfile") || "{}")
+          : apiProfile
+        );
         console.log("FINAL PERCENT:", percent);
       } catch (error) {
         console.log("Profile percent error:", error);
@@ -1636,6 +1616,12 @@ const MainContent = () => {
     };
 
     fetchProfilePercent();
+
+    window.addEventListener("profileUpdated", fetchProfilePercent);
+
+    return () => {
+      window.removeEventListener("profileUpdated", fetchProfilePercent);
+    };
   }, []);
 
   const handleShareClick = async (postId) => {
@@ -2426,45 +2412,45 @@ const MainContent = () => {
                   verified_user
                 </span>
               </div>
-             <div className="flex-1 min-w-0">
-  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-    <div>
-      <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-tight text-slate-900 dark:text-white">
-        Welcome back,{" "}
-        <span className="break-words">{userName}!</span>
-      </h1>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-tight text-slate-900 dark:text-white">
+                      Welcome back,{" "}
+                      <span className="break-words">{userName}!</span>
+                    </h1>
 
-      <p className="text-slate-600 dark:text-slate-400 mt-3 text-sm sm:text-base max-w-2xl leading-relaxed">
-        Your research network is active. Tracking collaborations
-        <br className="hidden sm:block" />
-        research activity, and latest updates.
-      </p>
-    </div>
+                    <p className="text-slate-600 dark:text-slate-400 mt-3 text-sm sm:text-base max-w-2xl leading-relaxed">
+                      Your research network is active. Tracking collaborations
+                      <br className="hidden sm:block" />
+                      research activity, and latest updates.
+                    </p>
+                  </div>
 
-    <div className="w-full lg:w-[360px] rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-black/35 p-5 shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-          Profile Status
-        </p>
+                  <div className="w-full lg:w-[360px] rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-black/35 p-5 shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                        Profile Status
+                      </p>
 
-        <p className="text-sm font-extrabold text-[#00ff88]">
-          {profilePercent}% Complete
-        </p>
-      </div>
+                      <p className="text-sm font-extrabold text-[#00ff88]">
+                        {profilePercent}% Complete
+                      </p>
+                    </div>
 
-      <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
-        <div
-          className="h-full rounded-full bg-[#00ff88] transition-all duration-500"
-          style={{ width: `${profilePercent}%` }}
-        />
-      </div>
+                    <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[#00ff88] transition-all duration-500"
+                        style={{ width: `${profilePercent}%` }}
+                      />
+                    </div>
 
-      <p className="mt-3 text-xs italic text-slate-500 dark:text-slate-400">
-        Complete your bio to reach Top Contributor status.
-      </p>
-    </div>
-  </div>
-</div>
+                    <p className="mt-3 text-xs italic text-slate-500 dark:text-slate-400">
+                      Complete your bio to reach Top Contributor status.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="hidden sm:block absolute right-0 top-0 w-[200px] h-[200px] sm:w-[250px] sm:h-[250px] lg:w-[300px] lg:h-[300px] bg-[#00ff88]/10 blur-[80px] sm:blur-[100px] lg:blur-[140px]"></div>
           </div>

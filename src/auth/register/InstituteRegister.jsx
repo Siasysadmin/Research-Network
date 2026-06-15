@@ -131,6 +131,72 @@ const InstituteRegister = () => {
     setStep(1);
   };
 
+
+
+  
+
+  // sync Common User Api start vijay
+  const syncCommonUserApi = async (userId) => {
+    try {
+      const commonUserPayload = {
+        // simple/common fields
+        name: formData.instituteName,
+        email: formData.email,
+        mobile: formData.contactNumber,
+        address: formData.address,
+        country: "",
+        state: "",
+        city: "",
+        pincode: "",
+        age: null,
+
+        category: "Institute",
+        platform: "RESEARCH_NETWORK",
+        platform_user_id: String(userId),
+
+        // institute extra fields
+        extra_data: {
+          institute_website: formData.instituteWebsite,
+          admin_name: formData.adminName,
+          professional_role: formData.professionalRole,
+        },
+      };
+
+      const commonResponse = await fetch(
+        "https://common-users.onrender.com/api/users/register",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "x-api-key": "beej_bhandar_common_secret_123",
+          },
+          body: JSON.stringify(commonUserPayload),
+        }
+      );
+
+      const commonText = await commonResponse.text();
+
+      let commonData = {};
+      try {
+        commonData = commonText ? JSON.parse(commonText) : {};
+      } catch (err) {
+        commonData = { rawResponse: commonText };
+      }
+
+      if (!commonResponse.ok || commonData.status === false) {
+        console.error("Institute Common User API Sync Failed:", commonData);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error("Institute Common User API Error:", error);
+      return false;
+    }
+  };
+  // sync Common User Api end vijay
+    
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -173,6 +239,9 @@ const InstituteRegister = () => {
           data.status === "success" ||
           data.message?.includes("success"))
       ) {
+
+        await syncCommonUserApi(data?.data || data?.user_id || data?.id);   //aded by vijay for common user api sync
+
         toast.success(" Registration successful!");
         localStorage.removeItem("formData");
         if (data.token) {

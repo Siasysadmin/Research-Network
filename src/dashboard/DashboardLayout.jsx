@@ -5,6 +5,7 @@ import avatar from "../assets/images/avatar.jpg";
 import API_CONFIG from "../config/api.config";
 import UserProfile from "./UserProfile";
 import NotificationPopup from "./NotificationPopup";
+import SearchBar from "./SearchBar";
 
 const MaterialIcon = ({ name, className = "" }) => (
   <span className={`material-symbols-outlined ${className}`}>{name}</span>
@@ -17,8 +18,8 @@ const DashboardLayout = ({ children }) => {
   const mobileMenuRef = useRef(null);
   const notifRef = useRef(null);
   const mobileNotifRef = useRef(null);
-  const searchRef = useRef(null);
-  const mobileSearchRef = useRef(null);
+  const searchDesktopContainerRef = useRef(null);
+  const searchMobileContainerRef = useRef(null);
 
   const [activeNav, setActiveNav] = useState("home");
   const [isBoardMember, setIsBoardMember] = useState(false);
@@ -34,13 +35,6 @@ const DashboardLayout = ({ children }) => {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isMobileNotifOpen, setIsMobileNotifOpen] = useState(false);
 
-  // ── Search States ──
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [allUsers, setAllUsers] = useState([]);
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [isMobileSearchFocused, setIsMobileSearchFocused] = useState(false);
-  const [blockedUserIds, setBlockedUserIds] = useState([]);
   // ── UserProfile Modal State ──
   const [selectedSearchUser, setSelectedSearchUser] = useState(null);
 
@@ -191,55 +185,6 @@ const DashboardLayout = ({ children }) => {
     loadImageFromStorage();
   }, [location.pathname]);
 
-  // ── Fetch All Users for Search ──
-  useEffect(() => {
-    const fetchAllUsers = async () => {
-      try {
-        const token = getAuthToken();
-        const res = await fetch(`${API_CONFIG.BASE_URL}/user/get-all-users`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        const list =
-          data.data || data.users || (Array.isArray(data) ? data : []);
-        setAllUsers(list);
-      } catch (err) {
-        console.error("Users fetch error:", err);
-      }
-    };
-    fetchAllUsers();
-  }, []);
-
-  useEffect(() => {
-    const fetchBlockedUsers = async () => {
-      try {
-        const token = getAuthToken();
-
-        const res = await fetch(
-          `${API_CONFIG.BASE_URL}/account/get-blocked-users`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
-
-        const data = await res.json();
-
-        if (data.status && Array.isArray(data.data)) {
-          const ids = data.data.map((user) => String(user.id));
-          setBlockedUserIds(ids);
-        }
-      } catch (err) {
-        console.error("Blocked users fetch error:", err);
-      }
-    };
-
-    fetchBlockedUsers();
-  }, []);
-
   // ✅ Only fetch unread count for bell dot — full data fetched inside NotificationPopup
   useEffect(() => {
     const fetchUnreadCount = async () => {
@@ -261,71 +206,6 @@ const DashboardLayout = ({ children }) => {
     const interval = setInterval(fetchUnreadCount, 30000);
     return () => clearInterval(interval);
   }, []);
-
-  // ── Search Handler ──
-  const handleSearch = (query) => {
-    setSearchQuery(query);
-
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    const q = query.toLowerCase().trim();
-
-    const filtered = allUsers.filter((u) => {
-      const isBlocked = blockedUserIds.includes(String(u.id));
-      if (isBlocked) return false;
-
-      const userType = (u.user_type || "").toLowerCase();
-
-      const name =
-        userType === "institute" || userType === "institution"
-          ? u.institute_details?.institute_name || u.name || ""
-          : u.name || "";
-
-      const email = u.email || "";
-      const id = String(u.id || "");
-      const registrationId = String(u.registration_id || "");
-
-      if (q === "individual" || q === "indivual") {
-        return userType === "individual";
-      }
-
-      if (q === "institute" || q === "institution" || q === "innstiute") {
-        return userType === "institute" || userType === "institution";
-      }
-
-      return (
-        name.toLowerCase().includes(q) ||
-        email.toLowerCase().includes(q) ||
-        id.includes(q) ||
-        registrationId.toLowerCase().includes(q) ||
-        userType.includes(q)
-      );
-    });
-
-    setSearchResults(filtered);
-  };
-
-  // ── Open UserProfile from search result ──
-  const handleSearchUserClick = (u) => {
-    const name =
-      u.user_type === "institute"
-        ? u.institute_details?.institute_name || u.name || "Institute"
-        : u.name || "User";
-
-    setSelectedSearchUser({
-      id: u.id,
-      name,
-      user_type: u.user_type || "individual",
-    });
-
-    setSearchQuery("");
-    setSearchResults([]);
-    setIsSearchFocused(false);
-    setIsMobileSearchFocused(false);
-  };
 
   const handleProtectedNav = (path) => {
     if (isInstituteBlocked) {
@@ -382,7 +262,7 @@ const DashboardLayout = ({ children }) => {
     localStorage.clear();
     sessionStorage.clear();
 
-    localStorage.setItem("theme", currentTheme);//
+    localStorage.setItem("theme", currentTheme); //
 
     document.documentElement.setAttribute("data-theme", currentTheme);
 
@@ -392,7 +272,7 @@ const DashboardLayout = ({ children }) => {
     } else {
       document.body.classList.add("light-theme");
       document.body.classList.remove("dark-theme");
-    }//
+    } //
 
     setIsProfileOpen(false);
     setIsMobileMenuOpen(false);
@@ -429,13 +309,6 @@ const DashboardLayout = ({ children }) => {
         !mobileNotifRef.current.contains(event.target)
       )
         setIsMobileNotifOpen(false);
-      if (searchRef.current && !searchRef.current.contains(event.target))
-        setIsSearchFocused(false);
-      if (
-        mobileSearchRef.current &&
-        !mobileSearchRef.current.contains(event.target)
-      )
-        setIsMobileSearchFocused(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -471,65 +344,6 @@ const DashboardLayout = ({ children }) => {
     checkBoardMember();
   }, []);
 
-  // ── Search Dropdown ──
-  const SearchDropdown = ({ results }) => {
-    if (results.length === 0) return null;
-    return (
-      <div
-        className="
-    absolute top-full mt-2 left-0 w-full min-w-[260px]
-    max-h-[320px] overflow-y-auto
-    rounded-xl shadow-xl z-[70]
-
-    bg-white border border-gray-200
-    dark:bg-[#111f17] dark:border-[#32ff9920]
-  "
-      >
-        {" "}
-        {results.map((u) => {
-          const name =
-            u.user_type === "institute"
-              ? u.institute_details?.institute_name || u.name || "Institute"
-              : u.name || "User";
-          const img =
-            u.user_type === "institute"
-              ? u.profile_institute_details?.profile_image
-              : u.profile_individual_details?.profile_image;
-          const imgUrl = img ? `${API_CONFIG.BASE_URL}/${img}` : avatar;
-          return (
-            <div
-              key={u.id}
-              onMouseDown={() => handleSearchUserClick(u)}
-              className="
-flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors
-
-hover:bg-gray-100
-dark:hover:bg-[#32ff9910]
-"
-            >
-              <img
-                src={imgUrl}
-                onError={(e) => {
-                  e.target.src = avatar;
-                }}
-                className="w-8 h-8 rounded-full object-cover border border-white/10 shrink-0"
-                alt={name}
-              />
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                  {name}
-                </p>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 capitalize">
-                  {u.user_type || "individual"} • Reg ID: {u.registration_id}
-                </p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
   return (
     <div className="bg-slate-50 dark:bg-[#0a120e] text-slate-100 min-h-[100dvh] overflow-x-hidden">
       {/* HEADER */}
@@ -556,32 +370,8 @@ dark:hover:bg-[#32ff9910]
             className="hidden md:flex items-center gap-4 relative"
             ref={dropdownRef}
           >
-            {/* Desktop Search */}
-            <div className="relative" ref={searchRef}>
-              <MaterialIcon
-                name="search"
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none"
-              />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                onFocus={() => setIsSearchFocused(true)}
-                placeholder="Search users..."
-                className="
-    pl-9 pr-4 py-2 rounded-xl text-sm transition-all w-48
-
-    bg-gray-100 text-slate-800 border border-gray-300 placeholder:text-gray-400
-    focus:border-[#00ff88] focus:ring-2 focus:ring-[#00ff88]/20 outline-none
-
-    dark:bg-white/5 dark:text-white dark:border-[#5bf9aa20]
-    dark:placeholder:text-slate-500 dark:focus:border-[#32ff99]
-  "
-              />
-              {isSearchFocused && searchResults.length > 0 && (
-                <SearchDropdown results={searchResults} />
-              )}
-            </div>
+            {/* Desktop Search (rendered into container by SearchBar) */}
+            <div ref={searchDesktopContainerRef} className="relative" />
 
             <button
               onClick={() => handleProtectedNav("/dashboard/create-post")}
@@ -770,7 +560,7 @@ dark:bg-[#16291e] dark:border-[#5bf9aa37]
                 alt="User Profile"
               />
               {isMobileMenuOpen && (
-                <div className="absolute right-0 mt-3 w-64 bg-white dark:bg-[#16291e] border border-slate-200 dark:border-[#5bf9aa37] rounded-2xl shadow-2xl overflow-hidden z-50">
+                <div className="fixed top-[64px] right-3 w-64 bg-white dark:bg-[#16291e] border border-slate-200 dark:border-[#5bf9aa37] rounded-2xl shadow-2xl overflow-hidden z-[99999]">
                   <div className="p-4 border-b border-slate-200 dark:border-[#5bf9aa15] flex flex-col items-center text-center">
                     <img
                       src={profileImage || avatar}
@@ -839,34 +629,49 @@ dark:bg-[#16291e] dark:border-[#5bf9aa37]
           </div>
         </div>
 
-        {/* Mobile Search Bar */}
-        <div className="flex md:hidden pb-3 w-full" ref={mobileSearchRef}>
-          <div className="relative w-full">
-            <MaterialIcon
-              name="search"
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none"
-            />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              onFocus={() => setIsMobileSearchFocused(true)}
-              placeholder="Search users..."
-              className="
-    w-full pl-9 pr-4 py-2 rounded-xl text-sm transition-all outline-none
+        {/* Mobile Search Bar (rendered into container by SearchBar) */}
+        <div
+          className="flex md:hidden pb-3 w-full"
+          ref={searchMobileContainerRef}
+        />
 
-    bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400
-    focus:border-[#00b86b] focus:ring-2 focus:ring-[#00b86b]/20
+        <SearchBar
+          desktopContainerRef={searchDesktopContainerRef}
+          mobileContainerRef={searchMobileContainerRef}
+          onUserSelect={setSelectedSearchUser}
+          isProfileModalOpen={!!selectedSearchUser}
+        />
 
-    dark:bg-white/5 dark:text-white dark:border-[#5bf9aa20]
-    dark:placeholder:text-slate-500 dark:focus:border-[#32ff99]
-  "
-            />
-            {isMobileSearchFocused && searchResults.length > 0 && (
-              <SearchDropdown results={searchResults} />
-            )}
+        {/* Search User Profile Modal View */}
+        {selectedSearchUser && (
+          <div
+            className="fixed inset-0 z-[100000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
+            onClick={() => setSelectedSearchUser(null)}
+          >
+            <div
+              className="w-full max-w-5xl h-[95vh] sm:h-[85vh] bg-[#0d0f0e] rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,255,136,0.1)] border border-[#00ff88]/20 relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <UserProfile
+                user={selectedSearchUser}
+                onClose={(e) => {
+                  if (e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                  }
+                  setSelectedSearchUser(null);
+                  setTimeout(() => {
+                    const input = document.querySelector(
+                      'input[placeholder="Search people, hashtags, research..."]',
+                    );
+
+                    input?.focus();
+                  }, 50);
+                }}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </header>
 
       {/* RESPONSIVE LAYOUT */}
@@ -1207,10 +1012,10 @@ dark:bg-transparent
       )}
 
       {/* ✅ UserProfile Modal */}
+      {/* Search User Profile Modal View */}
       {selectedSearchUser && (
         <div
-          className="fixed inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-6 md:p-8"
-          style={{ zIndex: 9999 }}
+          className="fixed inset-0 z-[100000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
           onClick={() => setSelectedSearchUser(null)}
         >
           <div
@@ -1219,7 +1024,21 @@ dark:bg-transparent
           >
             <UserProfile
               user={selectedSearchUser}
-              onClose={() => setSelectedSearchUser(null)}
+              onClose={(e) => {
+                if (e) {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }
+                setSelectedSearchUser(null);
+                setTimeout(() => {
+                  const input = document.querySelector(
+                    'input[placeholder="Search people, hashtags, research..."]',
+                  );
+
+                  input?.focus();
+                }, 50);
+                // Isse parent overlay focus me hi rahega aur close nahi hoga
+              }}
             />
           </div>
         </div>

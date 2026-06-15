@@ -70,36 +70,67 @@ const Step6 = ({ progress, onBack }) => {
       const descriptions = step4Array.map(exp => exp.description || "");
 
       // Final Data mapping
-      const finalData = {
+  //     const finalData = {
 
-        name: registeredUser.name || "", 
-        email: registeredUser.email,
-     country: registeredUser.country,
-  state: registeredUser.state,
-  city: registeredUser.city,
-  pincode: registeredUser.pincode,
+  //       name: registeredUser.name || "", 
+  //       email: registeredUser.email,
+  //    country: registeredUser.country,
+  // state: registeredUser.state,
+  // city: registeredUser.city,
+  // pincode: registeredUser.pincode,
 
-        describes: step1.describes || "",
-        developement_goals: step2.selectedGoals || [],
-        current_research: step3.research || "",
+  //       describes: step1.describes || "",
+  //       developement_goals: step2.selectedGoals || [],
+  //       current_research: step3.research || "",
         
-        // Step 4 updated fields (mapping to your required format)
-        job_role: jobRoles,
-        company: companies,
-        duration: durations,
-        description: descriptions,
+  //       // Step 4 updated fields (mapping to your required format)
+  //       job_role: jobRoles,
+  //       company: companies,
+  //       duration: durations,
+  //       description: descriptions,
         
       
-        interest: step5.selectedGoals || [],
-        custom_interests: step5.customGoals?.map((g) => g.title) || [],
-        linkedin: formData.linkedin || "",
-        research_gate: formData.research_gate || "",
-        orc_id: formData.orc_id || "",
-        personal_website: formData.personal_website || "",
+  //       interest: step5.selectedGoals || [],
+  //       custom_interests: step5.customGoals?.map((g) => g.title) || [],
+  //       linkedin: formData.linkedin || "",
+  //       research_gate: formData.research_gate || "",
+  //       orc_id: formData.orc_id || "",
+  //       personal_website: formData.personal_website || "",
+  //     };
 
-        
-       
-      };
+
+
+  const finalData = {
+    name: registeredUser.name || "",
+    email: registeredUser.email || "",
+    country: registeredUser.country || "",
+    state: registeredUser.state || "",
+    city: registeredUser.city || "",
+    pincode: registeredUser.pincode || "",
+
+    describes: step1.describes || "",
+    developement_goals: step2.selectedGoals || [],
+    current_research: step3.research || "",
+
+    job_role: jobRoles,
+    company: companies,
+    duration: durations,
+    description: descriptions,
+
+    interest: step5.selectedGoals || [],
+    custom_interests: step5.customGoals?.map((g) => g.title) || [],
+
+    linkedin: formData.linkedin || "",
+    research_gate: formData.research_gate || "",
+    orc_id: formData.orc_id || "",
+    personal_website: formData.personal_website || "",
+
+    date_of_birth: "",
+    short_bio: "",
+  };
+
+
+
 
       let response = await fetch(
         `${API_CONFIG.BASE_URL}/profile/profile-individual`,
@@ -130,17 +161,12 @@ const Step6 = ({ progress, onBack }) => {
       setLoading(false);
     }
   };
+
   const handleSkipAndContinue = () => {
-    // Save current data
-    localStorage.setItem("step6", JSON.stringify(formData));
-    
-    // Set flags
-    localStorage.setItem("profileCompleted", "true");
-    localStorage.setItem("showCompletion", "true");
-    
-    // ✅ FIXED: Navigate WITHOUT clearing data
-    navigate("/complet", { replace: true });
+    handleSubmit();
   };
+
+
 
   // Rest of your JSX remains exactly the same...
   return (

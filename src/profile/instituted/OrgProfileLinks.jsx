@@ -43,6 +43,8 @@ const OrgProfileLinks = ({ progress, onBack }) => {
     );
   };
 
+
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -67,26 +69,23 @@ const OrgProfileLinks = ({ progress, onBack }) => {
         organization_name: step1.organization_name || "",
         organization_type: step1.organization_type || "",
 
-        email: user.email || "",
-        contact_no: user.contact || "",
-        address: user.address || "",
-
-        name: user.name || "",
-        professional_role: user.role || "",
-
         country: step2.country || "",
         state: step2.state || "",
         city: step2.city || "",
 
         research_focus: step3.research_focus || [],
-
         platform: step4.platform || [],
 
-        linkedin: links.linkedin,
-        research_gate: links.researchGate,
-        orc_id: links.orcid,
-        personal_website: links.website,
+        linkedin: links.linkedin || "",
+        research_gate: links.researchGate || "",
+        orc_id: links.orcid || "",
+        personal_website: links.website || "",
       };
+
+      localStorage.setItem("latestInstituteProfile", JSON.stringify(finalData));
+      window.dispatchEvent(new Event("profileUpdated"));
+
+      
 
       const apiUrl = `${API_CONFIG.BASE_URL}/profile/profile-institute`;
 
@@ -136,15 +135,19 @@ const OrgProfileLinks = ({ progress, onBack }) => {
     }
   };
 
-  const handleSkip = () => {
-    localStorage.setItem(
-      "orgStep5",
-      JSON.stringify({
-        submitted: false,
-        links: links,
-      }),
-    );
-    navigate("/profileorg");
+  // const handleSkip = () => {
+  //   localStorage.setItem(
+  //     "orgStep5",
+  //     JSON.stringify({
+  //       submitted: false,
+  //       links: links,
+  //     }),
+  //   );
+  //   navigate("/profileorg");
+  // };
+
+  const handleSkip = (e) => {
+    handleSubmit(e);
   };
 
   return (
@@ -176,7 +179,10 @@ dark:bg-white/10
           </div>
         </div>
 
-        <button
+
+
+
+        {/* <button
           onClick={handleSkip}
 className="
 text-[15px] font-medium transition-colors flex items-center gap-1
@@ -187,7 +193,25 @@ dark:text-white/60 dark:hover:text-white
           <span className="material-symbols-outlined text-sm">
             chevron_right
           </span>
-        </button>
+        </button> */}
+
+<button
+  type="button"
+  onClick={handleSkip}
+  className="
+text-[15px] font-medium transition-colors flex items-center gap-1
+text-gray-500 hover:text-black
+dark:text-white/60 dark:hover:text-white
+"
+>
+  Skip{" "}
+  <span className="material-symbols-outlined text-sm">
+    chevron_right
+  </span>
+</button>
+
+
+
       </header>
       {/* Main Content Area */}
       <main className="w-full max-w-[640px] px-6 flex flex-col gap-10">
