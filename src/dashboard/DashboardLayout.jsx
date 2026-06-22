@@ -349,8 +349,7 @@ const DashboardLayout = ({ children }) => {
       {/* HEADER */}
       <header
         className="
-    px-6 md:px-10 sticky top-0 z-50 border-b backdrop-blur-xl
-
+    px-6 md:px-10 fixed md:sticky top-0 left-0 right-0 z-50 border-b backdrop-blur-xl
     bg-white border-gray-200
     dark:bg-[#13231a] dark:border-[#5bf9aa37]
   "
@@ -675,7 +674,7 @@ dark:bg-[#16291e] dark:border-[#5bf9aa37]
       </header>
 
       {/* RESPONSIVE LAYOUT */}
-      <div className="flex flex-col md:flex-row min-h-[calc(100dvh-90px)]">
+      <div className="flex flex-col md:flex-row min-h-[calc(100dvh-80px)]">
         {" "}
         {/* SIDEBAR */}
         <aside
@@ -896,7 +895,7 @@ dark:bg-[#16291e] dark:border-[#5bf9aa37]
         {/* MAIN CONTENT */}
         <main
           className="
-flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 h-[calc(100dvh-90px)]
+flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 mt-[148px] md:mt-0 h-[calc(100dvh-148px)] md:h-[calc(100dvh-90px)]
 bg-slate-50
 dark:bg-transparent
 "

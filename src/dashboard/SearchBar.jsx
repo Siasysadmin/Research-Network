@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
+import { useNavigate } from "react-router-dom";
 import API_CONFIG from "../config/api.config";
 import avatar from "../assets/images/avatar.jpg";
 import SearchOverlay from "./SearchOverlay";
@@ -21,6 +22,7 @@ const INPUT_CLASS =
   "focus:shadow-[0_0_18px_rgba(0,255,133,0.18)]";
 
 const SearchBar = ({ desktopContainerRef, mobileContainerRef, onUserSelect }) => {
+  const navigate = useNavigate();
   const searchRootRef = useRef(null);
   const mobileRootRef = useRef(null);
   const overlayRootRef = useRef(null);
@@ -188,7 +190,7 @@ const SearchBar = ({ desktopContainerRef, mobileContainerRef, onUserSelect }) =>
         name = u.name || "";
       }
 
-      const email = u.email || "";
+     
       const id = String(u.id || "");
       const registrationId = String(u.registration_id || "");
 
@@ -201,7 +203,7 @@ const SearchBar = ({ desktopContainerRef, mobileContainerRef, onUserSelect }) =>
       // 4. Name, Email, ID, Registration ID ya User Type mein se kuch bhi match ho jaye
       return (
         name.toLowerCase().includes(q) ||
-        email.toLowerCase().includes(q) ||
+       
         id.includes(q) ||
         registrationId.toLowerCase().includes(q) ||
         userType.includes(q)
@@ -217,25 +219,79 @@ const SearchBar = ({ desktopContainerRef, mobileContainerRef, onUserSelect }) =>
         ? u.institute_details?.institute_name || u.name || "Institute"
         : u.name || "User";
 
-    if (onUserSelect) {
-      onUserSelect({
-        id: u.id,
-        name,
-        user_type: u.user_type || "individual",
+    navigate("/user-profile", {
+      state: {
+        user: {
+          id: u.id,
+          user_id: u.id, // safe-side dono keys bhej rahe hain
+          name,
+          user_type: u.user_type || "individual",
+          registration_id: u.registration_id || "",
+          registration_no: u.registration_no || "",
+        }
+      }
+    });
+  };
+
+const handleHashtagClick = (post) => {
+    // 🔍 Sabse pehle check karte hain ki post ke andar author ka naam kis key mein chhupa hai
+    const realAuthorName = 
+      post.author_name || 
+      post.name || 
+      post.user_name || 
+      post.author || 
+      post.username || 
+      "User";
+
+    // Desktop/Mobile input se focus hatane ke liye
+    if (document.activeElement) document.activeElement.blur();
+
+    navigate("/user-activity", {
+      state: {
+        user: { 
+          id: post.user_id, 
+          user_id: post.user_id,
+          name: realAuthorName // Sahi naam ko yahan bhej rahe hain
+        },
+        displayName: realAuthorName, // Direct property bhi bhej rahe hain safe side ke liye
+        targetId: `post-${post.id}`, 
+      }
+    });
+  };
+
+
+const handleResearchClick = (res) => {
+    // 🔍 FIXED: API se 'researche_id' aa raha hai, toh hum dono spellings ko check kar lete hain
+    const actualResearchId = res.research_id || res.researche_id || res.id;
+
+
+    const realAuthorName = 
+      res.name ||
+      res.author_name || 
+      res.user_name || 
+      res.author || 
+      res.username || 
+      "User";
+
+    // Desktop/Mobile input se focus hatane ke liye
+    if (document.activeElement) document.activeElement.blur();
+
+    // Agar ID mil gayi hai tabhi navigate karein
+    if (actualResearchId) {
+      navigate("/user-activity", {
+        state: {
+          user: { 
+            id: res.user_id, 
+            user_id: res.user_id,
+            name: realAuthorName 
+          },
+          displayName: realAuthorName, 
+          targetId: `res-${actualResearchId}`, 
+        }
       });
+    } else {
+      console.error("Research ID nahi mili! Pura object ye raha:", res);
     }
-  };
-
-  const handleHashtagClick = (post) => {
-    alert(`Post Clicked! ID: ${post.id}`);
-    clearSearch();
-  };
-
-  const handleResearchClick = (res) => {
-    if (res.research_file) {
-      window.open(`${API_CONFIG.BASE_URL}/${res.research_file}`, "_blank");
-    }
-    clearSearch();
   };
 
   const clearSearch = () => {

@@ -308,11 +308,11 @@ const Chats = () => {
                   "Unknown Institute"
                 : user.name || "Unknown Individual";
             const finalType =
-  user.user_type === "institute"
-    ? "Research Institute"
-    : user.user_type === "admin"
-      ? "Admin"
-      : "Individual";
+              user.user_type === "institute"
+                ? "Research Institute"
+                : user.user_type === "admin"
+                  ? "Admin"
+                  : "Individual";
             const profileImg =
               user.user_type === "institute"
                 ? user.profile_institute_details?.profile_image
@@ -635,7 +635,9 @@ const Chats = () => {
                 : cleanText;
           }
           const lastTimestamp = latestMsg
-            ? new Date(latestMsg.created_at).getTime()
+            ? new Date(
+                String(latestMsg.created_at).replace(" ", "T"),
+              ).getTime() || 0
             : 0;
 
           if (
@@ -643,7 +645,11 @@ const Chats = () => {
             chat.timestamp !== lastTimestamp
           ) {
             hasUpdates = true;
-            updates[chat.id] = { unreadCount: effectiveUnread, lastMsgText, lastTimestamp };
+            updates[chat.id] = {
+              unreadCount: effectiveUnread,
+              lastMsgText,
+              lastTimestamp,
+            };
           }
         });
 
@@ -1448,161 +1454,173 @@ const Chats = () => {
                           </div>
                         ) : (
                           <>
-                            {activeChatData.messages.map((msg) => (
-                              <div
-                                key={msg.id}
-                                className={`flex ${msg.isMine ? "flex-row-reverse" : ""} items-start gap-3 max-w-[85%] ${msg.isMine ? "ml-auto" : ""}`}
-                              >
+                            {activeChatData.messages.map((msg, _i, _arr) => (
+                              <React.Fragment key={msg.id}>
+                                {(_i === 0 ||
+                                  getDateLabel(_arr[_i - 1].timestamp) !==
+                                    getDateLabel(msg.timestamp)) && (
+                                  <div className="flex justify-center my-2">
+                                    <span className="text-[10px] font-semibold text-slate-500 bg-slate-200/70 dark:bg-white/10 px-2.5 py-1 rounded-full">
+                                      {getDateLabel(msg.timestamp)}
+                                    </span>
+                                  </div>
+                                )}
                                 <div
-                                  className={`space-y-1 ${msg.isMine ? "text-right" : ""} min-w-0`}
+                                  className={`flex ${msg.isMine ? "flex-row-reverse" : ""} items-start gap-3 max-w-[85%] ${msg.isMine ? "ml-auto" : ""}`}
                                 >
                                   <div
-                                    className={`flex items-baseline gap-2 ${msg.isMine ? "justify-end" : ""}`}
+                                    className={`space-y-1 ${msg.isMine ? "text-right" : ""} min-w-0`}
                                   >
-                                    <span
-                                      className={`text-[11px] font-bold uppercase tracking-wider ${msg.isMine ? "text-[#00ff85]" : "text-slate-900 dark:text-white"}`}
+                                    <div
+                                      className={`flex items-baseline gap-2 ${msg.isMine ? "justify-end" : ""}`}
                                     >
-                                      {msg.sender}
-                                    </span>
-                                    <span className="text-[9px] font-mono text-slate-500">
-                                      {msg.time}
-                                    </span>
-                                    {/* FIX 10: Show sending indicator for temp msgs */}
-                                    {String(msg.id).startsWith("temp-") && (
-                                      <span className="text-[9px] font-mono text-slate-400 italic">
-                                        sending...
+                                      <span
+                                        className={`text-[11px] font-bold uppercase tracking-wider ${msg.isMine ? "text-[#00ff85]" : "text-slate-900 dark:text-white"}`}
+                                      >
+                                        {msg.sender}
                                       </span>
-                                    )}
-                                  </div>
-                                  <div
-                                    className={`px-4 py-2.5 lg:py-3 rounded-2xl text-sm leading-relaxed inline-block max-w-full text-left ${
-                                      msg.isMine
-                                        ? "bg-slate-200 dark:bg-[#0d0f0e] text-slate-900 dark:text-white border border-slate-300 dark:border-[#00ff85]/30 rounded-tr-none"
-                                        : "bg-slate-100 dark:bg-[#1e201f] text-slate-800 dark:text-[#e2e3e0] border border-slate-200 dark:border-white/5 rounded-tl-none"
-                                    } ${String(msg.id).startsWith("temp-") ? "opacity-70" : ""}`}
-                                  >
-                                    {msg.localFile &&
-                                      (msg.localFile.type === "image" ||
-                                      msg.localFile.type?.includes("image") ? (
-                                        <img
-                                          src={msg.localFile.url}
-                                          alt="attachment preview"
-                                          className="max-w-full sm:max-w-[250px] rounded-lg mb-2 object-cover border border-white/10"
-                                        />
-                                      ) : (
-                                        <video
-                                          src={msg.localFile.url}
-                                          controls
-                                          className="max-w-full sm:max-w-[250px] rounded-lg mb-2 bg-black border border-white/10"
-                                        />
-                                      ))}
-                                    {msg.file &&
-                                      msg.file.path &&
-                                      (() => {
-                                        const cleanBaseUrl =
-                                          API_CONFIG.BASE_URL.replace(
-                                            /\/$/,
-                                            "",
-                                          );
-                                        const cleanPath = msg.file.path.replace(
-                                          /^\//,
-                                          "",
-                                        );
-                                        const safeUrl =
-                                          msg.file.path.startsWith("http")
-                                            ? msg.file.path
-                                            : `${cleanBaseUrl}/${cleanPath}`;
-                                        const isImg =
-                                          msg.file.type === "image" ||
-                                          msg.file.path.match(
-                                            /\.(jpeg|jpg|gif|png|webp|bmp)$/i,
-                                          );
-                                        const isVid =
-                                          msg.file.type === "video" ||
-                                          msg.file.path.match(
-                                            /\.(mp4|webm|ogg|mov)$/i,
-                                          );
-                                        if (isImg)
+                                      <span className="text-[9px] font-mono text-slate-500">
+                                        {msg.time}
+                                      </span>
+                                      {/* FIX 10: Show sending indicator for temp msgs */}
+                                      {String(msg.id).startsWith("temp-") && (
+                                        <span className="text-[9px] font-mono text-slate-400 italic">
+                                          sending...
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div
+                                      className={`px-4 py-2.5 lg:py-3 rounded-2xl text-sm leading-relaxed inline-block max-w-full text-left ${
+                                        msg.isMine
+                                          ? "bg-slate-200 dark:bg-[#0d0f0e] text-slate-900 dark:text-white border border-slate-300 dark:border-[#00ff85]/30 rounded-tr-none"
+                                          : "bg-slate-100 dark:bg-[#1e201f] text-slate-800 dark:text-[#e2e3e0] border border-slate-200 dark:border-white/5 rounded-tl-none"
+                                      } ${String(msg.id).startsWith("temp-") ? "opacity-70" : ""}`}
+                                    >
+                                      {msg.localFile &&
+                                        (msg.localFile.type === "image" ||
+                                        msg.localFile.type?.includes(
+                                          "image",
+                                        ) ? (
+                                          <img
+                                            src={msg.localFile.url}
+                                            alt="attachment preview"
+                                            className="max-w-full sm:max-w-[250px] rounded-lg mb-2 object-cover border border-white/10"
+                                          />
+                                        ) : (
+                                          <video
+                                            src={msg.localFile.url}
+                                            controls
+                                            className="max-w-full sm:max-w-[250px] rounded-lg mb-2 bg-black border border-white/10"
+                                          />
+                                        ))}
+                                      {msg.file &&
+                                        msg.file.path &&
+                                        (() => {
+                                          const cleanBaseUrl =
+                                            API_CONFIG.BASE_URL.replace(
+                                              /\/$/,
+                                              "",
+                                            );
+                                          const cleanPath =
+                                            msg.file.path.replace(/^\//, "");
+                                          const safeUrl =
+                                            msg.file.path.startsWith("http")
+                                              ? msg.file.path
+                                              : `${cleanBaseUrl}/${cleanPath}`;
+                                          const isImg =
+                                            msg.file.type === "image" ||
+                                            msg.file.path.match(
+                                              /\.(jpeg|jpg|gif|png|webp|bmp)$/i,
+                                            );
+                                          const isVid =
+                                            msg.file.type === "video" ||
+                                            msg.file.path.match(
+                                              /\.(mp4|webm|ogg|mov)$/i,
+                                            );
+                                          if (isImg)
+                                            return (
+                                              <img
+                                                src={safeUrl}
+                                                alt="attachment"
+                                                className="max-w-full sm:max-w-[250px] rounded-lg mb-2 object-cover border border-white/10"
+                                              />
+                                            );
+                                          if (isVid)
+                                            return (
+                                              <video
+                                                src={safeUrl}
+                                                controls
+                                                className="max-w-full sm:max-w-[250px] rounded-lg mb-2 bg-black border border-white/10"
+                                              />
+                                            );
                                           return (
-                                            <img
-                                              src={safeUrl}
-                                              alt="attachment"
-                                              className="max-w-full sm:max-w-[250px] rounded-lg mb-2 object-cover border border-white/10"
-                                            />
+                                            <a
+                                              href={safeUrl}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              className="text-[#00ff85] underline text-xs mb-2 block font-bold"
+                                            >
+                                              📂 View Attachment
+                                            </a>
                                           );
-                                        if (isVid)
-                                          return (
-                                            <video
-                                              src={safeUrl}
-                                              controls
-                                              className="max-w-full sm:max-w-[250px] rounded-lg mb-2 bg-black border border-white/10"
-                                            />
-                                          );
-                                        return (
-                                          <a
-                                            href={safeUrl}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="text-[#00ff85] underline text-xs mb-2 block font-bold"
-                                          >
-                                            📂 View Attachment
-                                          </a>
-                                        );
-                                      })()}
-                                    {msg.text &&
-                                    String(msg.text).includes("POST_SHARE_ID:")
-                                      ? (() => {
-                                          const extractedId =
-                                            String(msg.text).split(
-                                              "POST_SHARE_ID:",
-                                            )[1] || "";
-                                          return (
-                                            <div className="p-3 bg-emerald-50 dark:bg-[#0d0f0e] border border-[#00ff85]/30 rounded-xl min-w-[220px] max-w-xs flex flex-col gap-2 my-1 shadow-md text-left animate-fadeIn">
-                                              <div className="flex items-center gap-2 border-b border-emerald-200 dark:border-white/10 pb-1.5">
-                                                <MaterialIcon
-                                                  name="share"
-                                                  className="text-emerald-500 text-sm"
-                                                  style={{
-                                                    fontVariationSettings:
-                                                      "'FILL' 1",
+                                        })()}
+                                      {msg.text &&
+                                      String(msg.text).includes(
+                                        "POST_SHARE_ID:",
+                                      )
+                                        ? (() => {
+                                            const extractedId =
+                                              String(msg.text).split(
+                                                "POST_SHARE_ID:",
+                                              )[1] || "";
+                                            return (
+                                              <div className="p-3 bg-emerald-50 dark:bg-[#0d0f0e] border border-[#00ff85]/30 rounded-xl min-w-[220px] max-w-xs flex flex-col gap-2 my-1 shadow-md text-left animate-fadeIn">
+                                                <div className="flex items-center gap-2 border-b border-emerald-200 dark:border-white/10 pb-1.5">
+                                                  <MaterialIcon
+                                                    name="share"
+                                                    className="text-emerald-500 text-sm"
+                                                    style={{
+                                                      fontVariationSettings:
+                                                        "'FILL' 1",
+                                                    }}
+                                                  />
+                                                  <span className="text-[11px] font-mono tracking-wider text-[#00ff85] uppercase font-bold">
+                                                    Shared Post
+                                                  </span>
+                                                </div>
+                                                <div className="text-xs text-slate-700 dark:text-slate-300">
+                                                  View shared post
+                                                </div>
+                                                <button
+                                                  onClick={() => {
+                                                    setSelectedPostIdForPopup(
+                                                      extractedId,
+                                                    );
+                                                    setIsPostModalOpen(true);
+                                                    fetchSinglePostDetails(
+                                                      extractedId,
+                                                    );
                                                   }}
-                                                />
-                                                <span className="text-[11px] font-mono tracking-wider text-[#00ff85] uppercase font-bold">
-                                                  Shared Post
-                                                </span>
+                                                  className="w-full mt-1 py-1.5 px-3 bg-[#00ff85] hover:bg-[#00e676] text-[#003919] font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-1"
+                                                >
+                                                  <MaterialIcon
+                                                    name="visibility"
+                                                    className="text-xs"
+                                                  />{" "}
+                                                  View Post
+                                                </button>
                                               </div>
-                                              <div className="text-xs text-slate-700 dark:text-slate-300">
-                                                View shared post
-                                              </div>
-                                              <button
-                                                onClick={() => {
-                                                  setSelectedPostIdForPopup(
-                                                    extractedId,
-                                                  );
-                                                  setIsPostModalOpen(true);
-                                                  fetchSinglePostDetails(
-                                                    extractedId,
-                                                  );
-                                                }}
-                                                className="w-full mt-1 py-1.5 px-3 bg-[#00ff85] hover:bg-[#00e676] text-[#003919] font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-1"
-                                              >
-                                                <MaterialIcon
-                                                  name="visibility"
-                                                  className="text-xs"
-                                                />{" "}
-                                                View Post
-                                              </button>
-                                            </div>
-                                          );
-                                        })()
-                                      : msg.text && (
-                                          <p className="whitespace-pre-wrap break-words">
-                                            {msg.text}
-                                          </p>
-                                        )}
+                                            );
+                                          })()
+                                        : msg.text && (
+                                            <p className="whitespace-pre-wrap break-words">
+                                              {msg.text}
+                                            </p>
+                                          )}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
+                              </React.Fragment>
                             ))}
                             <div ref={messagesEndRef} />
                           </>

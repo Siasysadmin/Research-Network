@@ -68,11 +68,13 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <button
               onClick={toggleTheme}
-              className="px-3 py-1.5 sm:px-4 sm:py-2 border border-[#00FF88] text-[#00FF88] rounded-md hover:bg-[#00FF88] hover:text-black transition text-sm"
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              className="w-10 h-10 flex items-center justify-center border border-[#00FF88] text-[#00FF88] rounded-lg hover:bg-[#00FF88] hover:text-black transition"
             >
-              {isDark ? "Light Mode" : "Dark Mode"}
+              <span className="material-symbols-outlined">
+                {isDark ? "wb_sunny" : "dark_mode"}
+              </span>
             </button>
-
             <button
               onClick={() => navigate("/login")}
               className="px-3 py-1.5 sm:px-5 sm:py-2 border border-[#00FF88] text-[#00FF88] rounded-md font-semibold hover:bg-[#00FF88] hover:text-black transition text-sm sm:text-base"

@@ -9,7 +9,6 @@
   body {
     @apply bg-white text-slate-900 dark:bg-black dark:text-white;
     font-family: Inter, sans-serif;
-    
   }
 }
 
@@ -194,12 +193,12 @@
 }
 
 input:-webkit-autofill,
-input:-webkit-autofill:hover, 
-input:-webkit-autofill:focus, 
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 30px #000000 inset !important; /* Aapka slate-900 background color */
-    -webkit-text-fill-color: white !important; /* Text color white rakhne ke liye */
-    transition: background-color 5000s ease-in-out 0s;
+  -webkit-box-shadow: 0 0 0 30px #000000 inset !important; /* Aapka slate-900 background color */
+  -webkit-text-fill-color: white !important; /* Text color white rakhne ke liye */
+  transition: background-color 5000s ease-in-out 0s;
 }
 /* ===== LIGHT MODE ===== */
 html:not(.dark) input:-webkit-autofill {
@@ -280,7 +279,6 @@ textarea:-webkit-autofill {
   -webkit-text-fill-color: white !important;
   transition: background-color 5000s ease-in-out 0s;
 }
-
 
 .Toastify__toast {
   background: white !important;

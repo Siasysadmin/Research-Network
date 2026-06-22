@@ -119,8 +119,8 @@ const SearchOverlay = React.forwardRef(
               )}
 
               {/* Accounts */}
-              {searchQuery.trim() && hasResults && (activeTab === "all" || activeTab === "accounts") && (
-                <section>
+
+{searchQuery.trim() && (userResults.length > 0 || activeTab === "accounts") && (activeTab === "all" || activeTab === "accounts") && (               <section>
                   <h3 className="text-xs font-semibold text-[#3b4b3d] dark:text-[#b9cbb9] uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <MaterialIcon name="group" className="text-[16px]" />
                     Researchers
@@ -174,97 +174,163 @@ const SearchOverlay = React.forwardRef(
                 </section>
               )}
 
-              {/* Research */}
-              {searchQuery.trim() && hasResults && (activeTab === "all" || activeTab === "research") && (
-                <section>
-                  <h3 className="text-xs font-semibold text-[#3b4b3d] dark:text-[#b9cbb9] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <MaterialIcon name="description" className="text-[16px]" />
-                    Research Documents
-                  </h3>
-                  <div className="space-y-2">
-                    {activeTab === "research" && researchResults.length === 0 && searchQuery && (
-                      <div className="text-sm text-center py-6 text-[#3b4b3d] dark:text-[#b9cbb9]">
-                        No research documents found
-                      </div>
-                    )}
+         {/* ✅ UPDATED PREMIUM BOX LAYOUT (No Green Hover on Name/Title) */}
 
-                    {researchResults.map((res) => (
-                      <div
-                        key={res.researche_id}
-                        onMouseDown={() => handleResearchClick(res)}
-                        className="p-2 hover:bg-[#f2f4f6] dark:hover:bg-white/5 rounded-lg cursor-pointer transition-colors border-l-2 border-transparent hover:border-[#006d35] dark:hover:border-[#00ff85]"
-                      >
-                        <div className="text-sm font-medium text-[#191c1e] dark:text-[#e2e3e0] mb-1 flex items-center gap-2">
-                          <MaterialIcon
-                            name="picture_as_pdf"
-                            className="text-[18px] text-[#505f76] dark:text-[#7c8b81]"
-                          />
-                          <span className="truncate">{res.research_title}</span>
-                        </div>
-                        <div className="text-xs text-[#3b4b3d] dark:text-[#b9cbb9]">By {res.name}</div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
+{searchQuery.trim() && (researchResults.length > 0 || activeTab === "research") && (activeTab === "all" || activeTab === "research") && (
+    <section className="mb-5">
+    <h3 className="text-xs font-semibold text-[#3b4b3d] dark:text-[#b9cbb9] uppercase tracking-wider mb-2 flex items-center gap-1.5 px-1">
+      <MaterialIcon name="description" className="text-[16px]" />
+      Research Documents
+    </h3>
+    
+    <div className="grid grid-cols-1 gap-3">
+      {activeTab === "research" && researchResults.length === 0 && searchQuery && (
+        <div className="text-sm text-center py-6 text-[#3b4b3d] dark:text-[#b9cbb9] bg-white dark:bg-[#0d100e] border border-gray-100 dark:border-[#1f2621] rounded-xl">
+          No research documents found
+        </div>
+      )}
 
-              {/* Posts */}
-              {searchQuery.trim() && hasResults && (activeTab === "all" || activeTab === "posts") && (
-                <section>
-                  <h3 className="text-xs font-semibold text-[#3b4b3d] dark:text-[#b9cbb9] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <MaterialIcon name="forum" className="text-[16px]" />
-                    Network Posts
-                  </h3>
-                  <div className="space-y-4">
-                    {activeTab === "posts" && hashtagResults.length === 0 && searchQuery && (
-                      <div className="text-sm text-center py-6 text-[#3b4b3d] dark:text-[#b9cbb9]">
-                        No posts found
-                      </div>
-                    )}
+      {researchResults.map((res) => {
+        // Safe check for fields, spellings and IDs
+        const actualId = res.research_id || res.researche_id || res.id;
+        const authorName = res.name || res.author_name || res.user_name || "User";
+        
+        // Setup user avatar profile image safely
+        const avatarSrc = res.profile_image 
+          ? (res.profile_image.startsWith("http") ? res.profile_image : `${API_CONFIG?.BASE_URL || ""}/${res.profile_image}`)
+          : avatar;
 
-                    {hashtagResults.map((post) => {
-                      const name =
-                        post.user_type === "institute"
-                          ? post.institute_details?.institute_name || post.name || "Institute"
-                          : post.name || "User";
+        return (
+          <div
+            key={actualId}
+            onMouseDown={() => handleResearchClick(res)}
+            // 👇 Card ka border aur shadow hover par subtle change hota rahega
+            className="p-3.5 bg-white dark:bg-[#0d100e] border border-gray-100 dark:border-[#1f2621] hover:border-emerald-500/40 dark:hover:border-[#00ff85]/40 rounded-xl cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md flex flex-col gap-2.5 group"
+          >
+            {/* 1. User Header: Avatar aur Name (Hover par color change NO) */}
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-white/5 shrink-0">
+                <img 
+                  src={avatarSrc} 
+                  alt={authorName} 
+                  className="w-full h-full object-cover"
+                  onError={(e) => { e.target.src = avatar; }} 
+                />
+              </div>
+              {/* ✅ FIXED: Yahan se group-hover:text-emerald-600/dark:group-hover:text-[#00ff85] hata di hai */}
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors capitalize">
+                {authorName}
+              </span>
+              <span className="text-[10px] text-slate-400 dark:text-[#5f6f65] ml-auto flex items-center gap-1">
+                <MaterialIcon name="picture_as_pdf" className="text-[12px] text-red-500" />
+                Research
+              </span>
+            </div>
 
-                      return (
-                        <div
-                          key={post.id}
-                          onMouseDown={() => handleHashtagClick(post)}
-                          className="p-4 bg-white dark:bg-[#0b110e] border border-[#e0e3e5] dark:border-[#1f2a24] rounded-lg transition-all hover:shadow-sm cursor-pointer"
-                        >
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-6 h-6 rounded-full bg-[#dae2fd] dark:bg-[#007037] flex items-center justify-center text-[10px] font-bold">
-                              {name?.charAt(0)}
-                            </div>
-                            <span className="text-xs font-semibold text-[#191c1e] dark:text-[#e2e3e0]">
-                              {name}
-                            </span>
-                          </div>
+            {/* 2. Research Title Block: Title (Hover par color change NO) */}
+            {/* ✅ FIXED: Yahan se bhi group-hover:text-emerald-600/dark:group-hover:text-[#00ff85] hata di hai */}
+            <div className="text-sm font-semibold text-[#191c1e] dark:text-[#e2e3e0] leading-snug line-clamp-2 pl-0.5 transition-colors">
+              {res.research_title}
+            </div>
 
-                          <p className="text-sm text-[#191c1e] dark:text-[#e2e3e0] leading-relaxed mb-2 line-clamp-3">
-                            {post.post_text}
-                          </p>
+            {/* 3. Keywords / Tags Grid: Inka soft green highlight bana rahega */}
+            {res.keywords && (Array.isArray(res.keywords) ? res.keywords : typeof res.keywords === 'string' ? JSON.parse(res.keywords || "[]") : []).length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-0.5">
+                {(Array.isArray(res.keywords) ? res.keywords : JSON.parse(res.keywords || "[]")).map((tag, idx) => (
+                  <span
+                    key={idx}
+                    // Yahan ye bright aura bana rahega taki interaction responsive lage
+                    className="text-[10px] font-medium text-emerald-700 dark:text-[#00ff85] bg-emerald-50 dark:bg-[#00ff85]/10 px-2 py-0.5 rounded-md border border-emerald-100/50 dark:border-[#00ff85]/5"
+                  >
+                    {tag.startsWith("#") ? tag : `#${tag}`}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  </section>
+)}
 
-                          {Array.isArray(post.hash_tag) && post.hash_tag.length > 0 && (
-                            <div className="flex flex-wrap gap-2">
-                              {post.hash_tag.map((tag, idx) => (
-                                <span
-                                  key={idx}
-                                  className="text-[11px] text-[#006d35] dark:text-[#00ff85] bg-[#00ff85]/15 px-2 py-0.5 rounded-full"
-                                >
-                                  {tag.startsWith("#") ? tag : `#${tag}`}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </section>
-              )}
+            {/* ✅ UPDATED NETWORK POSTS LAYOUT (Same Avatar & No Green Hover on Text) */}
+
+{searchQuery.trim() && (hashtagResults.length > 0 || activeTab === "posts") && (activeTab === "all" || activeTab === "posts") && (
+    <section className="mb-5">
+    <h3 className="text-xs font-semibold text-[#3b4b3d] dark:text-[#b9cbb9] uppercase tracking-wider mb-2 flex items-center gap-1.5 px-1">
+      <MaterialIcon name="forum" className="text-[16px]" />
+      Network Posts
+    </h3>
+    <div className="grid grid-cols-1 gap-3">
+      {activeTab === "posts" && hashtagResults.length === 0 && searchQuery && (
+        <div className="text-sm text-center py-6 text-[#3b4b3d] dark:text-[#b9cbb9] bg-white dark:bg-[#0d100e] border border-gray-100 dark:border-[#1f2621] rounded-xl">
+          No posts found
+        </div>
+      )}
+
+      {hashtagResults.map((post) => {
+        const name =
+          post.user_type === "institute"
+            ? post.institute_details?.institute_name || post.name || "Institute"
+            : post.name || "User";
+
+        // Setup user avatar profile image safely (Same as Research card layout)
+        const avatarSrc = post.profile_image 
+          ? (post.profile_image.startsWith("http") ? post.profile_image : `${API_CONFIG?.BASE_URL || ""}/${post.profile_image}`)
+          : avatar;
+
+        return (
+          <div
+            key={post.id}
+            onMouseDown={() => handleHashtagClick(post)}
+            // 👇 Same premium box hover effect as Research card
+            className="p-3.5 bg-white dark:bg-[#0d100e] border border-gray-100 dark:border-[#1f2621] hover:border-emerald-500/40 dark:hover:border-[#00ff85]/40 rounded-xl cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md flex flex-col gap-2.5 group"
+          >
+            {/* 1. User Header: Circle letter hata kar exact Avatar Image lagayi hai */}
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-white/5 shrink-0">
+                <img 
+                  src={avatarSrc} 
+                  alt={name} 
+                  className="w-full h-full object-cover"
+                  onError={(e) => { e.target.src = avatar; }} 
+                />
+              </div>
+              {/* Text color rigid rakha hai (Hover par change nahi hoga) */}
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors capitalize">
+                {name}
+              </span>
+              <span className="text-[10px] text-slate-400 dark:text-[#5f6f65] ml-auto flex items-center gap-1">
+                <MaterialIcon name="forum" className="text-[12px] text-emerald-600 dark:text-[#00ff85]" />
+                Post
+              </span>
+            </div>
+
+            {/* 2. Post Text Block (Hover par text color green nahi hoga) */}
+            <p className="text-sm text-[#191c1e] dark:text-[#e2e3e0] leading-relaxed line-clamp-3 pl-0.5 transition-colors">
+              {post.post_text}
+            </p>
+
+            {/* 3. Hash Tags Grid */}
+            {Array.isArray(post.hash_tag) && post.hash_tag.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-0.5">
+                {post.hash_tag.map((tag, idx) => (
+                  <span
+                    key={idx}
+                    className="text-[10px] font-medium text-emerald-700 dark:text-[#00ff85] bg-emerald-50 dark:bg-[#00ff85]/10 px-2 py-0.5 rounded-md border border-emerald-100/50 dark:border-[#00ff85]/5"
+                  >
+                    {tag.startsWith("#") ? tag : `#${tag}`}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  </section>
+)}
             </div>
 
             {/* Footer */}

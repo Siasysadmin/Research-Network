@@ -221,8 +221,9 @@ const InstituteProfile = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-[#0df287] text-lg font-bold">
+        <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+          <div className="w-12 h-12 rounded-full border-[3px] border-[#0df287]/20 border-t-[#0df287] animate-spin" />
+          <div className="text-[#0df287] text-base font-medium tracking-wide">
             Loading Profile...
           </div>
         </div>
@@ -233,11 +234,14 @@ const InstituteProfile = () => {
   if (error) {
     return (
       <DashboardLayout>
-        <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-          <div className="text-red-500 text-xl font-bold">⚠️ {error}</div>
+        <div className="flex flex-col items-center justify-center min-h-screen gap-5 px-4 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center">
+            <MaterialIcon name="error" className="text-red-500 text-3xl" />
+          </div>
+          <div className="text-red-500 text-xl font-semibold">{error}</div>
           <button
             onClick={fetchProfileData}
-            className="px-6 py-2 bg-[#0df287] text-black rounded-lg font-bold text-sm hover:bg-[#0df287]/90 transition-all"
+            className="px-6 py-3 bg-[#0df287] text-black font-bold rounded-xl shadow-lg shadow-[#0df287]/25 hover:bg-[#0df287]/90 hover:-translate-y-0.5 active:translate-y-0 transition-all"
           >
             Try Again
           </button>
@@ -248,280 +252,263 @@ const InstituteProfile = () => {
 
   return (
     <DashboardLayout>
-      <div className="mx-auto px-4 py-10 pb-12 flex-1 max-w-7xl">
-        <section className="mb-12">
-          <div className="flex flex-col md:flex-row items-center gap-8 bg-white dark:bg-[#0a0a0a]/50 p-8 rounded-2xl border border-slate-200 dark:border-[#1a1a1a]">
-            <div className="relative">
-              <div className="w-32 h-32 rounded-full ring-4 ring-[#0df287]/20 p-1 overflow-hidden bg-slate-100 dark:bg-black/40 flex items-center justify-center">
-                <img
-                  src={profileImage || profileData?.profile_image || avatar}
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = aatar;
-                  }}
-                  className="w-full h-full object-cover rounded-full"
-                  alt="institute profile"
-                />
+      <div
+        className="mx-auto px-4 sm:px-6 py-8 sm:py-10 pb-16 flex-1 max-w-6xl
+bg-white text-slate-800
+dark:bg-[#0a0a0a] dark:text-white"
+      >
+        {/* ===================== PROFILE HEADER ===================== */}
+        <section className="mb-8">
+          <div
+            className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm
+dark:bg-[#0d0d0d] dark:border-[#1a1a1a] dark:shadow-2xl"
+          >
+            {/* Banner accent */}
+            <div className="h-28 sm:h-32 w-full bg-gradient-to-r from-[#0df287]/20 via-emerald-400/10 to-transparent dark:from-[#0df287]/15 dark:via-emerald-500/5 dark:to-transparent" />
+
+            <div className="px-6 sm:px-8 pb-7">
+              <div className="flex flex-col lg:flex-row lg:items-end gap-6">
+                {/* Avatar (overlaps banner) */}
+                <div className="relative -mt-16 sm:-mt-20 shrink-0 self-center lg:self-auto">
+                  <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full ring-4 ring-white dark:ring-[#0d0d0d] bg-white dark:bg-[#0d0d0d] shadow-xl overflow-hidden">
+                    <img
+                      src={profileImage || profileData?.profile_image || avatar}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = avatar;
+                      }}
+                      className="w-full h-full object-cover rounded-full"
+                      alt="institute profile"
+                    />
+                  </div>
+                  <span className="absolute bottom-2 right-2 w-5 h-5 rounded-full bg-[#0df287] border-4 border-white dark:border-[#0d0d0d]" />
+                </div>
+
+                {/* Identity */}
+                <div className="flex-1 min-w-0 text-center lg:text-left">
+                  <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white capitalize">
+                    {profileData.organization_name || "Institute Name"}
+                  </h1>
+
+                  <div className="mt-2 flex flex-wrap items-center justify-center lg:justify-start gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0df287]/10 text-[#0aa866] dark:text-[#0df287] border border-[#0df287]/30 px-3 py-1 text-xs font-semibold capitalize">
+                      <MaterialIcon name="domain" className="text-sm" />
+                      {profileData.organization_type || "Institute Type"}
+                    </span>
+                  </div>
+
+                  <div className="mt-2 flex items-center justify-center lg:justify-start gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+                    <MaterialIcon name="badge" className="text-base" />
+                    <span>
+                      Registration ID:{" "}
+                      <span className="font-semibold text-slate-700 dark:text-slate-200">
+                        {profileData.registration_id || "N/A"}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Stat + Actions */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+                  {/* Clickable connections stat (opens same modal) */}
+                  <button
+                    onClick={() => setShowConnectionsModal(true)}
+                    className="group flex h-14 min-w-[180px] items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-5 text-left transition-all hover:border-[#0df287]/50 hover:bg-[#0df287]/5 dark:bg-white/5 dark:border-[#1f1f1f] dark:hover:bg-[#0df287]/10"
+                  >
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0df287]/15 text-[#0aa866] dark:text-[#0df287]">
+                      <MaterialIcon name="group" />
+                    </span>
+                    <span className="flex items-center gap-1.5 text-sm font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                      <span className="text-base font-black">
+                        {connectionCount}
+                      </span>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        Connections
+                      </span>
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => navigate("/dashboard/institute-edit-profile")}
+                    className="flex h-14 min-w-[180px] items-center justify-center gap-2 rounded-2xl bg-[#0df287] px-6 text-black font-extrabold text-sm shadow-lg shadow-[#0df287]/20 hover:bg-[#0df287]/90 hover:-translate-y-0.5 active:translate-y-0 transition-all"
+                  >
+                    <MaterialIcon name="edit" className="text-lg" />
+                    Edit Profile
+                  </button>
+                </div>
               </div>
-            </div>
-            <div className="flex-1 text-center md:text-left">
-              <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-1">
-                <span>Institute Name </span>
-                <span className="text-slate-600">:</span>
-                <span>
-                  {" "}
-                  {profileData.organization_name || "Institute Name"}
-                </span>
-              </h1>
-              <p className="text-[#0df287] font-medium flex items-center justify-center md:justify-start gap-2">
-                <span>Institute Type</span>
-                <span className="text-slate-600">:</span>
-                <span>{profileData.organization_type || "Institute Type"}</span>
-              </p>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                Registration ID: {profileData.registration_id || "N/A"}
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
-              {" "}
-              <button
-                onClick={() => setShowConnectionsModal(true)}
-                className="px-4 py-2 border border-[#0df287]/50 text-[#0df287] bg-[#0df287]/10 hover:bg-[#0df287]/20 transition-all rounded-full font-medium text-xs sm:text-sm"
-              >
-                View Connections
-              </button>
-              <button
-                onClick={() => navigate("/dashboard/institute-edit-profile")}
-                className="flex items-center justify-center gap-2 px-6 py-2.5 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 hover:border-slate-400 dark:hover:border-slate-500 transition-all rounded-lg font-bold text-sm"
-              >
-                <MaterialIcon name="edit" className="text-lg" />
-                Edit Profile
-              </button>
             </div>
           </div>
         </section>
 
-        <div className="flex flex-col gap-6">
-          <details
-            className="group bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#1a1a1a] rounded-2xl overflow-hidden shadow-sm dark:shadow-2xl"
-            open
+        {/* ===================== SECTIONS ===================== */}
+        <div className="flex flex-col gap-5">
+          {/* INSTITUTE DETAILS */}
+          <Section
+            icon="domain"
+            title="Institute Details"
+            subtitle="Organization overview and focus"
+            defaultOpen
           >
-            <summary className="px-8 py-6 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 transition-colors flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a1a]">
-              <div className="flex items-center gap-3">
-                <MaterialIcon name="domain" className="text-[#0df287]" />
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                  Institute Details
-                </h2>
-              </div>
-              <MaterialIcon
-                name="expand_more"
-                className="text-slate-400 group-open:rotate-180 transition-transform"
+            {/* Detail tiles */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <InfoTile
+                icon="calendar_month"
+                label="Establishment Year"
+                value={profileData.establishment_year || "N/A"}
               />
-            </summary>
+              <InfoTile
+                icon="public"
+                label="Country"
+                value={profileData.country || "N/A"}
+                valueClass="uppercase"
+              />
+              <InfoTile
+                icon="map"
+                label="State"
+                value={profileData.state || "N/A"}
+                valueClass="uppercase"
+              />
+              <InfoTile
+                icon="location_city"
+                label="City"
+                value={profileData.city || "N/A"}
+                valueClass="capitalize"
+              />
+              <InfoTile
+                icon="location_on"
+                label="Address"
+                value={profileData.address || "N/A"}
+                valueClass="capitalize"
+              />
+            </div>
 
-            <div className="p-8 space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    Establishment Year
-                  </label>
-                  <p className="text-lg text-slate-900 dark:text-white font-medium">
-                    {profileData.establishment_year || "N/A"}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    Address
-                  </label>
-                  <p className="text-lg text-slate-900 dark:text-white font-medium capitalize">
-                    {profileData.address || "N/A"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    Country
-                  </label>
-                  <p className="text-lg text-slate-900 dark:text-white font-medium uppercase">
-                    {profileData.country || "N/A"}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    State
-                  </label>
-                  <p className="text-lg text-slate-900 dark:text-white font-medium uppercase">
-                    {profileData.state || "N/A"}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    City
-                  </label>
-                  <p className="text-lg text-slate-900 dark:text-white font-medium capitalize">
-                    {profileData.city || "N/A"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            {/* Institute Description */}
+            <div className="mt-5 relative overflow-hidden rounded-2xl border border-slate-200/70 bg-slate-50/60 p-5 dark:border-[#1a1a1a] dark:bg-white/[0.02]">
+              <span className="absolute left-0 top-0 h-full w-1 bg-[#0df287]/50" />
+              <div className="flex items-center gap-2 mb-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0df287]/10 text-[#0aa866] dark:text-[#0df287]">
+                  <MaterialIcon name="description" className="text-lg" />
+                </span>
+                <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
                   Institute Description
                 </label>
-                <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                  {profileData.institute_description ||
-                    "No description provided"}
-                </p>
               </div>
+              <p className="leading-relaxed text-slate-700 dark:text-slate-300">
+                {profileData.institute_description || "No description provided"}
+              </p>
+            </div>
 
-              <div className="space-y-3">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Focus Area
-                </label>
-                <div className="flex flex-wrap gap-2">
+            {/* Focus Area + Platform Goals */}
+            <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+<Panel icon="track_changes" title={<span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Focus Area</span>}>                <div className="flex flex-wrap gap-2">
                   {profileData.research_focus.length > 0 ? (
                     profileData.research_focus.map((tag, idx) => (
                       <span
                         key={idx}
-                        className="bg-[#0df287]/10 text-[#0df287] border border-[#0df287]/20 px-3 py-1 rounded-full text-xs font-bold uppercase"
+                        className="bg-[#0df287]/10 text-[#0aa866] dark:text-[#0df287] border border-[#0df287]/20 px-3 py-1.5 rounded-full text-xs font-semibold"
                       >
                         {tag}
                       </span>
                     ))
                   ) : (
-                    <span className="text-slate-500 dark:text-slate-400 text-sm">
+                    <p className="text-slate-400 dark:text-slate-500 text-sm">
                       No focus areas added
-                    </span>
+                    </p>
                   )}
                 </div>
-              </div>
+              </Panel>
 
-              <div className="space-y-3 pt-4 border-t border-[#1a1a1a]">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  What would you like to achieve in this platform
-                </label>
+              <Panel
+  icon="rocket_launch"
+  title={<span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-tight">What would you like to achieve in this platform</span>}
+>
                 <div className="flex flex-wrap gap-2">
                   {profileData.platform.length > 0 ? (
                     profileData.platform.map((tag, idx) => (
                       <span
                         key={idx}
-                        className="bg-[#0df287]/10 text-[#0df287] border border-[#0df287]/20 px-3 py-1 rounded-full text-xs font-bold uppercase"
+                        className="bg-[#0df287]/10 text-[#0aa866] dark:text-[#0df287] border border-[#0df287]/20 px-3 py-1.5 rounded-full text-xs font-semibold"
                       >
                         {tag}
                       </span>
                     ))
                   ) : (
-                    <span className="text-slate-500 dark:text-slate-400 text-sm">
+                    <p className="text-slate-400 dark:text-slate-500 text-sm">
                       No platform goals added
-                    </span>
+                    </p>
                   )}
                 </div>
-              </div>
+              </Panel>
             </div>
-          </details>
+          </Section>
 
-          <details className="group bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#1a1a1a] rounded-2xl overflow-hidden shadow-sm dark:shadow-2xl">
-            <summary className="px-8 py-6 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 transition-colors flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a1a]">
-              <div className="flex items-center gap-3">
-                <MaterialIcon
-                  name="admin_panel_settings"
-                  className="text-[#0df287]"
-                />
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                  Administrator Information
-                </h2>
-              </div>
-              <MaterialIcon
-                name="expand_more"
-                className="text-slate-400 group-open:rotate-180 transition-transform"
+          {/* ADMINISTRATOR INFORMATION */}
+          <Section
+            icon="admin_panel_settings"
+            title="Administrator Information"
+            subtitle="Primary point of contact"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <InfoTile
+                icon="account_circle"
+                label="Administrator Name"
+                value={profileData.name || "N/A"}
+                valueClass="capitalize"
               />
-            </summary>
-            <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Administrator Name
-                </label>
-                <p className="text-lg text-slate-900 dark:text-white font-medium capitalize">
-                 
-                  {profileData.name || "N/A"}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Role
-                </label>
-                <p className="text-lg text-slate-900 dark:text-white font-medium capitalize">
-                  {profileData.professional_role || "N/A"}
-                </p>
-              </div>
-            </div>
-          </details>
-
-          <details className="group bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#1a1a1a] rounded-2xl overflow-hidden shadow-sm dark:shadow-2xl">
-            <summary className="px-8 py-6 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 transition-colors flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a1a]">
-              <div className="flex items-center gap-3">
-                <MaterialIcon
-                  name="contact_support"
-                  className="text-[#0df287]"
-                />
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                  Contact & Social
-                </h2>
-              </div>
-              <MaterialIcon
-                name="expand_more"
-                className="text-slate-400 group-open:rotate-180 transition-transform"
+              <InfoTile
+                icon="work"
+                label="Role"
+                value={profileData.professional_role || "N/A"}
+                valueClass="capitalize"
               />
-            </summary>
-            <div className="p-8 space-y-8">
-              <div className="flex flex-col gap-6 max-w-2xl">
-                <ContactItem
-                  label="Institute Email"
-                  value={profileData.email}
-                  icon="mail"
-                />
-
-                <ContactItem
-                  label="Contact Number"
-                  value={profileData.contact_no || "Not provided"}
-                  icon="call"
-                />
-              </div>
-
-              <div className="space-y-6 border-t border-slate-200 dark:border-[#1a1a1a]/50 flex flex-col gap-2">
-                <div className="flex flex-col gap-6 max-w-2xl pt-4">
-                  <ContactItem
-                    label="Institute Website"
-                    value={profileData.personal_website}
-                    icon="language"
-                    isLink
-                  />
-                  <ContactItem
-                    label="LinkedIn Page"
-                    value={profileData.linkedin}
-                    icon="share"
-                    isLink
-                  />
-                  <ContactItem
-                    label="ResearchGate ID"
-                    value={profileData.research_gate}
-                    icon="groups"
-                    isLink
-                  />
-                  <ContactItem
-                    label="ORCID ID"
-                    value={profileData.orc_id}
-                    icon="fingerprint"
-                    isLink
-                  />
-                </div>
-              </div>
             </div>
-          </details>
+          </Section>
+
+          {/* CONTACT */}
+          <Section
+            icon="contact_support"
+            title="Contact & Social"
+            subtitle="Ways to reach and connect"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <ContactItem
+                label="Institute Email"
+                value={profileData.email}
+                icon="mail"
+              />
+              <ContactItem
+                label="Contact Number"
+                value={profileData.contact_no || "Not provided"}
+                icon="call"
+              />
+              <ContactItem
+                label="Institute Website"
+                value={profileData.personal_website}
+                icon="language"
+                isLink
+              />
+              <ContactItem
+                label="LinkedIn Page"
+                value={profileData.linkedin}
+                icon="share"
+                isLink
+              />
+              <ContactItem
+                label="ResearchGate ID"
+                value={profileData.research_gate}
+                icon="groups"
+              />
+              <ContactItem
+                label="ORCID ID"
+                value={profileData.orc_id}
+                icon="fingerprint"
+              />
+            </div>
+          </Section>
         </div>
       </div>
+
       <style jsx global>{`
         /* Chrome, Safari aur Opera ke liye */
         ::-webkit-scrollbar {
@@ -539,132 +526,209 @@ const InstituteProfile = () => {
         * {
           -ms-overflow-style: none;
         }
+
+        /* Native <details> marker hide (Safari/Chrome) */
+        summary::-webkit-details-marker {
+          display: none;
+        }
       `}</style>
- {showConnectionsModal && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
-    
-    <div className="w-full max-w-md max-h-[80vh] overflow-hidden rounded-3xl
+
+      {showConnectionsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
+          <div
+            className="w-full max-w-md max-h-[80vh] overflow-hidden rounded-3xl
       bg-white dark:bg-[#050505]
       border border-slate-200 dark:border-[#1f1f1f]
-      shadow-2xl flex flex-col">
+      shadow-2xl flex flex-col"
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-[#1f1f1f]">
+              <h3 className="flex items-center gap-2 text-xl font-bold text-slate-900 dark:text-white">
+                <MaterialIcon
+                  name="group"
+                  className="text-[#00b86b] dark:text-[#00ff88]"
+                />
+                Connections :
+                <span className="text-[#00b86b] dark:text-[#00ff88]">
+                  {connectionCount}
+                </span>
+              </h3>
 
-      <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-[#1f1f1f]">
-        
-        <h3 className="flex items-center gap-2 text-xl font-bold text-slate-900 dark:text-white">
-          <MaterialIcon
-            name="group"
-            className="text-[#00b86b] dark:text-[#00ff88]"
-          />
-
-          Connections :
-
-          <span className="text-[#00b86b] dark:text-[#00ff88]">
-            {connectionCount}
-          </span>
-        </h3>
-
-        <button
-          onClick={() => setShowConnectionsModal(false)}
-          className="w-9 h-9 rounded-full flex items-center justify-center
+              <button
+                onClick={() => setShowConnectionsModal(false)}
+                className="w-9 h-9 rounded-full flex items-center justify-center
           text-slate-500 dark:text-slate-300
           hover:bg-slate-100 dark:hover:bg-[#111]
           hover:text-red-500 transition-all"
-        >
-          <MaterialIcon name="close" />
-        </button>
-      </div>
+              >
+                <MaterialIcon name="close" />
+              </button>
+            </div>
 
-      <div className="overflow-y-auto p-4 space-y-3 flex-1">
-        {connectedUsersList.length > 0 ? (
-          connectedUsersList.map((connUser) => (
-            <div
-              key={connUser.id}
-              className="group flex items-center gap-4 p-4 rounded-2xl
+            <div className="overflow-y-auto p-4 space-y-3 flex-1">
+              {connectedUsersList.length > 0 ? (
+                connectedUsersList.map((connUser) => (
+                  <div
+                    key={connUser.id}
+                    className="group flex items-center gap-4 p-4 rounded-2xl
               bg-slate-50 dark:bg-[#0b0b0b]
               border border-slate-200 dark:border-[#202020]
               hover:bg-white dark:hover:bg-[#111]
               hover:border-[#00ff88]/40
               transition-all duration-300"
-            >
-              <img
-                src={getFullImageUrl(connUser.profile_image) || avatar}
-                alt={connUser.name}
-                className="w-14 h-14 rounded-full object-cover
+                  >
+                    <img
+                      src={getFullImageUrl(connUser.profile_image) || avatar}
+                      alt={connUser.name}
+                      className="w-14 h-14 rounded-full object-cover
                 border-2 border-slate-300 dark:border-[#2a2a2a]
                 group-hover:border-[#00ff88]/60
                 transition-all"
-                onError={(e) => {
-                  e.target.src = avatar;
-                }}
-              />
+                      onError={(e) => {
+                        e.target.src = avatar;
+                      }}
+                    />
 
-              <div className="flex-1 min-w-0">
-                <h4 className="text-[15px] font-semibold text-slate-900 dark:text-white truncate">
-                  {connUser.user_type === "institute"
-                    ? connUser.institute_name || connUser.name
-                    : connUser.name}
-                </h4>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-[15px] font-semibold text-slate-900 dark:text-white truncate">
+                        {connUser.user_type === "institute"
+                          ? connUser.institute_name || connUser.name
+                          : connUser.name}
+                      </h4>
 
-                <p className="text-sm text-[#00b86b] dark:text-[#00ff88] capitalize truncate">
-                  {connUser.user_type} Researcher
-                </p>
-              </div>
+                      <p className="text-sm text-[#00b86b] dark:text-[#00ff88] capitalize truncate">
+                        {connUser.user_type} Researcher
+                      </p>
+                    </div>
 
-              <button
-                onClick={() => disconnectUser(connUser.id)}
-                className="w-10 h-10 rounded-full flex items-center justify-center
+                    <button
+                      onClick={() => disconnectUser(connUser.id)}
+                      className="w-10 h-10 rounded-full flex items-center justify-center
                 text-slate-500 dark:text-slate-300
                 hover:bg-red-500/10 hover:text-red-500
                 transition-all"
-              >
-                <MaterialIcon
-                  name="person_remove"
-                  className="text-[22px]"
-                />
-              </button>
+                    >
+                      <MaterialIcon
+                        name="person_remove"
+                        className="text-[22px]"
+                      />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="py-10 text-center text-slate-500 dark:text-slate-400">
+                  No connections found.
+                </div>
+              )}
             </div>
-          ))
-        ) : (
-          <div className="py-10 text-center text-slate-500 dark:text-slate-400">
-            No connections found.
           </div>
-        )}
-      </div>
-    </div>
-  </div>
-)}
+        </div>
+      )}
     </DashboardLayout>
   );
 };
 
-const ContactItem = ({ label, value, icon, isLink }) => (
-  <div className="flex flex-col gap-2 w-full max-w-2xl">
-    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">
-      {label}
-    </label>
+/* ===================== Presentational helpers ===================== */
 
-    <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-[#050505] border border-slate-200 dark:border-[#1a1a1a] rounded-xl group">
-      <div className="text-slate-500 group-hover:text-[#0df287] transition-colors">
-        <MaterialIcon name={icon} className="text-xl" />
-      </div>
-
-      <div className="flex-1 truncate">
-        {isLink && value && value !== "Not provided" ? (
-          <a
-            href={value?.startsWith("http") ? value : `https://${value}`}
-            target="_blank"
-            rel="noopener noreferrer"
-className="text-sm text-slate-900 dark:text-white hover:text-[#0df287] transition-colors font-medium"          >
-            {value || "Not provided"}
-          </a>
-        ) : (
-          <p className="text-sm text-slate-900 dark:text-white font-medium">
-            {value || "Not provided"}
-          </p>
-        )}
+/* Collapsible section that visually matches the IndividualResearcherProfile
+   section header (icon tile + title + subtitle bar). Native <details> keeps
+   the institute page's existing expand/collapse behavior. */
+const Section = ({ icon, title, subtitle, children }) => (
+  <div className="rounded-3xl border border-slate-200/80 bg-white shadow-sm dark:bg-[#0d0d0d] dark:border-[#1a1a1a] dark:shadow-2xl overflow-hidden">
+    <div className="px-6 sm:px-8 py-5 flex items-center gap-4 border-b border-slate-100 dark:border-[#1a1a1a] bg-slate-50/80 dark:bg-white/[0.02]">
+      <span className="flex items-center justify-center w-11 h-11 shrink-0 rounded-xl bg-[#0df287]/10 text-[#0aa866] dark:text-[#0df287]">
+        <MaterialIcon name={icon} />
+      </span>
+      <div className="flex-1 min-w-0">
+        <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white leading-tight">
+          {title}
+        </h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          {subtitle}
+        </p>
       </div>
     </div>
+
+    <div className="px-6 sm:px-8 pb-8 pt-6">{children}</div>
   </div>
 );
+/* Compact icon + label + value detail tile */
+const InfoTile = ({ icon, label, value, valueClass = "" }) => (
+  <div className="rounded-2xl border border-slate-200/70 bg-slate-50/60 p-4 transition-all hover:border-[#0df287]/40 hover:bg-white hover:shadow-sm dark:border-[#1a1a1a] dark:bg-white/[0.02] dark:hover:bg-white/[0.04]">
+    <div className="flex items-center gap-2">
+      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0df287]/10 text-[#0aa866] dark:text-[#0df287]">
+        <MaterialIcon name={icon} className="text-lg" />
+      </span>
+      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+        {label}
+      </label>
+    </div>
+    <p
+      className={`mt-3 text-base font-semibold text-slate-900 dark:text-white break-words ${valueClass}`}
+    >
+      {value ? (
+        value
+      ) : (
+        <span className="text-slate-400 dark:text-slate-500 normal-case font-medium">
+          —
+        </span>
+      )}
+    </p>
+  </div>
+);
+
+/* Framed sub-panel with header used for grouped content */
+const Panel = ({ icon, title, children }) => (
+  <div className="rounded-2xl border border-slate-200/70 bg-slate-50/60 p-5 dark:border-[#1a1a1a] dark:bg-white/[0.02]">
+    <div className="flex items-center gap-2 mb-4">
+      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0df287]/10 text-[#0aa866] dark:text-[#0df287]">
+        <MaterialIcon name={icon} className="text-lg" />
+      </span>
+      <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">
+        {title}
+      </h3>
+    </div>
+    {children}
+  </div>
+);
+
+const ContactItem = ({ label, value, icon, isLink }) => {
+  const inner = (
+    <>
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0df287]/10 text-[#0aa866] group-hover/card:bg-[#0df287]/20 dark:text-[#0df287] transition-colors">
+        <MaterialIcon name={icon} className="text-xl" />
+      </span>
+      <div className="flex-1 min-w-0">
+        <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+          {label}
+        </label>
+        <p className="mt-0.5 text-sm font-semibold text-slate-900 dark:text-white truncate">
+          {value || "Not provided"}
+        </p>
+      </div>
+      {isLink && value && value !== "Not provided" && (
+        <MaterialIcon
+          name="north_east"
+          className="text-slate-300 group-hover/card:text-[#0df287] transition-colors shrink-0"
+        />
+      )}
+    </>
+  );
+
+  const classes =
+    "group/card flex items-center gap-3 p-4 rounded-2xl border border-slate-200 bg-slate-50/60 text-slate-900 dark:bg-white/[0.02] dark:border-[#1a1a1a] dark:text-white hover:border-[#0df287]/40 hover:bg-white dark:hover:bg-white/[0.05] hover:shadow-sm transition-all";
+
+  return isLink && value && value !== "Not provided" ? (
+    <a
+      href={value?.startsWith("http") ? value : `https://${value}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={classes}
+    >
+      {inner}
+    </a>
+  ) : (
+    <div className={classes}>{inner}</div>
+  );
+};
 
 export default InstituteProfile;

@@ -31,7 +31,7 @@ import AdminCreateGroup from "./Admin/chat/AdminCreateGroup";
 import AdminEvents from "./Admin/Events/AdminEvents";
 import EventApprovals from "./Admin/Events/EventApprovals";
 //Dashboard
-import MainContent from "./dashboard/MainContent";
+import MainContent from "./dashboard/components/MainContent";
 import RightSection from "./dashboard/RightSection";
 import ResearchUploadForm from "./dashboard/ResearchUploadForm";
 import BoardReviewPortal from "./dashboard/BoardReviewPortal";
@@ -46,6 +46,7 @@ import CreatePost from "./dashboard/createpost";
 import Chats from "./dashboard/Chat/Chats";
 import Events from "./dashboard/Events";
 import UserProfile from "./dashboard/UserProfile";
+import UserActivityPage from "./dashboard/UserActivityPage";
 import CreateGroup from "./dashboard/Chat/CreateGroup";
 import GroupDetails from "./dashboard/GroupDetails";
 import BoardMember from "./dashboard/BoardMember/BoardMember";
@@ -170,6 +171,7 @@ const App = () => {
         <Route path="/dashboard/events" element={<Events />} />
         <Route path="/dashboard/CreateGroup" element={<CreateGroup />} />
         <Route path="/user-profile" element={<UserProfile />} />
+        <Route path="/user-activity" element={<UserActivityPage />} />
         <Route path="/group" element={<GroupDetails />} />
         <Route path="/dashboard/create-event" element={<Event />} />
         <Route path="/dashboard/my-event" element={<MyEvents />} />
