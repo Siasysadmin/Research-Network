@@ -1,5 +1,5 @@
 // ============================================
-// INSTITUTE REGISTRATION - ADDRESS FIRST, THEN WEBSITE
+// INSTITUTE REGISTRATION - WITH OTP VERIFY FLOW
 // ============================================
 
 import React, { useState, useEffect } from "react";
@@ -8,7 +8,6 @@ import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 
 import API_CONFIG from "../../config/api.config";
-import { useReducer } from "react";
 
 const InstituteRegister = () => {
   const navigate = useNavigate();
@@ -37,6 +36,13 @@ const InstituteRegister = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+
+  // ── OTP flow states ──
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [registeredUserData, setRegisteredUserData] = useState(null);
 
   // Handle input changes
   const handleChange = (e) => {
@@ -79,10 +85,10 @@ const InstituteRegister = () => {
       errors.contactNumber = "Contact number must be exactly 10 digits";
     }
 
-    // Address validation - pehle
+    // Address validation
     if (!formData.address.trim()) errors.address = "Address is required";
 
-    // Website validation - baad mein
+    // Website validation
     if (!formData.instituteWebsite.trim()) {
       errors.instituteWebsite = "Institute website is required";
     } else if (
@@ -130,10 +136,6 @@ const InstituteRegister = () => {
     setFieldErrors({});
     setStep(1);
   };
-
-
-
-  
 
   // sync Common User Api start vijay
   const syncCommonUserApi = async (userId) => {
@@ -195,8 +197,8 @@ const InstituteRegister = () => {
     }
   };
   // sync Common User Api end vijay
-    
 
+  // ── REGISTER API → on success, open OTP modal ──
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -210,14 +212,14 @@ const InstituteRegister = () => {
         institute_name: formData.instituteName,
         email: formData.email,
         contact_no: formData.contactNumber,
-        address: formData.address, // Address
-        website: formData.instituteWebsite, // Website
+        address: formData.address,
+        website: formData.instituteWebsite,
         name: formData.adminName,
         professional_role: formData.professionalRole,
         password: formData.password,
         confirm_password: formData.confirmPassword,
       };
-      console.log(JSON.parse(localStorage.getItem("user")));
+
       const response = await fetch(
         `${API_CONFIG.BASE_URL}/auth/register-institute`,
         {
@@ -239,54 +241,21 @@ const InstituteRegister = () => {
           data.status === "success" ||
           data.message?.includes("success"))
       ) {
-
-        await syncCommonUserApi(data?.data || data?.user_id || data?.id);   //aded by vijay for common user api sync
-
-        toast.success(" Registration successful!");
-        localStorage.removeItem("formData");
-        if (data.token) {
-          localStorage.setItem("token", data.token);
-        }
-
-        localStorage.setItem("userEmail", formData.email);
-        localStorage.setItem("userType", "institute");
-        localStorage.setItem("instituteName", formData.instituteName);
-        localStorage.setItem("isLoggedIn", "true");
-
-        localStorage.setItem(
-          "user",
-          JSON.stringify({
-            id: data?.data || "",
-            user_id: data?.data || "",
-            user_type: "institute",
-            institute_name: formData.instituteName,
-            name: formData.adminName,
-            email: formData.email,
-            contact: formData.contactNumber,
-            address: formData.address,
-            role: formData.professionalRole,
-            website: formData.instituteWebsite,
-          }),
-        );
-        localStorage.setItem("user_id", data?.data || "");
-        setTimeout(() => {
-          navigate("/application-approved", {
-            state: { userType: "institute", email: formData.email },
-          });
-        }, 500);
-      } // ⭐ EMAIL ALREADY REGISTERED LOGIC
+        // Store response. No localStorage write yet — OTP pending.
+        setRegisteredUserData(data);
+        setOtp("");
+        setShowOtpModal(true);
+        toast.success("OTP sent to your email");
+      }
+      // ⭐ EMAIL ALREADY REGISTERED
       else if (
         data.message?.toLowerCase().includes("email") &&
         data.message?.toLowerCase().includes("exist")
       ) {
-        // Step 1 pe wapas le jao
         setStep(1);
-
-        // Email field error show karo
         setFieldErrors({
           email: "This email is already registered. Please login.",
         });
-
         toast.error("Email already registered");
       } else {
         toast.error(data.message || "Registration failed. Please try again.");
@@ -298,11 +267,126 @@ const InstituteRegister = () => {
     }
   };
 
+  // ── Verify OTP → write localStorage, sync, navigate ──
+  const handleVerifyOtp = async () => {
+    if (otp.length !== 6) {
+      toast.error("Enter 6-digit OTP");
+      return;
+    }
+    setOtpLoading(true);
+    try {
+      const res = await fetch(
+        `${API_CONFIG.BASE_URL}/auth/register/verify-otp`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ email: formData.email, otp }),
+        },
+      );
+      const data = await res.json();
+
+      if (
+        res.ok &&
+        (data.status === true ||
+          data.status === "success" ||
+          data.message?.toLowerCase().includes("success") ||
+          data.message?.toLowerCase().includes("verified"))
+      ) {
+        const reg = registeredUserData || {};
+
+        // sync common user — moved here from handleSubmit
+        await syncCommonUserApi(reg?.data || reg?.user_id || reg?.id);
+
+        // token from register or verify-otp response
+        if (reg.token || data.token) {
+          localStorage.setItem("token", reg.token || data.token);
+        }
+
+        localStorage.setItem("userEmail", formData.email);
+        localStorage.setItem("userType", "institute");
+        localStorage.setItem("instituteName", formData.instituteName);
+        localStorage.setItem("isLoggedIn", "true");
+
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            id: reg?.data || data?.data || "",
+            user_id: reg?.data || data?.data || "",
+            user_type: "institute",
+            institute_name: formData.instituteName,
+            name: formData.adminName,
+            email: formData.email,
+            contact: formData.contactNumber,
+            address: formData.address,
+            role: formData.professionalRole,
+            website: formData.instituteWebsite,
+          }),
+        );
+        localStorage.setItem("user_id", reg?.data || data?.data || "");
+        localStorage.removeItem("formData");
+
+        toast.success("Verified! Welcome aboard.");
+        setShowOtpModal(false);
+
+        setTimeout(() => {
+          navigate("/application-approved", {
+            state: { userType: "institute", email: formData.email },
+          });
+        }, 400);
+      } else {
+        toast.error(data.message || "Invalid OTP. Try again.");
+      }
+    } catch (err) {
+      toast.error("Network error verifying OTP.");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  // ── Resend OTP ──
+  const handleResendOtp = async () => {
+    setResendLoading(true);
+    try {
+      const res = await fetch(
+        `${API_CONFIG.BASE_URL}/auth/resend-registration-otp`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ email: formData.email }),
+        },
+      );
+      const data = await res.json();
+
+      if (
+        res.ok &&
+        (data.status === true ||
+          data.status === "success" ||
+          data.message?.toLowerCase().includes("success") ||
+          data.message?.toLowerCase().includes("sent"))
+      ) {
+        toast.success("OTP resent to your email");
+        setOtp("");
+      } else {
+        toast.error(data.message || "Failed to resend OTP");
+      }
+    } catch (err) {
+      toast.error("Network error. Try again.");
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
   useEffect(() => {
     localStorage.setItem("formData", JSON.stringify(formData));
   }, [formData]);
 
-  // EXACT same classes as IndividualRegister
+  // UI Classes
   const inputClass =
     "w-full bg-[#f1f5f9] dark:bg-slate-950/70 border border-gray-300 dark:border-white/10 rounded-lg py-3 pl-11 pr-12 outline-none focus:border-[#00ff88]/50 focus:ring-1 focus:ring-[#00ff88]/30 transition-all text-slate-900 dark:text-white placeholder:text-slate-500 dark:text-slate-500 dark:placeholder:text-slate-600";
   const errorInputClass =
@@ -451,7 +535,7 @@ const InstituteRegister = () => {
                   )}
                 </div>
 
-                {/* ADDRESS - pehle */}
+                {/* ADDRESS */}
                 <div className="space-y-1.5 mb-4">
                   <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider ml-1">
                     Address <span className="text-red-500">*</span>
@@ -485,7 +569,7 @@ const InstituteRegister = () => {
                   )}
                 </div>
 
-                {/* INSTITUTE WEBSITE - baad mein */}
+                {/* INSTITUTE WEBSITE */}
                 <div className="space-y-1.5 mb-6">
                   <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider ml-1">
                     Institute Website <span className="text-red-500">*</span>
@@ -536,7 +620,7 @@ const InstituteRegister = () => {
               </form>
             )}
 
-            {/* STEP 2 FORM - same as before */}
+            {/* STEP 2 FORM */}
             {step === 2 && (
               <form onSubmit={handleSubmit} noValidate>
                 {/* Admin Name */}
@@ -723,7 +807,7 @@ ${fieldErrors.agreeTerms ? "border-red-500" : ""}`}
                   )}
                 </div>
 
-                {/* Buttons - Back button chhota kiya */}
+                {/* Buttons */}
                 <div className="flex gap-3">
                   <button
                     type="button"
@@ -746,10 +830,8 @@ ${fieldErrors.agreeTerms ? "border-red-500" : ""}`}
            transition-all flex items-center justify-center gap-2 text-sm uppercase 
            active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed relative"
                   >
-                    {/* Hidden text to keep width fixed */}
                     <span className="invisible">Creating Account...</span>
 
-                    {/* Real content */}
                     <span className="absolute flex items-center gap-2">
                       {isLoading ? (
                         <>
@@ -783,6 +865,101 @@ ${fieldErrors.agreeTerms ? "border-red-500" : ""}`}
           </div>
         </div>
       </main>
+
+      {/* ══════════ OTP VERIFICATION MODAL ══════════ */}
+            {showOtpModal && (
+  <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div className="w-full max-w-[420px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl p-6 md:p-8">
+      <div className="text-center mb-6">
+        <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-[#00ff88]/10 flex items-center justify-center">
+          <span className="material-symbols-outlined text-[#00ff88] text-2xl">
+            mail_lock
+          </span>
+        </div>
+
+        <h2 className="text-xl font-black text-slate-900 dark:text-white mb-1">
+          Verify Your Email
+        </h2>
+
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          We've sent a 6-digit OTP to
+        </p>
+
+        <p className="text-sm font-bold text-slate-900 dark:text-white break-all">
+          {formData.email}
+        </p>
+      </div>
+
+      <div className="mb-5">
+        <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-wider block mb-1.5">
+          Enter OTP
+        </label>
+
+        <input
+          type="text"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          value={otp}
+          onChange={(e) => {
+            const v = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
+            setOtp(v);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && otp.length === 6 && !otpLoading) {
+              handleVerifyOtp();
+            }
+          }}
+          maxLength={6}
+          disabled={otpLoading}
+          placeholder="- - - - - -"
+          className="w-full text-center text-2xl tracking-[0.6em] font-bold bg-[#f1f5f9] dark:bg-slate-950/70 border border-gray-300 dark:border-white/10 rounded-xl py-3.5 px-4 outline-none focus:border-[#00ff88]/50 focus:ring-1 focus:ring-[#00ff88]/30 transition-all text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-600 disabled:opacity-50"
+        />
+      </div>
+
+      <button
+        type="button"
+        onClick={handleVerifyOtp}
+        disabled={otpLoading || resendLoading || otp.length !== 6}
+        className="w-full bg-[#00ff88] hover:bg-[#00e67a] text-black font-bold py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2 text-sm uppercase active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed mb-3"
+      >
+        {otpLoading ? (
+          <>
+            <span className="inline-block w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+            Verifying...
+          </>
+        ) : (
+          <>
+            Verify OTP
+            <span className="material-symbols-outlined text-lg">
+              check_circle
+            </span>
+          </>
+        )}
+      </button>
+
+      <button
+        type="button"
+        onClick={handleResendOtp}
+        disabled={otpLoading || resendLoading}
+        className="w-full bg-transparent border border-slate-300 dark:border-white/10 hover:border-[#00ff88]/50 text-slate-700 dark:text-slate-300 font-bold py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2 text-sm uppercase active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {resendLoading ? (
+          <>
+            <span className="inline-block w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
+            Resending...
+          </>
+        ) : (
+          <>
+            Resend OTP
+            <span className="material-symbols-outlined text-lg">
+              refresh
+            </span>
+          </>
+        )}
+      </button>
+    </div>
+  </div>
+)}
     </div>
   );
 };

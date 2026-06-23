@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import Logo from "../../assets/Logo";
 import avatar from "../../assets/images/avatar.jpg";
 import axios from "axios";
-import API_CONFIG from "../../config/api.config";
 import UserProfile from "../porfile/AdminUserProfile";
+import SearchBar from "../../dashboard/SearchBar";
 
 const MaterialIcon = ({ name, className = "" }) => (
   <span className={`material-symbols-outlined ${className}`}>{name}</span>
@@ -29,11 +29,6 @@ const handleLeave = (e, isActive, isDark) => {
 };
 
 const HeaderNav = ({ user, toggleSidebar, isSidebarOpen, isDark }) => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [allUsers, setAllUsers] = useState([]);
-  const [blockedUserIds, setBlockedUserIds] = useState([]);
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -42,81 +37,15 @@ const HeaderNav = ({ user, toggleSidebar, isSidebarOpen, isDark }) => {
 const [showProfile, setShowProfile] = useState(false);
   const navigate = useNavigate();
   const profileRef = useRef(null);
-  const searchRef = useRef(null);
+  // Containers that the shared SearchBar portals its desktop/mobile inputs into.
+  const searchDesktopContainerRef = useRef(null);
+  const searchMobileContainerRef = useRef(null);
 
-  const SearchDropdown = ({ results }) => {
-    if (results.length === 0) return null;
-
-    return (
-      <div
-        className="
-          absolute top-full mt-2 left-0 w-[13.5rem] rounded-xl shadow-xl overflow-hidden z-[200]
-          max-h-64 overflow-y-auto
-          bg-white border border-gray-200
-          dark:bg-[#111f17] dark:border-[#32ff9920]
-        "
-      >
-        {results.map((u) => {
-          const name =
-            u.user_type === "institute"
-              ? u.institute_details?.institute_name || u.name || "Institute"
-              : u.name || "User";
-
-          const img =
-            u.user_type === "institute"
-              ? u.profile_institute_details?.profile_image
-              : u.profile_individual_details?.profile_image;
-
-          const imgUrl = img ? `${API_CONFIG.BASE_URL}/${img}` : avatar;
-
-          return (
-            <div
-              key={u.id}
-              onClick={() => {
-  setSelectedUser(u);
-  setShowProfile(true);
-  setIsSearchFocused(false);
-}}
-              className="
-                flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors
-                hover:bg-gray-100
-                dark:hover:bg-[#32ff9910]
-              "
-            >
-              <img
-                src={imgUrl}
-                onError={(e) => {
-                  e.target.src = avatar;
-                }}
-                className="w-8 h-8 rounded-full object-cover"
-                alt={name}
-              />
-
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                  {name}
-                </p>
-
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 capitalize">
-                  {u.user_type || "individual"} • Reg ID: {u.registration_id}
-                </p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
-  // Click Outside Wrapper (Dono Dropdown aur Profile Menu ke liye)
+  // Click Outside Wrapper (Profile Menu ke liye)
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
         setIsProfileOpen(false);
-      }
-
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
-        setIsSearchFocused(false);
       }
     };
 
@@ -179,73 +108,6 @@ const [showProfile, setShowProfile] = useState(false);
     await handleLogout();
   };
 
-  useEffect(() => {
-    const fetchAllUsers = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await fetch(`${API_CONFIG.BASE_URL}/user/get-all-users`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await res.json();
-        const list = data.data || data.users || (Array.isArray(data) ? data : []);
-        setAllUsers(list);
-      } catch (err) {
-        console.error("Users fetch error:", err);
-      }
-    };
-
-    fetchAllUsers();
-  }, []);
-
-  const handleSearch = (query) => {
-    setSearchQuery(query);
-
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    const q = query.toLowerCase().trim();
-
-    const filtered = allUsers.filter((u) => {
-      const isBlocked =
-        Array.isArray(blockedUserIds) && blockedUserIds.includes(String(u.id));
-
-      if (isBlocked) return false;
-
-      const userType = (u.user_type || "").toLowerCase();
-
-      const name =
-        userType === "institute" || userType === "institution"
-          ? u.institute_details?.institute_name || u.name || ""
-          : u.name || "";
-
-      const email = u.email || "";
-      const id = String(u.id || "");
-      const registrationId = String(u.registration_id || "");
-
-      if (q === "individual" || q === "indivual") {
-        return userType.includes("individual");
-      }
-
-      if (q === "institute" || q === "institution" || q === "innstiute") {
-        return userType.includes("institute") || userType.includes("institution");
-      }
-      return (
-        name.toLowerCase().includes(q) ||
-        email.toLowerCase().includes(q) ||
-        id.includes(q) ||
-        registrationId.toLowerCase().includes(q) ||
-        userType.includes(q)
-      );
-    });
-
-    setSearchResults(filtered);
-  };
-
   return (
     <header
       className="fixed top-0 left-0 right-0 h-16 flex items-center justify-between px-4 md:px-6 z-[100]"
@@ -267,38 +129,15 @@ const [showProfile, setShowProfile] = useState(false);
         <Logo />
       </div>
 
-      <div className="relative ml-auto mr-4" ref={searchRef}>
-        <MaterialIcon
-          name="search"
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none"
+      {/* Search (rendered into these containers by the shared SearchBar) */}
+      <div className="ml-auto mr-4 flex items-center justify-end">
+        {/* Desktop Search */}
+        <div ref={searchDesktopContainerRef} className="relative hidden md:block" />
+        {/* Mobile Search */}
+        <div
+          ref={searchMobileContainerRef}
+          className="relative w-40 sm:w-52 md:hidden"
         />
-
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => handleSearch(e.target.value)}
-          onFocus={() => setIsSearchFocused(true)}
-          placeholder="Search users..."
-          className="
-            pl-9 pr-4 py-2 rounded-xl text-sm transition-all w-48
-            bg-gray-100 text-slate-800
-            border border-gray-300
-            placeholder:text-gray-400
-            focus:border-[#00ff88]
-            focus:ring-2
-            focus:ring-[#00ff88]/20
-            outline-none
-            dark:bg-white/5
-            dark:text-white
-            dark:border-[#5bf9aa20]
-            dark:placeholder:text-slate-500
-            dark:focus:border-[#32ff99]
-          "
-        />
-
-        {isSearchFocused && searchResults.length > 0 && (
-          <SearchDropdown results={searchResults} />
-        )}
       </div>
 
       {/* Main Profile Control Div - ref lagaya taaki pure area ko track kare */}
@@ -432,6 +271,14 @@ const [showProfile, setShowProfile] = useState(false);
           </div>
         )}
       </div>
+      {/* Shared Search Bar — same component/behavior as DashboardLayout */}
+      <SearchBar
+        desktopContainerRef={searchDesktopContainerRef}
+        mobileContainerRef={searchMobileContainerRef}
+        onUserSelect={setSelectedUser}
+        isProfileModalOpen={!!selectedUser}
+      />
+
       {showProfile && selectedUser && (
   <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center p-4">
     <div className="w-full max-w-5xl h-[90vh]">

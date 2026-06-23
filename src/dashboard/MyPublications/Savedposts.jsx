@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
+import ReactDOM from "react-dom";
 import API_CONFIG from "../../config/api.config";
 import defaultAvatar from "../../assets/images/avatar.jpg";
 import { toast } from "react-toastify";
+import ShareModal, { fetchShareData, sendPost } from "../ShareModal";
 
 const MaterialIcon = ({ name, className = "", style = {} }) => (
   <span className={`material-symbols-outlined ${className}`} style={style}>
@@ -10,7 +12,7 @@ const MaterialIcon = ({ name, className = "", style = {} }) => (
 );
 
 // ✅ SAVED POST CARD
-const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
+const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete, onShareClick }) => {
   const [refreshingComments, setRefreshingComments] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isVideoMuted, setIsVideoMuted] = useState(true);
@@ -318,18 +320,7 @@ const SavedPostCard = ({ post, currentUserId, onUnsave, onDelete }) => {
   };
 
   const handleShare = () => {
-    if (navigator.share) {
-      navigator
-        .share({
-          title: postData.name,
-          text: postData.post_text?.substring(0, 100),
-          url: window.location.href,
-        })
-        .catch((err) => console.error("Share failed:", err));
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success("Link copied to clipboard!");
-    }
+    if (onShareClick) onShareClick(postData.id);
   };
 
   const formatTimeAgo = (timestamp) => {
@@ -705,6 +696,21 @@ const SavedPosts = () => {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
 
+  /* ── Share modal state (same as UserProfile) ── */
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [selectedSharePostId, setSelectedSharePostId] = useState(null);
+  const [shareSearchQuery, setShareSearchQuery] = useState("");
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
+  const [shareAllUsers, setShareAllUsers] = useState([]);
+  const [shareGroups, setShareGroups] = useState([]);
+
+  const getAuthToken = () =>
+    localStorage.getItem("auth_token") ||
+    localStorage.getItem("token") ||
+    sessionStorage.getItem("auth_token") ||
+    localStorage.getItem("authToken") ||
+    null;
+
   useEffect(() => {
     try {
       const userStr = localStorage.getItem("user");
@@ -715,6 +721,11 @@ const SavedPosts = () => {
 
   useEffect(() => {
     fetchSavedPosts();
+  }, []);
+
+  /* ── Share data fetch (same as UserProfile) ── */
+  useEffect(() => {
+    fetchShareData(getAuthToken, setShareAllUsers, setShareGroups);
   }, []);
 
   // ✅ FETCH SAVED POSTS
@@ -861,15 +872,21 @@ const SavedPosts = () => {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 dark:border-[#00ff85]"></div>
         </div>
       ) : savedPosts.length > 0 ? (
-        savedPosts.map((post) => (
-          <SavedPostCard
-            key={post.id}
-            post={post}
-            currentUserId={userId}
-            onUnsave={handleToggleSave}
-            onDelete={handleDeletePost}
-          />
-        ))
+        <div className="w-full max-w-4xl mx-auto">
+          {savedPosts.map((post) => (
+            <SavedPostCard
+              key={post.id}
+              post={post}
+              currentUserId={userId}
+              onUnsave={handleToggleSave}
+              onDelete={handleDeletePost}
+              onShareClick={(id) => {
+                setSelectedSharePostId(id);
+                setIsShareOpen(true);
+              }}
+            />
+          ))}
+        </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-16 sm:py-20 border-2 border-dashed border-[#3b4b3d]/30 rounded-xl opacity-50">
           <span className="material-symbols-outlined text-5xl sm:text-6xl text-[#b9cbb9]/30 mb-4">
@@ -880,6 +897,42 @@ const SavedPosts = () => {
           </p>
         </div>
       )}
+
+      {/* Share modal — same as UserProfile. Portaled to <body> so the
+          fixed/blur overlay covers the entire page (sidebar + layout),
+          escaping any transformed ancestor that would otherwise clip it. */}
+      {typeof document !== "undefined" &&
+        ReactDOM.createPortal(
+          <ShareModal
+            isOpen={isShareOpen}
+            onClose={() => {
+              setIsShareOpen(false);
+              setSelectedUserIds([]);
+              setShareSearchQuery("");
+            }}
+            allUsers={shareAllUsers}
+            shareGroups={shareGroups}
+            selectedUserIds={selectedUserIds}
+            setSelectedUserIds={setSelectedUserIds}
+            shareSearchQuery={shareSearchQuery}
+            setShareSearchQuery={setShareSearchQuery}
+            onSend={(postId) =>
+              sendPost(
+                postId,
+                selectedUserIds,
+                shareGroups,
+                getAuthToken,
+                setIsShareOpen,
+                setSelectedSharePostId,
+                setSelectedUserIds,
+                setShareSearchQuery,
+              )
+            }
+            selectedSharePostId={selectedSharePostId}
+            avatarFallback={defaultAvatar}
+          />,
+          document.body,
+        )}
 
       <style jsx>{`
         .line-clamp-3 {
