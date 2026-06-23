@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import API_CONFIG from "../config/api.config";
 
@@ -50,15 +50,34 @@ const getAuthToken = () =>
   localStorage.getItem("token") ||
   sessionStorage.getItem("auth_token");
 
-const NotificationItem = ({
+// ✅ FIX #2: Build a guaranteed-unique tracking key per notification.
+// If API returns missing/duplicate `id`, we synthesize one from other fields
+// + the array index. This is what we use to look up & store action state.
+const getTrackKey = (notif, index) => {
+  if (notif?.id !== undefined && notif?.id !== null && notif?.id !== "") {
+    return String(notif.id);
+  }
+  const sender =
+    notif?.sender_id ||
+    notif?.connected_user_id ||
+    notif?.user_id ||
+    notif?.from_id ||
+    "x";
+  const ts = notif?.created_at || "";
+  return `${notif?.type || "n"}-${sender}-${ts}-${index}`;
+};
+
+// ✅ FIX #1 (perf): memo so an unrelated item does not re-render
+// when another item's action state changes.
+const NotificationItem = memo(function NotificationItem({
   notif,
+  trackKey,
   onClose,
   navigate,
   actionState,
   onAccept,
   onReject,
-}) => {
-  // ✅ States ab parent se aa rahi hain - reset nahi hongi
+}) {
   const {
     accepting = false,
     rejecting = false,
@@ -68,10 +87,11 @@ const NotificationItem = ({
 
   const type = notif.type?.toLowerCase() || "general";
   const meta = typeMeta[type] || typeMeta.general;
+  const isConnectionRequest = type === "user_connected";
 
   const handleClick = () => {
     if (type === "event") {
-      const match = notif.message?.match(/[""""]([^""""]+)[""""]/);
+      const match = notif.message?.match(/[“”"„«»]([^“”"„«»]+)[“”"„«»]/);
       const eventName = match ? match[1].trim() : "";
       onClose?.();
       navigate("/dashboard", {
@@ -84,8 +104,10 @@ const NotificationItem = ({
   return (
     <div
       onClick={handleClick}
-      className={`relative flex items-start gap-3 px-[18px] py-[14px] border-b border-[#32ff9908] transition-all cursor-pointer
-        ${type === "event" ? "hover:bg-[#32ff9907]" : "hover:bg-gray-100 dark:hover:bg-white/[0.02]"}
+      className={`relative flex items-start gap-3 px-[18px] py-[14px] border-b border-gray-100 dark:border-[#32ff9908] transition-all ${
+        type === "event" ? "cursor-pointer" : ""
+      }
+        ${type === "event" ? "hover:bg-[#32ff9907]" : "hover:bg-gray-50 dark:hover:bg-white/[0.02]"}
         ${notif.is_read === "0" ? "bg-[#32ff9904]" : ""}
       `}
     >
@@ -94,8 +116,7 @@ const NotificationItem = ({
       )}
 
       <div
-        className={`w-9 h-9 rounded-[11px] flex items-center justify-center shrink-0 mt-0.5 border ${meta.iconBg}`}
-        style={{ borderColor: "transparent" }}
+        className={`w-9 h-9 rounded-[11px] flex items-center justify-center shrink-0 mt-0.5 ${meta.iconBg}`}
       >
         <MaterialIcon
           name={meta.icon}
@@ -106,7 +127,11 @@ const NotificationItem = ({
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2 mb-[3px]">
           <p
-            className={`text-[12.5px] font-semibold leading-tight ${notif.is_read === "0" ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-600 dark:text-slate-400"}`}
+            className={`text-[12.5px] font-semibold leading-tight ${
+              notif.is_read === "0"
+                ? "text-slate-900 dark:text-white"
+                : "text-slate-600 dark:text-slate-400"
+            }`}
           >
             {notif.title}
           </p>
@@ -120,75 +145,100 @@ const NotificationItem = ({
           </span>
         </div>
 
-        <p className="text-[11.5px] text-slate-500 leading-relaxed mb-2">
+        <p className="text-[11.5px] text-slate-500 dark:text-slate-400 leading-relaxed mb-2">
           {notif.message}
         </p>
 
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <span
-            className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-[3px] rounded-full border ${meta.badgeBg} ${meta.badgeText} ${meta.badgeBorder}`}
-          >
-            <span
-              className={`w-[5px] h-[5px] rounded-full ${meta.iconColor.replace("text-", "bg-")}`}
-            />
-            {meta.label}
-          </span>
-
-          {/* ✅ Buttons - parent state se control ho rahi hain */}
-          {type === "user_connected" && !accepted && !rejected && (
-            <div className="flex items-center gap-2">
-              {/* ✗ Reject */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onReject(notif);
-                }}
-                disabled={rejecting || accepting}
-                className="flex items-center gap-1 text-[11px] font-semibold px-3 py-1 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 active:scale-95 transition-all disabled:opacity-50"
+        {/* ====== FIX #3: Improved connection-request UI ====== */}
+        {isConnectionRequest ? (
+          <>
+            <div className="flex items-center gap-2 mb-2">
+              <span
+                className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-[3px] rounded-full border ${meta.badgeBg} ${meta.badgeText} ${meta.badgeBorder}`}
               >
-                {rejecting ? (
-                  <div className="w-3 h-3 border border-red-400/40 border-t-red-400 rounded-full animate-spin" />
-                ) : (
-                  <MaterialIcon name="close" className="text-[13px]" />
-                )}
-              </button>
-
-              {/* ✓ Accept */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAccept(notif);
-                }}
-                disabled={accepting || rejecting}
-                className="flex items-center gap-1 text-[11px] font-semibold px-3 py-1 rounded-lg bg-[#32ff9915] text-[#32ff99] border border-[#32ff9930] hover:bg-[#32ff9925] active:scale-95 transition-all disabled:opacity-50"
-              >
-                {accepting ? (
-                  <div className="w-3 h-3 border border-[#32ff99]/40 border-t-[#32ff99] rounded-full animate-spin" />
-                ) : (
-                  <MaterialIcon name="check" className="text-[13px]" />
-                )}
-              </button>
+                <span
+                  className={`w-[5px] h-[5px] rounded-full ${meta.iconColor.replace("text-", "bg-")}`}
+                />
+                {meta.label}
+              </span>
             </div>
-          )}
 
-          {type === "user_connected" && accepted && (
-            <span className="flex items-center gap-1 text-[11px] font-semibold px-3 py-1 rounded-lg bg-[#32ff9915] text-[#32ff99] border border-[#32ff9930]">
-              <MaterialIcon name="check_circle" className="text-[13px]" />
-              Connected
-            </span>
-          )}
+            {!accepted && !rejected && (
+              <div className="flex items-center gap-2 w-full">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onReject(notif, trackKey);
+                  }}
+                  disabled={rejecting || accepting}
+                  className="flex-1 flex items-center justify-center gap-1.5 text-[11.5px] font-semibold px-3 py-[7px] rounded-lg
+                    bg-gray-100 text-slate-700 border border-gray-200
+                    hover:bg-gray-200 hover:border-gray-300
+                    dark:bg-white/[0.03] dark:text-slate-300 dark:border-white/10
+                    dark:hover:bg-red-500/10 dark:hover:text-red-400 dark:hover:border-red-500/30
+                    active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {rejecting ? (
+                    <div className="w-3 h-3 border border-current/40 border-t-current rounded-full animate-spin" />
+                  ) : (
+                    <MaterialIcon name="close" className="text-[14px]" />
+                  )}
+                  <span>Decline</span>
+                </button>
 
-          {type === "user_connected" && rejected && (
-            <span className="flex items-center gap-1 text-[11px] font-semibold px-3 py-1 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20">
-              <MaterialIcon name="cancel" className="text-[13px]" />
-              Declined
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAccept(notif, trackKey);
+                  }}
+                  disabled={accepting || rejecting}
+                  className="flex-1 flex items-center justify-center gap-1.5 text-[11.5px] font-semibold px-3 py-[7px] rounded-lg
+                    bg-[#32ff99] text-[#062014] border border-[#32ff99]
+                    hover:bg-[#28e88a]
+                    dark:bg-[#32ff9918] dark:text-[#32ff99] dark:border-[#32ff9940]
+                    dark:hover:bg-[#32ff9928]
+                    active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {accepting ? (
+                    <div className="w-3 h-3 border border-current/40 border-t-current rounded-full animate-spin" />
+                  ) : (
+                    <MaterialIcon name="check" className="text-[14px]" />
+                  )}
+                  <span>Accept</span>
+                </button>
+              </div>
+            )}
+
+            {accepted && (
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-3 py-[6px] rounded-lg bg-[#32ff9915] text-[#32ff99] border border-[#32ff9930]">
+                <MaterialIcon name="check_circle" className="text-[13px]" />
+                Connected
+              </span>
+            )}
+
+            {rejected && (
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-3 py-[6px] rounded-lg bg-red-500/10 text-red-400 border border-red-500/20">
+                <MaterialIcon name="cancel" className="text-[13px]" />
+                Declined
+              </span>
+            )}
+          </>
+        ) : (
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <span
+              className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-[3px] rounded-full border ${meta.badgeBg} ${meta.badgeText} ${meta.badgeBorder}`}
+            >
+              <span
+                className={`w-[5px] h-[5px] rounded-full ${meta.iconColor.replace("text-", "bg-")}`}
+              />
+              {meta.label}
             </span>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
-};
+});
 
 const NotificationPopup = ({ onClose }) => {
   const navigate = useNavigate();
@@ -196,94 +246,108 @@ const NotificationPopup = ({ onClose }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Sabhi connection actions ka state yahan - notif id se track hoga
+  // ✅ FIX #2: keyed by stable trackKey (not by possibly-missing notif.id)
   const [connectionActions, setConnectionActions] = useState({});
-  // Structure: { [notifId]: { accepting, rejecting, accepted, rejected } }
 
-  const getActionState = (notifId) => ({
-    accepting: connectionActions[notifId]?.accepting || false,
-    rejecting: connectionActions[notifId]?.rejecting || false,
-    accepted: connectionActions[notifId]?.accepted || false,
-    rejected: connectionActions[notifId]?.rejected || false,
-  });
-
-  const updateAction = (notifId, update) => {
+  const updateAction = useCallback((trackKey, update) => {
     setConnectionActions((prev) => ({
       ...prev,
-      [notifId]: {
-        ...(prev[notifId] || {}),
+      [trackKey]: {
+        ...(prev[trackKey] || {}),
         ...update,
       },
     }));
-  };
+  }, []);
 
-  // ✅ Accept handler - parent mein
-  const handleAccept = async (notif) => {
-    const notifId = notif.id;
-    const userId =
-      notif.sender_id ||
-      notif.connected_user_id ||
-      notif.user_id ||
-      notif.from_id;
-    if (!userId || getActionState(notifId).accepting) return;
+  // ✅ FIX #2: handlers receive the same trackKey that the item uses
+  const handleAccept = useCallback(
+    async (notif, trackKey) => {
+      const userId =
+        notif.sender_id ||
+        notif.connected_user_id ||
+        notif.user_id ||
+        notif.from_id;
+      if (!userId) return;
 
-    updateAction(notifId, { accepting: true });
-    try {
-      const token = getAuthToken();
-      const res = await fetch(`${API_CONFIG.BASE_URL}/user/accept-connection`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ connected_user_id: userId }),
+      // read latest state from setter to avoid stale closure
+      let alreadyRunning = false;
+      setConnectionActions((prev) => {
+        if (prev[trackKey]?.accepting) alreadyRunning = true;
+        return prev;
       });
-      const data = await res.json();
-      if (data.status) {
-        updateAction(notifId, { accepted: true, accepting: false });
-      } else {
-        updateAction(notifId, { accepting: false });
+      if (alreadyRunning) return;
+
+      updateAction(trackKey, { accepting: true });
+      try {
+        const token = getAuthToken();
+        const res = await fetch(
+          `${API_CONFIG.BASE_URL}/user/accept-connection`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ connected_user_id: userId }),
+          },
+        );
+        const data = await res.json();
+        if (data.status) {
+          updateAction(trackKey, { accepted: true, accepting: false });
+        } else {
+          updateAction(trackKey, { accepting: false });
+        }
+      } catch (err) {
+        console.error("Accept error:", err);
+        updateAction(trackKey, { accepting: false });
       }
-    } catch (err) {
-      console.error("Accept error:", err);
-      updateAction(notifId, { accepting: false });
-    }
-  };
+    },
+    [updateAction],
+  );
 
-  // ✅ Reject handler - parent mein
-  const handleReject = async (notif) => {
-    const notifId = notif.id;
-    const userId =
-      notif.sender_id ||
-      notif.connected_user_id ||
-      notif.user_id ||
-      notif.from_id;
-    if (!userId || getActionState(notifId).rejecting) return;
+  const handleReject = useCallback(
+    async (notif, trackKey) => {
+      const userId =
+        notif.sender_id ||
+        notif.connected_user_id ||
+        notif.user_id ||
+        notif.from_id;
+      if (!userId) return;
 
-    updateAction(notifId, { rejecting: true });
-    try {
-      const token = getAuthToken();
-      const res = await fetch(`${API_CONFIG.BASE_URL}/user/disconnect-user`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ connected_user_id: String(userId) }),
+      let alreadyRunning = false;
+      setConnectionActions((prev) => {
+        if (prev[trackKey]?.rejecting) alreadyRunning = true;
+        return prev;
       });
-      const data = await res.json();
-      if (data.status) {
-        updateAction(notifId, { rejected: true, rejecting: false });
-      } else {
-        updateAction(notifId, { rejecting: false });
-      }
-    } catch (err) {
-      console.error("Reject error:", err);
-      updateAction(notifId, { rejecting: false });
-    }
-  };
+      if (alreadyRunning) return;
 
-  const fetchNotifications = async () => {
+      updateAction(trackKey, { rejecting: true });
+      try {
+        const token = getAuthToken();
+        const res = await fetch(`${API_CONFIG.BASE_URL}/user/disconnect-user`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ connected_user_id: String(userId) }),
+        });
+        const data = await res.json();
+        if (data.status) {
+          updateAction(trackKey, { rejected: true, rejecting: false });
+        } else {
+          updateAction(trackKey, { rejecting: false });
+        }
+      } catch (err) {
+        console.error("Reject error:", err);
+        updateAction(trackKey, { rejecting: false });
+      }
+    },
+    [updateAction],
+  );
+
+  // ✅ FIX #1: stable callbacks so memoized children don't re-render
+  const fetchNotifications = useCallback(async () => {
     try {
       const token = getAuthToken();
       const res = await fetch(
@@ -300,9 +364,9 @@ const NotificationPopup = ({ onClose }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const markAllRead = async () => {
+  const markAllRead = useCallback(async () => {
     try {
       const token = getAuthToken();
       await fetch(`${API_CONFIG.BASE_URL}/notifications/mark-all-as-read`, {
@@ -314,32 +378,54 @@ const NotificationPopup = ({ onClose }) => {
     } catch (err) {
       console.error("Mark read error:", err);
     }
-  };
-
-  useEffect(() => {
-    const loadNotifications = async () => {
-      await fetchNotifications();
-
-      // LinkedIn jaisa: popup open hote hi unread notifications read ho jaye
-      setTimeout(() => {
-        markAllRead();
-      }, 500);
-    };
-
-    loadNotifications();
   }, []);
+
+  // ✅ FIX #1: fetch immediately; only fire mark-as-read if there's
+  // actually something unread. Saves a wasted round-trip on every open.
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      await fetchNotifications();
+      if (cancelled) return;
+    })();
+
+    const timer = setTimeout(() => {
+      // use functional read to get the latest unreadCount
+      setUnreadCount((current) => {
+        if (current > 0) markAllRead();
+        return current;
+      });
+    }, 800);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ✅ FIX #1 (perf): precompute trackKeys once per render
+  const itemsWithKeys = useMemo(
+    () =>
+      notifications.map((notif, i) => ({
+        notif,
+        trackKey: getTrackKey(notif, i),
+      })),
+    [notifications],
+  );
 
   return (
     <div
       className="
-fixed sm:absolute right-2 sm:right-0 top-[80px] sm:top-auto sm:mt-3 
-w-[calc(100vw-16px)] sm:w-[340px] md:w-[360px] lg:w-[380px] 
-max-h-[480px] bg-white text-slate-800 
-border border-gray-200 
+fixed sm:absolute right-2 sm:right-0 top-[80px] sm:top-auto sm:mt-3
+w-[calc(100vw-16px)] sm:w-[340px] md:w-[360px] lg:w-[380px]
+max-h-[480px] bg-white text-slate-800
+border border-gray-200
 rounded-[18px] shadow-2xl overflow-hidden z-[60]
 
-dark:bg-[#0e1c14] 
-dark:text-white 
+dark:bg-[#0e1c14]
+dark:text-white
 dark:border-[#32ff9918]
 "
     >
@@ -391,7 +477,7 @@ dark:bg-[#32ff9906] dark:border-[#32ff9912] dark:text-white"
               Loading…
             </span>
           </div>
-        ) : notifications.length === 0 ? (
+        ) : itemsWithKeys.length === 0 ? (
           <div className="py-10 flex flex-col items-center gap-3 text-center">
             <div className="w-12 h-12 rounded-[14px] bg-[#32ff9910] border border-[#32ff9918] flex items-center justify-center">
               <MaterialIcon
@@ -409,13 +495,14 @@ dark:bg-[#32ff9906] dark:border-[#32ff9912] dark:text-white"
             </div>
           </div>
         ) : (
-          notifications.map((notif, i) => (
+          itemsWithKeys.map(({ notif, trackKey }) => (
             <NotificationItem
-              key={notif.id || i}
+              key={trackKey}
               notif={notif}
+              trackKey={trackKey}
               onClose={onClose}
               navigate={navigate}
-              actionState={connectionActions[notif.id] || {}}
+              actionState={connectionActions[trackKey]}
               onAccept={handleAccept}
               onReject={handleReject}
             />

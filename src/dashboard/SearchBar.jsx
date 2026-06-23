@@ -81,7 +81,13 @@ const SearchBar = ({ desktopContainerRef, mobileContainerRef, onUserSelect }) =>
         });
         const data = await res.json();
         const list = data.data || data.users || (Array.isArray(data) ? data : []);
-        setAllUsers(list);
+        // Exclude admin accounts entirely so they never appear in search results.
+        const visibleList = (Array.isArray(list) ? list : []).filter((u) => {
+          const role = String(u?.role || "").toLowerCase();
+          const type = String(u?.user_type || "").toLowerCase();
+          return role !== "admin" && type !== "admin";
+        });
+        setAllUsers(visibleList);
       } catch (err) {
         console.error("Users fetch error:", err);
       }
@@ -181,7 +187,11 @@ const SearchBar = ({ desktopContainerRef, mobileContainerRef, onUserSelect }) =>
       if (isBlocked) return false;
 
       const userType = (u.user_type || "").toLowerCase();
-      
+
+      // 1a. Admin accounts ko search results mein kabhi na dikhayein
+      const userRole = String(u.role || "").toLowerCase();
+      if (userRole === "admin" || userType === "admin") return false;
+
       // 2. User Type ke mutabik sahi Name extract karein
       let name = "";
       if (userType === "institute" || userType === "institution") {
@@ -214,12 +224,37 @@ const SearchBar = ({ desktopContainerRef, mobileContainerRef, onUserSelect }) =>
   };
 
   const handleUserClick = (u) => {
+    // Choose the profile screen based on WHO is searching (the current logged-in
+    // user / the side they're on), not the searched result:
+    //   • current user_type (or role) === "admin"  -> AdminUserProfile
+    //   • anyone else                               -> UserProfile (unchanged)
+    // Set ADMIN_PROFILE_ROUTE to whatever route renders <AdminUserProfile />.
+    const ADMIN_PROFILE_ROUTE = "/admin/user-profile";
+    const USER_PROFILE_ROUTE = "/user-profile";
+
+    const getCurrentUserType = () => {
+      try {
+        const raw = localStorage.getItem("user");
+        let cu = raw ? JSON.parse(raw) : null;
+        if (Array.isArray(cu)) cu = cu[0] || null;
+        return String(
+          cu?.user_type || cu?.role || localStorage.getItem("userType") || ""
+        )
+          .toLowerCase()
+          .trim();
+      } catch {
+        return "";
+      }
+    };
+
+    const isAdminSide = getCurrentUserType() === "admin";
+
     const name =
       u.user_type === "institute"
         ? u.institute_details?.institute_name || u.name || "Institute"
         : u.name || "User";
 
-    navigate("/user-profile", {
+    navigate(isAdminSide ? ADMIN_PROFILE_ROUTE : USER_PROFILE_ROUTE, {
       state: {
         user: {
           id: u.id,

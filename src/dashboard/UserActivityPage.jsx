@@ -195,9 +195,15 @@ const Skeleton = () => (
     ))}
     <style jsx>{`
       @keyframes shimmer {
-        0% { opacity: 1; }
-        50% { opacity: 0.5; }
-        100% { opacity: 1; }
+        0% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+        100% {
+          opacity: 1;
+        }
       }
       .animate-shimmer {
         animation: shimmer 1.5s ease-in-out infinite;
@@ -381,7 +387,9 @@ const CommentSection = ({
                 alt={comment.author}
                 className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-200 dark:border-white/10 object-cover shrink-0"
                 src={comment.authorAvatar || avatar}
-                onError={(e) => { e.target.src = avatar; }}
+                onError={(e) => {
+                  e.target.src = avatar;
+                }}
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
@@ -497,7 +505,7 @@ const ActionBar = ({
     </button>
 
     {/* Share Button */}
-{/* Share Button - Only visible for regular posts, completely hidden for research */}
+    {/* Share Button - Only visible for regular posts, completely hidden for research */}
     {!isResearch && (
       <button
         onClick={() => {
@@ -569,8 +577,11 @@ const PostCard = ({
     ? post.hash_tag
     : typeof post.hash_tag === "string" && post.hash_tag
       ? (() => {
-          try { return JSON.parse(post.hash_tag); }
-          catch { return []; }
+          try {
+            return JSON.parse(post.hash_tag);
+          } catch {
+            return [];
+          }
         })()
       : [];
 
@@ -616,9 +627,13 @@ const PostCard = ({
       localStorage.setItem("savedPosts", JSON.stringify(next));
       return next;
     });
-    toast.success(wasSaved ? "Post removed from saved" : "Post saved successfully");
+    toast.success(
+      wasSaved ? "Post removed from saved" : "Post saved successfully",
+    );
     if (wasSaved)
-      window.dispatchEvent(new CustomEvent("postUnsaved", { detail: { postId } }));
+      window.dispatchEvent(
+        new CustomEvent("postUnsaved", { detail: { postId } }),
+      );
     try {
       const res = await fetch(
         `${API_CONFIG.BASE_URL}/post/save-post/${postId}`,
@@ -699,7 +714,9 @@ const PostCard = ({
             alt={post.name || "User"}
             className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full border-2 border-[#00ff88]/20 object-cover shrink-0"
             src={getPostProfileSrc(post)}
-            onError={(e) => { e.target.src = avatar; }}
+            onError={(e) => {
+              e.target.src = avatar;
+            }}
           />
           <div className="flex-1 min-w-0">
             <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white truncate capitalize">
@@ -758,14 +775,21 @@ const PostCard = ({
               alt="Post media"
               loading="lazy"
               className="w-full h-auto object-contain max-h-[500px]"
-              onError={(e) => { e.target.parentElement.style.display = "none"; }}
+              onError={(e) => {
+                e.target.parentElement.style.display = "none";
+              }}
             />
           </div>
         )}
 
         {videoUrl && (
           <div className="mb-3 rounded-lg sm:rounded-xl overflow-hidden bg-black">
-            <video src={videoUrl} controls playsInline className="w-full max-h-[500px]" />
+            <video
+              src={videoUrl}
+              controls
+              playsInline
+              className="w-full max-h-[500px]"
+            />
           </div>
         )}
       </div>
@@ -827,7 +851,6 @@ const ResearchCard = ({
 
   const abs = research.abstract || "";
 
-
   const keywords = Array.isArray(research.keywords) ? research.keywords : [];
   const fileUrl = research.research_file
     ? `${API_CONFIG.BASE_URL}/${research.research_file}`
@@ -876,9 +899,13 @@ const ResearchCard = ({
       localStorage.setItem("savedPosts", JSON.stringify(next));
       return next;
     });
-    toast.success(wasSaved ? "Post removed from saved" : "Post saved successfully");
+    toast.success(
+      wasSaved ? "Post removed from saved" : "Post saved successfully",
+    );
     if (wasSaved)
-      window.dispatchEvent(new CustomEvent("postUnsaved", { detail: { postId } }));
+      window.dispatchEvent(
+        new CustomEvent("postUnsaved", { detail: { postId } }),
+      );
     try {
       const res = await fetch(
         `${API_CONFIG.BASE_URL}/research/research-save/${postId}`,
@@ -959,7 +986,9 @@ const ResearchCard = ({
             alt={research.name || "User"}
             className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full border-2 border-[#00ff88]/20 object-cover shrink-0"
             src={getPostProfileSrc(research)}
-            onError={(e) => { e.target.src = avatar; }}
+            onError={(e) => {
+              e.target.src = avatar;
+            }}
           />
           <div className="flex-1 min-w-0">
             <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white truncate capitalize">
@@ -976,31 +1005,35 @@ const ResearchCard = ({
           {research.research_title}
         </h4>
 
-      {abs && (
-  <div className="mb-3">
-    <div 
-      className="text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-300 break-words whitespace-pre-wrap"
-      style={!expanded ? {
-        display: "-webkit-box",
-        WebkitBoxOrient: "vertical",
-        overflow: "hidden",
-        WebkitLineClamp: 3, 
-      } : {}}
-    >
-      {abs}
-    </div>
-    
-    {/* Dynamic Read more / Show less Button */}
-    {abs.length > 120 && ( // Ek andaze se character safety lagayi hai taaki chote text par button na dikhe
-      <button
-        onClick={() => setExpanded((v) => !v)}
-        className="text-[10px] sm:text-xs text-emerald-600 dark:text-[#00ff85] mt-1 hover:underline font-semibold block"
-      >
-        {expanded ? "Show less" : "Read more"}
-      </button>
-    )}
-  </div>
-)}
+        {abs && (
+          <div className="mb-3">
+            <div
+              className="text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-300 break-words whitespace-pre-wrap"
+              style={
+                !expanded
+                  ? {
+                      display: "-webkit-box",
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                      WebkitLineClamp: 3,
+                    }
+                  : {}
+              }
+            >
+              {abs}
+            </div>
+
+            {/* Dynamic Read more / Show less Button */}
+            {abs.length > 120 && ( // Ek andaze se character safety lagayi hai taaki chote text par button na dikhe
+              <button
+                onClick={() => setExpanded((v) => !v)}
+                className="text-[10px] sm:text-xs text-emerald-600 dark:text-[#00ff85] mt-1 hover:underline font-semibold block"
+              >
+                {expanded ? "Show less" : "Read more"}
+              </button>
+            )}
+          </div>
+        )}
 
         {keywords.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
@@ -1095,7 +1128,9 @@ const recomputePollPercentages = (options, totalVotes) => {
 
 const clonePoll = (poll) => ({
   ...poll,
-  options: Array.isArray(poll.options) ? poll.options.map((o) => ({ ...o })) : [],
+  options: Array.isArray(poll.options)
+    ? poll.options.map((o) => ({ ...o }))
+    : [],
 });
 
 const applyLocalVote = (poll, optionId) => {
@@ -1156,8 +1191,8 @@ const PollCard = ({
   currentUserId,
   pollActionLoading,
   setPollActionLoading,
-  onPollUpdate,          // (pollId, updaterFn) => void  — updates activity state
-  onDeletePoll,          // (pollId) => void
+  onPollUpdate, // (pollId, updaterFn) => void  — updates activity state
+  onDeletePoll, // (pollId) => void
   showOptionsId,
   setShowOptionsId,
 }) => {
@@ -1204,7 +1239,8 @@ const PollCard = ({
         },
       );
     } catch (err) {
-      if (err?.name === "AbortError") throw new Error("Voting timed out. Please try again.");
+      if (err?.name === "AbortError")
+        throw new Error("Voting timed out. Please try again.");
       throw err;
     } finally {
       clearTimeout(timeoutId);
@@ -1233,7 +1269,8 @@ const PollCard = ({
         },
       );
     } catch (err) {
-      if (err?.name === "AbortError") throw new Error("Undo vote timed out. Please try again.");
+      if (err?.name === "AbortError")
+        throw new Error("Undo vote timed out. Please try again.");
       throw err;
     } finally {
       clearTimeout(timeoutId);
@@ -1337,7 +1374,9 @@ const PollCard = ({
                   alt={pollName}
                   src={getPostProfileSrc(poll)}
                   className="w-full h-full rounded-lg sm:rounded-2xl object-cover"
-                  onError={(e) => { e.target.src = avatar; }}
+                  onError={(e) => {
+                    e.target.src = avatar;
+                  }}
                 />
               ) : (
                 <img
@@ -1366,7 +1405,7 @@ const PollCard = ({
           </div>
 
           {/* Options menu */}
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0 relative">
+          {/* <div className="flex items-center gap-1 sm:gap-2 shrink-0 relative">
             <button
               type="button"
               className="text-slate-400 hover:text-slate-900 dark:text-white p-1 rounded-full hover:bg-white/5 transition-all duration-200"
@@ -1412,7 +1451,7 @@ const PollCard = ({
                 </div>
               </>
             )}
-          </div>
+          </div> */}
         </div>
 
         {/* Question */}
@@ -1423,7 +1462,10 @@ const PollCard = ({
         {/* Options */}
         <div className="mt-3 sm:mt-4 md:mt-5 space-y-2 sm:space-y-3">
           {(poll.options || []).map((opt) => {
-            const percent = Math.max(0, Math.min(100, Number(opt.percentage) || 0));
+            const percent = Math.max(
+              0,
+              Math.min(100, Number(opt.percentage) || 0),
+            );
             const isSelected =
               String(opt.id) === String(myVote) ||
               Number(opt.is_voted_by_me) === 1;
@@ -1496,7 +1538,9 @@ const PollCard = ({
               Undo vote
             </button>
           ) : (
-            <span className="text-slate-600 whitespace-nowrap">Tap to vote</span>
+            <span className="text-slate-600 whitespace-nowrap">
+              Tap to vote
+            </span>
           )}
         </div>
       </div>
@@ -1528,12 +1572,18 @@ const UserActivityPage = () => {
 
   // ── Card shared state (mirrors MainContent) ──
   const [likedPosts, setLikedPosts] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("postLikes") || "{}"); }
-    catch { return {}; }
+    try {
+      return JSON.parse(localStorage.getItem("postLikes") || "{}");
+    } catch {
+      return {};
+    }
   });
   const [savedPosts, setSavedPosts] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("savedPosts") || "{}"); }
-    catch { return {}; }
+    try {
+      return JSON.parse(localStorage.getItem("savedPosts") || "{}");
+    } catch {
+      return {};
+    }
   });
   const [commentsState, setCommentsState] = useState({});
 
@@ -1605,7 +1655,9 @@ const UserActivityPage = () => {
     };
 
     fetchActivity();
-    return () => { aborted = true; };
+    return () => {
+      aborted = true;
+    };
   }, [passedUser?.id]);
 
   /* ── Share data fetch (same as UserProfile) ── */
@@ -1634,9 +1686,7 @@ const UserActivityPage = () => {
     const snapshot = activity.polls;
     setActivity((prev) => ({
       ...prev,
-      polls: prev.polls.filter(
-        (p) => String(p.poll_id || p.id) !== pollIdStr,
-      ),
+      polls: prev.polls.filter((p) => String(p.poll_id || p.id) !== pollIdStr),
     }));
 
     try {
@@ -1664,7 +1714,8 @@ const UserActivityPage = () => {
       if (responseText.includes("PHP Error") || responseText.includes("<div"))
         throw new Error("Server error occurred while deleting poll.");
       const data = JSON.parse(responseText);
-      if (!data?.status) throw new Error(data?.message || "Failed to delete poll.");
+      if (!data?.status)
+        throw new Error(data?.message || "Failed to delete poll.");
       toast.success("Poll deleted successfully");
     } catch (err) {
       // rollback
@@ -1683,9 +1734,21 @@ const UserActivityPage = () => {
 
   /* ── Merge + sort (preserved exactly) ── */
   const allItems = [
-    ...activity.posts.map((p) => ({ type: "post", data: p, time: p.created_at })),
-    ...activity.research.map((r) => ({ type: "research", data: r, time: r.created_at })),
-    ...activity.polls.map((p) => ({ type: "poll", data: p, time: p.created_at })),
+    ...activity.posts.map((p) => ({
+      type: "post",
+      data: p,
+      time: p.created_at,
+    })),
+    ...activity.research.map((r) => ({
+      type: "research",
+      data: r,
+      time: r.created_at,
+    })),
+    ...activity.polls.map((p) => ({
+      type: "poll",
+      data: p,
+      time: p.created_at,
+    })),
   ].sort((a, b) => new Date(b.time || 0) - new Date(a.time || 0));
 
   const tabs = [
@@ -1759,10 +1822,22 @@ const UserActivityPage = () => {
     activeTab === "all"
       ? allItems
       : activeTab === "posts"
-        ? activity.posts.map((d) => ({ type: "post", data: d, time: d.created_at }))
+        ? activity.posts.map((d) => ({
+            type: "post",
+            data: d,
+            time: d.created_at,
+          }))
         : activeTab === "research"
-          ? activity.research.map((d) => ({ type: "research", data: d, time: d.created_at }))
-          : activity.polls.map((d) => ({ type: "poll", data: d, time: d.created_at }));
+          ? activity.research.map((d) => ({
+              type: "research",
+              data: d,
+              time: d.created_at,
+            }))
+          : activity.polls.map((d) => ({
+              type: "poll",
+              data: d,
+              time: d.created_at,
+            }));
 
   const emptyConfigs = {
     all: {
@@ -1826,7 +1901,9 @@ const UserActivityPage = () => {
     return String(t).toLowerCase() === "institute";
   })();
 
-  const userTypeLabel = isInstituteUser ? "Research Institute" : "Individual Researcher";
+  const userTypeLabel = isInstituteUser
+    ? "Research Institute"
+    : "Individual Researcher";
 
   return (
     <div className="min-h-screen w-full bg-slate-50 text-slate-800 dark:bg-[#080a09] dark:text-white">
@@ -1859,7 +1936,9 @@ const UserActivityPage = () => {
                   src={headerAvatar}
                   alt={displayName}
                   className="h-16 w-16 sm:h-20 sm:w-20 rounded-full object-cover bg-gray-100 dark:bg-[#13231a]"
-                  onError={(e) => { e.target.src = avatar; }}
+                  onError={(e) => {
+                    e.target.src = avatar;
+                  }}
                 />
               </div>
 
@@ -1999,8 +2078,14 @@ const UserActivityPage = () => {
 
       <style jsx>{`
         @keyframes fadeInScale {
-          from { opacity: 0; transform: scale(0.95) translateY(10px); }
-          to { opacity: 1; transform: scale(1) translateY(0); }
+          from {
+            opacity: 0;
+            transform: scale(0.95) translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
         }
         .animate-fadeInScale {
           animation: fadeInScale 0.2s cubic-bezier(0.4, 0, 0.2, 1);

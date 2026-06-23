@@ -4,6 +4,10 @@ import Layout from "../Layout/Layout"; // ✅ Admin Layout
 import defaultAvatar from "../../assets/images/avatar.jpg";
 import API_CONFIG from "../../config/api.config";
 import { toast } from "react-toastify";
+import ShareModal, {
+  fetchShareData,
+  sendPost,
+} from "../../dashboard/ShareModal"; // ⚠️ adjust path if needed
 
 // ─────────────────────────────────────────
 // MaterialIcon Helper
@@ -17,7 +21,7 @@ const MaterialIcon = ({ name, className = "", style = {} }) => (
 // ─────────────────────────────────────────
 // SavedPostCard Component
 // ─────────────────────────────────────────
-const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
+const SavedPostCard = ({ post, currentUserId, onUnsave, onShare }) => {
   const [refreshingComments, setRefreshingComments] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isVideoMuted, setIsVideoMuted] = useState(true);
@@ -68,14 +72,14 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-          }
+          },
         );
         const result = await res.json();
         if (result.status && result.data) {
           const freshPost = result.data.find(
             (p) =>
               String(p.researche_id) === String(actualId) ||
-              String(p.id) === String(actualId)
+              String(p.id) === String(actualId),
           );
           if (freshPost) {
             setIsLiked(freshPost.is_liked === "1");
@@ -98,7 +102,7 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
         const result = await res.json();
         if (result.status && result.data) {
           const freshPost = result.data.find(
-            (p) => String(p.id) === String(postData.id)
+            (p) => String(p.id) === String(postData.id),
           );
           if (freshPost) {
             setPostData(freshPost);
@@ -319,21 +323,6 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
     }
   };
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator
-        .share({
-          title: postData.name,
-          text: postData.post_text?.substring(0, 100),
-          url: window.location.href,
-        })
-        .catch((err) => console.error("Share failed:", err));
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success("Link copied to clipboard!");
-    }
-  };
-
   const formatTimeAgo = (timestamp) => {
     if (!timestamp) return "Just now";
     let normalized = String(timestamp).replace(" ", "T");
@@ -369,13 +358,17 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
                 ? `${API_CONFIG.BASE_URL}/${postData.profile_image}`
                 : defaultAvatar
             }
-            onError={(e) => { e.target.src = defaultAvatar; }}
+            onError={(e) => {
+              e.target.src = defaultAvatar;
+            }}
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <h4 className="font-bold text-slate-900 dark:text-white transition-colors capitalize truncate text-sm sm:text-base">
-                  {postData.institute_name ? postData.institute_name : postData.name}
+                  {postData.institute_name
+                    ? postData.institute_name
+                    : postData.name}
                 </h4>
                 <p className="text-xs text-slate-500 dark:text-slate-500 capitalize mt-0.5 truncate flex items-center gap-1">
                   {postData.institute_name ? "Institute" : "Individual"}
@@ -412,7 +405,9 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
                   src={`${API_CONFIG.BASE_URL}/${postData.image}`}
                   alt="Post Media"
                   className="w-full h-auto object-contain max-h-[600px] md:max-h-[700px]"
-                  onError={(e) => { e.target.src = postData.image; }}
+                  onError={(e) => {
+                    e.target.src = postData.image;
+                  }}
                 />
               </div>
             )}
@@ -438,7 +433,10 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
                     onClick={toggleVideoPlayPause}
                   >
                     <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#00ff85] to-[#00dd77] rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-lg">
-                      <MaterialIcon name="play_arrow" className="text-4xl sm:text-5xl text-black ml-1" />
+                      <MaterialIcon
+                        name="play_arrow"
+                        className="text-4xl sm:text-5xl text-black ml-1"
+                      />
                     </div>
                   </div>
                 )}
@@ -446,7 +444,10 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
                   onClick={toggleVideoSound}
                   className="absolute bottom-4 right-4 bg-black/80 hover:bg-black/95 text-white rounded-full p-3 transition-all z-10"
                 >
-                  <MaterialIcon name={isVideoMuted ? "volume_off" : "volume_up"} className="text-xl sm:text-2xl" />
+                  <MaterialIcon
+                    name={isVideoMuted ? "volume_off" : "volume_up"}
+                    className="text-xl sm:text-2xl"
+                  />
                 </button>
                 <div className="absolute top-4 left-4 bg-black/80 px-3 py-1.5 rounded-lg text-xs text-white font-semibold">
                   Video
@@ -462,11 +463,15 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
                 <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-gray-100 dark:bg-[#0f172a] border border-[#00ff85]/20 flex items-center justify-center shrink-0">
-                  <MaterialIcon name="description" className="text-[#00ff85] text-xl sm:text-2xl" />
+                  <MaterialIcon
+                    name="description"
+                    className="text-[#00ff85] text-xl sm:text-2xl"
+                  />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white truncate">
-                    {postData.research_file.split("/").pop() || "Research Paper"}
+                    {postData.research_file.split("/").pop() ||
+                      "Research Paper"}
                   </p>
                   <p className="text-[10px] sm:text-xs text-slate-400 mt-1">
                     PDF • {postData.research_title || "Research Document"}
@@ -479,7 +484,9 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
                 rel="noopener noreferrer"
                 className="w-full sm:w-auto px-4 py-2 bg-[#00ff88] text-black font-bold text-xs sm:text-sm rounded-lg hover:bg-[#00dd77] transition-all flex items-center justify-center gap-2"
               >
-                <span className="material-symbols-outlined text-sm sm:text-base">open_in_new</span>
+                <span className="material-symbols-outlined text-sm sm:text-base">
+                  open_in_new
+                </span>
                 View PDF
               </a>
             </div>
@@ -500,7 +507,9 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
             <MaterialIcon
               name="favorite"
               className="text-lg sm:text-xl"
-              style={{ fontVariationSettings: isLiked ? "'FILL' 1" : "'FILL' 0" }}
+              style={{
+                fontVariationSettings: isLiked ? "'FILL' 1" : "'FILL' 0",
+              }}
             />
             {likeCount > 0 ? (
               <span className="text-xs sm:text-sm font-bold">{likeCount}</span>
@@ -513,7 +522,9 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
           <button
             onClick={toggleComments}
             className={`flex items-center gap-1 sm:gap-2 transition-all ${
-              showComments ? "text-[#00ff85]" : "text-slate-500 hover:text-[#00ff85]"
+              showComments
+                ? "text-[#00ff85]"
+                : "text-slate-500 hover:text-[#00ff85]"
             }`}
           >
             <MaterialIcon name="chat_bubble" className="text-lg sm:text-xl" />
@@ -522,13 +533,15 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
                 {commentsList.length > 0 ? commentsList.length : commentCount}
               </span>
             ) : (
-              <span className="hidden sm:inline text-xs font-bold">Comment</span>
+              <span className="hidden sm:inline text-xs font-bold">
+                Comment
+              </span>
             )}
           </button>
 
           {/* Share */}
           <button
-            onClick={handleShare}
+            onClick={() => onShare(postData.id || postData.researche_id)}
             className="flex items-center gap-1 sm:gap-2 text-slate-500 hover:text-[#00ff85] transition-all"
           >
             <MaterialIcon name="share" className="text-lg sm:text-xl" />
@@ -558,7 +571,9 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
                   type="text"
                   value={newCommentText}
                   onChange={(e) => setNewCommentText(e.target.value)}
-                  onKeyPress={(e) => { if (e.key === "Enter") addComment(); }}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") addComment();
+                  }}
                   placeholder="Add a comment..."
                   className="w-full bg-gray-100 dark:bg-[#1e293b] border border-gray-200 dark:border-white/10 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm focus:outline-none focus:border-[#00ff85]/50 transition-colors pr-10 text-slate-900 dark:text-white placeholder:text-slate-400"
                   style={{ outline: "none", boxShadow: "none" }}
@@ -584,11 +599,15 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
                       alt={comment.author}
                       className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-white/10 object-cover shrink-0"
                       src={comment.authorAvatar || defaultAvatar}
-                      onError={(e) => { e.target.src = defaultAvatar; }}
+                      onError={(e) => {
+                        e.target.src = defaultAvatar;
+                      }}
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{comment.author}</span>
+                        <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                          {comment.author}
+                        </span>
                         <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-2">
                           <span className="text-[10px] text-slate-500 uppercase">
                             {formatTimeAgo(comment.timestamp)}
@@ -603,9 +622,11 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
                           )}
                         </div>
                       </div>
-                      <p className={`text-xs text-slate-700 dark:text-slate-300 mt-1 leading-relaxed ${
-                        expandedComments[comment.id] ? "" : "line-clamp-3"
-                      }`}>
+                      <p
+                        className={`text-xs text-slate-700 dark:text-slate-300 mt-1 leading-relaxed ${
+                          expandedComments[comment.id] ? "" : "line-clamp-3"
+                        }`}
+                      >
                         {comment.text}
                       </p>
                       {comment.text.length > 120 && (
@@ -618,7 +639,9 @@ const SavedPostCard = ({ post, currentUserId, onUnsave }) => {
                           }
                           className="text-[10px] text-[#00ff88] mt-1 hover:underline"
                         >
-                          {expandedComments[comment.id] ? "Show less" : "Read more"}
+                          {expandedComments[comment.id]
+                            ? "Show less"
+                            : "Read more"}
                         </button>
                       )}
                       <div className="border-b border-gray-200 dark:border-white/10 mt-3"></div>
@@ -649,6 +672,14 @@ const AdminSavedPosts = () => {
   const [userId, setUserId] = useState(null);
   const [activeNav, setActiveNav] = useState("save"); // ✅ Sidebar mein "Save" highlight hoga
 
+  // ── Share modal state ──
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [selectedSharePostId, setSelectedSharePostId] = useState(null);
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
+  const [shareSearchQuery, setShareSearchQuery] = useState("");
+  const [shareAllUsers, setShareAllUsers] = useState([]);
+  const [shareGroups, setShareGroups] = useState([]);
+
   // ── Get current user ID ──
   useEffect(() => {
     try {
@@ -667,6 +698,26 @@ const AdminSavedPosts = () => {
 
   const getAuthToken = () =>
     localStorage.getItem("token") || localStorage.getItem("authToken");
+
+  // ── Share modal handlers ──
+  const openShareModal = (postId) => {
+    setSelectedSharePostId(postId);
+    setIsShareOpen(true);
+    fetchShareData(getAuthToken, setShareAllUsers, setShareGroups);
+  };
+
+  const handleSendPost = (postId) => {
+    sendPost(
+      postId,
+      selectedUserIds,
+      shareGroups,
+      getAuthToken,
+      setIsShareOpen,
+      setSelectedSharePostId,
+      setSelectedUserIds,
+      setShareSearchQuery,
+    );
+  };
 
   const fetchSavedPosts = async () => {
     try {
@@ -700,7 +751,7 @@ const AdminSavedPosts = () => {
       }));
 
       const finalData = [...transformedResearch, ...regularPosts].filter(
-        (p) => p && (p.id || p.researche_id)
+        (p) => p && (p.id || p.researche_id),
       );
 
       setSavedPosts(finalData);
@@ -717,7 +768,7 @@ const AdminSavedPosts = () => {
     try {
       const token = getAuthToken();
       const post = savedPosts.find(
-        (p) => p.id === postId || p.researche_id === postId
+        (p) => p.id === postId || p.researche_id === postId,
       );
       if (!post) return;
 
@@ -741,10 +792,10 @@ const AdminSavedPosts = () => {
       if (result.status) {
         toast.success("Removed from saved");
         setSavedPosts((prev) =>
-          prev.filter((p) => p.id !== postId && p.researche_id !== postId)
+          prev.filter((p) => p.id !== postId && p.researche_id !== postId),
         );
         const savedState = JSON.parse(
-          localStorage.getItem("savedPosts") || "{}"
+          localStorage.getItem("savedPosts") || "{}",
         );
         delete savedState[postId];
         localStorage.setItem("savedPosts", JSON.stringify(savedState));
@@ -785,6 +836,7 @@ const AdminSavedPosts = () => {
               post={post}
               currentUserId={userId}
               onUnsave={handleToggleSave}
+              onShare={openShareModal}
             />
           ))
         ) : (
@@ -803,6 +855,20 @@ const AdminSavedPosts = () => {
         ::-webkit-scrollbar { display: none; width: 0; height: 0; }
         * { scrollbar-width: none; -ms-overflow-style: none; }
       `}</style>
+
+      <ShareModal
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+        allUsers={shareAllUsers}
+        shareGroups={shareGroups}
+        selectedUserIds={selectedUserIds}
+        setSelectedUserIds={setSelectedUserIds}
+        shareSearchQuery={shareSearchQuery}
+        setShareSearchQuery={setShareSearchQuery}
+        onSend={handleSendPost}
+        selectedSharePostId={selectedSharePostId}
+        avatarFallback={defaultAvatar}
+      />
     </Layout>
   );
 };

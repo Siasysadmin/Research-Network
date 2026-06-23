@@ -4,7 +4,6 @@ import avatar from "../assets/images/avatar.jpg";
 import { Layout } from "./Layout/Layout";
 import API_CONFIG from "../config/api.config";
 import { toast } from "react-toastify";
-import UserProfile from "./porfile/AdminUserProfile";
 
 // ==================== COMMENTS SECTION (reusable) ====================
 const CommentsSection = React.memo(
@@ -164,8 +163,7 @@ const MainContent = () => {
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [showReportPopup, setShowReportPopup] = useState(false);
   const [showBlockPopup, setShowBlockPopup] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [showProfile, setShowProfile] = useState(false);
+ 
   // Poll states
   const [pollVoting, setPollVoting] = useState({}); // { pollId: true/false } loading state
 
@@ -262,16 +260,18 @@ const MainContent = () => {
     return localStorage.getItem("token") || localStorage.getItem("authToken");
   };
 
-  const openUserProfile = (post) => {
-    setSelectedUser({
-      id: post.user_id || post.id,
-      name: post.name || post.postName,
-      email: post.email,
-      user_type: post.user_type,
-      registration_id: post.registration_id,
+ const openUserProfile = (post) => {
+    navigate("/admin/user-profile", {
+      state: {
+        user: {
+          id: post.user_id || post.id,
+          name: post.name || post.postName,
+          email: post.email,
+          user_type: post.user_type,
+          registration_id: post.registration_id,
+        },
+      },
     });
-
-    setShowProfile(true);
   };
 
   const getCurrentUserId = () => {
@@ -2733,7 +2733,7 @@ const MainContent = () => {
           </div>
         </div>
       )}
-
+{/* 
       {showProfile && selectedUser && (
         <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-5xl h-[90vh]">
@@ -2746,7 +2746,7 @@ const MainContent = () => {
             />
           </div>
         </div>
-      )}
+      )} */}
 
       <style jsx global>{`
         ::-webkit-scrollbar {

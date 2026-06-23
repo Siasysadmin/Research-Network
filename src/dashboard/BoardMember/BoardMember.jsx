@@ -4,6 +4,8 @@ import UserProfile from "../UserProfile";
 import API_CONFIG from "../../config/api.config";
 import avatar from "../../assets/images/avatar.jpg";
 
+import { useNavigate } from "react-router-dom";
+
 const MaterialIcon = ({ name, className = "" }) => (
   <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
@@ -44,6 +46,9 @@ const BoardMembers = () => {
   const [searchedUser, setSearchedUser] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [selectedProfileUser, setSelectedProfileUser] = useState(null);
+
+
+  const navigate = useNavigate();
 
   // ✅ Store original IDs for stable keys
   const stableIds = useRef(new Map());
@@ -351,9 +356,11 @@ const BoardMembers = () => {
                     {member.email}
                   </p>
                   <button
-                    onClick={() => {
-                      setSelectedProfileUser(member);
-                    }}
+                  onClick={() => {
+  navigate("/user-profile", {
+    state: { user: member },
+  });
+}}
                     className="w-full py-2 px-2 bg-[#00ff88]/10 hover:bg-[#00ff88] text-[#00ff88] hover:text-[#0a120e] text-xs font-bold rounded-lg border border-[#00ff88]/20 transition-all flex items-center justify-center gap-2"
                   >
                     <MaterialIcon name="person" className="text-sm" />
@@ -366,24 +373,7 @@ const BoardMembers = () => {
         )}
       </div>
 
-      {/* ✅ UserProfile Modal */}
-      {selectedProfileUser && (
-        <div
-          className="fixed inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-6 md:p-8"
-          onClick={() => setSelectedProfileUser(null)}
-          style={{ zIndex: 9999 }}
-        >
-          <div
-            className="w-full max-w-5xl h-[95vh] sm:h-[85vh] bg-[#0d0f0e] rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,255,136,0.1)] border border-[#00ff88]/20 relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <UserProfile
-              user={selectedProfileUser}
-              onClose={() => setSelectedProfileUser(null)}
-            />
-          </div>
-        </div>
-      )}
+   
       <style jsx global>{`
         /* Chrome, Safari aur Opera ke liye */
         ::-webkit-scrollbar {

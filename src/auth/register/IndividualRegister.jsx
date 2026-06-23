@@ -1,5 +1,5 @@
 // ============================================
-// INDIVIDUAL REGISTRATION - CORRECTED LAYOUT
+// INDIVIDUAL REGISTRATION - WITH OTP VERIFY FLOW
 // ============================================
 
 import React, { useState, useEffect } from "react";
@@ -32,6 +32,13 @@ const IndividualRegister = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+
+  // ── OTP flow states ──
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [registeredUserData, setRegisteredUserData] = useState(null);
 
   // Handle input changes
   const handleChange = (e) => {
@@ -117,7 +124,7 @@ const IndividualRegister = () => {
             "x-api-key": "beej_bhandar_common_secret_123",
           },
           body: JSON.stringify(commonUserPayload),
-        }
+        },
       );
 
       const commonData = await commonResponse.json();
@@ -134,7 +141,7 @@ const IndividualRegister = () => {
   };
   //sync Common User Api end vijay
 
-  // API CALL
+  // ── REGISTER API → on success, open OTP modal ──
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -176,44 +183,11 @@ const IndividualRegister = () => {
           data.status === "success" ||
           data.message?.toLowerCase().includes("success"))
       ) {
-
-        await syncCommonUserApi(data?.user_id || data?.id || data?.user?.id);   //added by vijay sync Common User Api
-
-
-        toast.success(" Registration successful!");
-        localStorage.removeItem("formData");
-        // ✅ Token
-        if (data.token) {
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("user_type", "individual"); // Use same key name everywhere
-          localStorage.setItem("isLoggedIn", "true");
-        }
-
-        const userData = {
-          id: data?.user_id || "",
-          user_id: data?.user_id || "",
-          name: formData.fullName,
-          email: formData.email,
-          user_type: "individual",
-          country: formData.country,
-          state: formData.state,
-          city: formData.city,
-          pincode: formData.pincode,
-          registration_id: data?.registration_id || "",
-        };
-
-        localStorage.setItem("user", JSON.stringify(userData));
-        localStorage.setItem("user_id", data?.user_id || "");
-        // ✅ ALSO save separately (backup for other components)
-        localStorage.setItem("userEmail", formData.email);
-        localStorage.setItem("user_type", "individual");
-        localStorage.setItem("isLoggedIn", "true");
-
-        setTimeout(() => {
-          navigate("/application-approved", {
-            state: { userType: "individual", email: formData.email },
-          });
-        }, 500);
+        // Store response. No localStorage write yet — OTP pending.
+        setRegisteredUserData(data);
+        setOtp("");
+        setShowOtpModal(true);
+        toast.success("OTP sent to your email");
       } else if (
         data.message?.toLowerCase().includes("email already exists") ||
         data.message?.toLowerCase().includes("already registered")
@@ -228,6 +202,118 @@ const IndividualRegister = () => {
       toast.error("Network error. Please check your connection and try again.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // ── Verify OTP → write localStorage, sync common user, navigate ──
+  const handleVerifyOtp = async () => {
+    if (otp.length !== 6) {
+      toast.error("Enter 6-digit OTP");
+      return;
+    }
+    setOtpLoading(true);
+    try {
+      const res = await fetch(
+        `${API_CONFIG.BASE_URL}/auth/register/verify-otp`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ email: formData.email, otp }),
+        },
+      );
+      const data = await res.json();
+
+      if (
+        res.ok &&
+        (data.status === true ||
+          data.status === "success" ||
+          data.message?.toLowerCase().includes("success") ||
+          data.message?.toLowerCase().includes("verified"))
+      ) {
+        const reg = registeredUserData || {};
+
+        // sync common user — moved here from handleSubmit
+        await syncCommonUserApi(reg?.user_id || reg?.id || reg?.user?.id);
+
+        // token can come from register or verify-otp
+        if (reg.token || data.token) {
+          localStorage.setItem("token", reg.token || data.token);
+        }
+        localStorage.setItem("user_type", "individual");
+        localStorage.setItem("isLoggedIn", "true");
+
+        const userData = {
+          id: reg?.user_id || data?.user_id || "",
+          user_id: reg?.user_id || data?.user_id || "",
+          name: formData.fullName,
+          email: formData.email,
+          user_type: "individual",
+          country: formData.country,
+          state: formData.state,
+          city: formData.city,
+          pincode: formData.pincode,
+          registration_id: reg?.registration_id || data?.registration_id || "",
+        };
+        localStorage.setItem("user", JSON.stringify(userData));
+        localStorage.setItem("user_id", reg?.user_id || data?.user_id || "");
+        localStorage.setItem("userEmail", formData.email);
+
+        localStorage.removeItem("formData");
+
+        toast.success("Verified! Welcome aboard.");
+        setShowOtpModal(false);
+
+        setTimeout(() => {
+          navigate("/application-approved", {
+            state: { userType: "individual", email: formData.email },
+          });
+        }, 400);
+      } else {
+        toast.error(data.message || "Invalid OTP. Try again.");
+      }
+    } catch (err) {
+      toast.error("Network error verifying OTP.");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  // ── Resend OTP ──
+  const handleResendOtp = async () => {
+    setResendLoading(true);
+    try {
+      const res = await fetch(
+        `${API_CONFIG.BASE_URL}/auth/resend-registration-otp`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ email: formData.email }),
+        },
+      );
+      const data = await res.json();
+
+      if (
+        res.ok &&
+        (data.status === true ||
+          data.status === "success" ||
+          data.message?.toLowerCase().includes("success") ||
+          data.message?.toLowerCase().includes("sent"))
+      ) {
+        toast.success("OTP resent to your email");
+        setOtp("");
+      } else {
+        toast.error(data.message || "Failed to resend OTP");
+      }
+    } catch (err) {
+      toast.error("Network error. Try again.");
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -632,6 +718,101 @@ ${fieldErrors.agreeTerms ? "border-red-500" : ""}`}
           </div>
         </div>
       </main>
+
+      {/* ══════════ OTP VERIFICATION MODAL ══════════ */}
+      {showOtpModal && (
+  <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div className="w-full max-w-[420px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl p-6 md:p-8">
+      <div className="text-center mb-6">
+        <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-[#00ff88]/10 flex items-center justify-center">
+          <span className="material-symbols-outlined text-[#00ff88] text-2xl">
+            mail_lock
+          </span>
+        </div>
+
+        <h2 className="text-xl font-black text-slate-900 dark:text-white mb-1">
+          Verify Your Email
+        </h2>
+
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          We've sent a 6-digit OTP to
+        </p>
+
+        <p className="text-sm font-bold text-slate-900 dark:text-white break-all">
+          {formData.email}
+        </p>
+      </div>
+
+      <div className="mb-5">
+        <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-wider block mb-1.5">
+          Enter OTP
+        </label>
+
+        <input
+          type="text"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          value={otp}
+          onChange={(e) => {
+            const v = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
+            setOtp(v);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && otp.length === 6 && !otpLoading) {
+              handleVerifyOtp();
+            }
+          }}
+          maxLength={6}
+          disabled={otpLoading}
+          placeholder="- - - - - -"
+          className="w-full text-center text-2xl tracking-[0.6em] font-bold bg-[#f1f5f9] dark:bg-slate-950/70 border border-gray-300 dark:border-white/10 rounded-xl py-3.5 px-4 outline-none focus:border-[#00ff88]/50 focus:ring-1 focus:ring-[#00ff88]/30 transition-all text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-600 disabled:opacity-50"
+        />
+      </div>
+
+      <button
+        type="button"
+        onClick={handleVerifyOtp}
+        disabled={otpLoading || resendLoading || otp.length !== 6}
+        className="w-full bg-[#00ff88] hover:bg-[#00e67a] text-black font-bold py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2 text-sm uppercase active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed mb-3"
+      >
+        {otpLoading ? (
+          <>
+            <span className="inline-block w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+            Verifying...
+          </>
+        ) : (
+          <>
+            Verify OTP
+            <span className="material-symbols-outlined text-lg">
+              check_circle
+            </span>
+          </>
+        )}
+      </button>
+
+      <button
+        type="button"
+        onClick={handleResendOtp}
+        disabled={otpLoading || resendLoading}
+        className="w-full bg-transparent border border-slate-300 dark:border-white/10 hover:border-[#00ff88]/50 text-slate-700 dark:text-slate-300 font-bold py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2 text-sm uppercase active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {resendLoading ? (
+          <>
+            <span className="inline-block w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
+            Resending...
+          </>
+        ) : (
+          <>
+            Resend OTP
+            <span className="material-symbols-outlined text-lg">
+              refresh
+            </span>
+          </>
+        )}
+      </button>
+    </div>
+  </div>
+)}
     </div>
   );
 };
