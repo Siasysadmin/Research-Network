@@ -47,10 +47,9 @@ import CreatePost from "./dashboard/createpost";
 import Chats from "./dashboard/Chat/Chats";
 import Events from "./dashboard/Events";
 import UserProfile from "./dashboard/UserProfile";
-<<<<<<< HEAD
+
 import UserActivityPage from "./dashboard/UserActivityPage";
-=======
->>>>>>> b40b52ce4e14e78114b8290339d16cb192dd787b
+
 import CreateGroup from "./dashboard/Chat/CreateGroup";
 import GroupDetails from "./dashboard/GroupDetails";
 import BoardMember from "./dashboard/BoardMember/BoardMember";
@@ -70,26 +69,24 @@ import { ThemeProvider } from "./context/ThemeContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicRoute from "./routes/PublicRoute";
 
-<<<<<<< HEAD
-=======
 
->>>>>>> b40b52ce4e14e78114b8290339d16cb192dd787b
+
+
 const App = () => {
   return (
     <ThemeProvider>
       <Routes>
         {/* Home */}
-<<<<<<< HEAD
+
         {/* Auth Routes */}
         <Route element={<PublicRoute />}>
           {" "}
           {/*added by vijay start */}
-=======
         
          
         {/* Auth Routes */}
         <Route element={<PublicRoute />}>  {/*added by vijay start */}
->>>>>>> b40b52ce4e14e78114b8290339d16cb192dd787b
+
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot" element={<ForgotPassword />} />
@@ -97,7 +94,7 @@ const App = () => {
           <Route path="/reset" element={<ResetPassword />} />
           <Route path="/individual" element={<IndividualRegister />} />
           <Route path="/institute" element={<InstituteRegister />} />
-<<<<<<< HEAD
+
         </Route>{" "}
         {/*added by vijay end */}
         {/* Protected Routes */}
@@ -206,7 +203,6 @@ const App = () => {
           <Route path="/settings" element={<Settings />} />
         </Route>{" "}
         {/*added by vijay end */}
-=======
         </Route>  {/*added by vijay end */}
 
         {/* Protected Routes */}
@@ -308,7 +304,7 @@ const App = () => {
 
 
         </Route> {/*added by vijay end */}
->>>>>>> b40b52ce4e14e78114b8290339d16cb192dd787b
+
         <Route path="/terms" element={<TermsConditions />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
 
