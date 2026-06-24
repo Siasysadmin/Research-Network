@@ -344,6 +344,68 @@ const DashboardLayout = ({ children }) => {
     checkBoardMember();
   }, []);
 
+<<<<<<< HEAD
+=======
+  // ── Search Dropdown ──
+  const SearchDropdown = ({ results }) => {
+    if (results.length === 0) return null;
+    return (
+  <div
+  className="
+    absolute top-full mt-2 left-0 w-full min-w-[260px]
+    max-h-[320px] overflow-y-auto
+    rounded-xl shadow-xl z-[70]
+
+    bg-white border border-gray-200
+    dark:bg-[#111f17] dark:border-[#32ff9920]
+  "
+>
+        {" "}
+        {results.map((u) => {
+          const name =
+            u.user_type === "institute"
+              ? u.institute_details?.institute_name || u.name || "Institute"
+              : u.name || "User";
+          const img =
+            u.user_type === "institute"
+              ? u.profile_institute_details?.profile_image
+              : u.profile_individual_details?.profile_image;
+          const imgUrl = img ? `${API_CONFIG.BASE_URL}/${img}` : avatar;
+          return (
+            <div
+              key={u.id}
+              onMouseDown={() => handleSearchUserClick(u)}
+              className="
+flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors
+
+hover:bg-gray-100
+dark:hover:bg-[#32ff9910]
+"
+            >
+              <img
+                src={imgUrl}
+                onError={(e) => {
+                  e.target.src = avatar;
+                }}
+                className="w-8 h-8 rounded-full object-cover border border-white/10 shrink-0"
+                alt={name}
+              />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                  {name}
+                </p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 capitalize">
+                  {u.user_type || "individual"} • Reg ID: {u.registration_id}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+>>>>>>> b40b52ce4e14e78114b8290339d16cb192dd787b
   return (
     <div className="bg-slate-50 dark:bg-[#0a120e] text-slate-100 min-h-[100dvh] overflow-x-hidden">
       {/* HEADER */}

@@ -308,11 +308,19 @@ const Chats = () => {
                   "Unknown Institute"
                 : user.name || "Unknown Individual";
             const finalType =
+<<<<<<< HEAD
               user.user_type === "institute"
                 ? "Research Institute"
                 : user.user_type === "admin"
                   ? "Admin"
                   : "Individual";
+=======
+  user.user_type === "institute"
+    ? "Research Institute"
+    : user.user_type === "admin"
+      ? "Admin"
+      : "Individual";
+>>>>>>> b40b52ce4e14e78114b8290339d16cb192dd787b
             const profileImg =
               user.user_type === "institute"
                 ? user.profile_institute_details?.profile_image
@@ -645,11 +653,15 @@ const Chats = () => {
             chat.timestamp !== lastTimestamp
           ) {
             hasUpdates = true;
+<<<<<<< HEAD
             updates[chat.id] = {
               unreadCount: effectiveUnread,
               lastMsgText,
               lastTimestamp,
             };
+=======
+            updates[chat.id] = { unreadCount: effectiveUnread, lastMsgText, lastTimestamp };
+>>>>>>> b40b52ce4e14e78114b8290339d16cb192dd787b
           }
         });
 
@@ -1563,6 +1575,7 @@ const Chats = () => {
                                               📂 View Attachment
                                             </a>
                                           );
+<<<<<<< HEAD
                                         })()}
                                       {msg.text &&
                                       String(msg.text).includes(
@@ -1618,6 +1631,78 @@ const Chats = () => {
                                             </p>
                                           )}
                                     </div>
+=======
+                                        if (isVid)
+                                          return (
+                                            <video
+                                              src={safeUrl}
+                                              controls
+                                              className="max-w-full sm:max-w-[250px] rounded-lg mb-2 bg-black border border-white/10"
+                                            />
+                                          );
+                                        return (
+                                          <a
+                                            href={safeUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="text-[#00ff85] underline text-xs mb-2 block font-bold"
+                                          >
+                                            📂 View Attachment
+                                          </a>
+                                        );
+                                      })()}
+                                    {msg.text &&
+                                    String(msg.text).includes("POST_SHARE_ID:")
+                                      ? (() => {
+                                          const extractedId =
+                                            String(msg.text).split(
+                                              "POST_SHARE_ID:",
+                                            )[1] || "";
+                                          return (
+                                            <div className="p-3 bg-emerald-50 dark:bg-[#0d0f0e] border border-[#00ff85]/30 rounded-xl min-w-[220px] max-w-xs flex flex-col gap-2 my-1 shadow-md text-left animate-fadeIn">
+                                              <div className="flex items-center gap-2 border-b border-emerald-200 dark:border-white/10 pb-1.5">
+                                                <MaterialIcon
+                                                  name="share"
+                                                  className="text-emerald-500 text-sm"
+                                                  style={{
+                                                    fontVariationSettings:
+                                                      "'FILL' 1",
+                                                  }}
+                                                />
+                                                <span className="text-[11px] font-mono tracking-wider text-[#00ff85] uppercase font-bold">
+                                                  Shared Post
+                                                </span>
+                                              </div>
+                                              <div className="text-xs text-slate-700 dark:text-slate-300">
+                                                View shared post
+                                              </div>
+                                              <button
+                                                onClick={() => {
+                                                  setSelectedPostIdForPopup(
+                                                    extractedId,
+                                                  );
+                                                  setIsPostModalOpen(true);
+                                                  fetchSinglePostDetails(
+                                                    extractedId,
+                                                  );
+                                                }}
+                                                className="w-full mt-1 py-1.5 px-3 bg-[#00ff85] hover:bg-[#00e676] text-[#003919] font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-1"
+                                              >
+                                                <MaterialIcon
+                                                  name="visibility"
+                                                  className="text-xs"
+                                                />{" "}
+                                                View Post
+                                              </button>
+                                            </div>
+                                          );
+                                        })()
+                                      : msg.text && (
+                                          <p className="whitespace-pre-wrap break-words">
+                                            {msg.text}
+                                          </p>
+                                        )}
+>>>>>>> b40b52ce4e14e78114b8290339d16cb192dd787b
                                   </div>
                                 </div>
                               </React.Fragment>

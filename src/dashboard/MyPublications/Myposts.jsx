@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import avatar from "../../assets/images/avatar.jpg";
 import API_CONFIG from "../../config/api.config";
 import { toast } from "react-toastify";
@@ -134,10 +135,17 @@ const PostCard = ({ post, onPostClick, onDeletePost }) => {
         </div>
       </div>
 
-      {/* Text */}
       {post.post_text && (
         <div className="px-4 pb-3">
-          <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed line-clamp-3">
+          <p
+            className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed"
+            style={{
+              display: "-webkit-box",
+              WebkitBoxOrient: "vertical",
+              WebkitLineClamp: post.image && post.image.trim() !== "" ? 3 : 14,
+              overflow: "hidden",
+            }}
+          >
             {post.post_text}
           </p>
         </div>
@@ -176,7 +184,6 @@ const PostCard = ({ post, onPostClick, onDeletePost }) => {
       )}
 
       {/* Actions */}
-      {/* Actions */}
       <div className="mt-auto flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-white/5">
         {" "}
         <div className="flex items-center gap-5">
@@ -199,7 +206,7 @@ const PostCard = ({ post, onPostClick, onDeletePost }) => {
             <span className="text-sm font-semibold">{likeCount}</span>
           </button>
 
-          <button
+          {/* <button
             onClick={(e) => e.stopPropagation()}
             className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-[#00ff85]"
           >
@@ -214,7 +221,7 @@ const PostCard = ({ post, onPostClick, onDeletePost }) => {
                 {post.comment_count}
               </span>
             )}
-          </button>
+          </button> */}
         </div>
       </div>
     </div>
@@ -232,7 +239,7 @@ const PostModal = ({ post, onClose }) => {
   const currentUserId =
     currentUser?.id || currentUser?.user_id || localStorage.getItem("user_id");
   const avatarSrc =
-    post.profile_image && post.profile_image !== ""
+    post?.profile_image && post.profile_image !== ""
       ? `${API_CONFIG.BASE_URL}/${post.profile_image}`
       : avatar;
   const hasImage = post?.image && post.image !== "";
@@ -345,7 +352,7 @@ const PostModal = ({ post, onClose }) => {
       const result = await response.json();
 
       if (result.status) {
-        toast.success(result.msg || "Comment deleted successfully");
+        // toast.success(result.msg || "Comment deleted successfully");
 
         setComments((prev) =>
           prev.filter((comment) => String(comment.id) !== String(commentId)),
@@ -382,22 +389,239 @@ const PostModal = ({ post, onClose }) => {
 
   if (!post) return null;
 
-  return (
+  const isTextOnly = !hasImage && !hasVideo;
+
+  // ─────────────────────────────────────────────
+  // TEXT-ONLY POST → compact single-column modal
+  // ─────────────────────────────────────────────
+  if (isTextOnly) {
+    return createPortal(
+      <>
+        {/* Backdrop */}
+        <div
+          className="fixed inset-0 z-[9998] bg-black/50 backdrop-blur-md"
+          style={{
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+          }}
+          onClick={onClose}
+        />
+
+        {/* Modal wrapper */}
+        {/* Modal wrapper */}
+        <div
+          className="fixed inset-x-0 top-0 bottom-16 md:inset-0 z-[9999] flex items-end md:items-center justify-center md:p-6"
+          onClick={onClose}
+        >
+          <div
+            className="
+              relative
+              w-full md:w-[min(560px,calc(100vw-32px))]
+              h-full md:h-[80vh]
+              bg-white dark:bg-[#0a0a0a]
+              rounded-t-2xl md:rounded-2xl
+              overflow-hidden shadow-2xl
+              flex flex-col
+            "
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={onClose}
+              className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-black/40 dark:bg-black/60 text-white hover:bg-black/70 transition-all flex items-center justify-center"
+            >
+              <MaterialIcon name="close" className="text-xl" />
+            </button>
+
+            {/* Author header */}
+            <div className="flex items-center gap-3 px-4 py-3 pr-14 border-b border-gray-200 dark:border-white/10 shrink-0">
+              <img
+                src={avatarSrc}
+                alt={post.name}
+                className="w-9 h-9 rounded-full border-2 border-[#00ff85]/30 object-cover shrink-0"
+                onError={(e) => {
+                  e.target.src = avatar;
+                }}
+              />
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-slate-800 dark:text-white capitalize truncate">
+                  {post.institute_name || post.name}
+                </p>
+                <p className="text-xs text-slate-400">
+                  {new Date(post.created_at).toLocaleDateString("en-IN", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </p>
+              </div>
+            </div>
+
+            {/* Scrollable area: post text + comments */}
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5 min-h-0">
+              {post.post_text && (
+                <div className="flex gap-3">
+                  <img
+                    src={avatarSrc}
+                    alt={post.name}
+                    className="w-8 h-8 rounded-full object-cover border border-[#00ff85]/30 shrink-0"
+                    onError={(e) => {
+                      e.target.src = avatar;
+                    }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
+                      <span className="font-bold text-slate-900 dark:text-white mr-1">
+                        {post.institute_name || post.name}
+                      </span>
+                      {post.post_text}
+                    </p>
+                    {post.hash_tag && post.hash_tag.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {post.hash_tag.map((tag, index) => (
+                          <span
+                            key={index}
+                            className="text-sm font-medium text-[#00b86b] dark:text-[#00ff85] hover:underline cursor-pointer"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {loadingComments ? (
+                <div className="flex justify-center py-6">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#00ff85]" />
+                </div>
+              ) : comments.length > 0 ? (
+                comments.map((comment) => (
+                  <div key={comment.id} className="flex gap-3">
+                    <img
+                      src={comment.avatar ? comment.avatar : avatar}
+                      alt={comment.author}
+                      className="w-8 h-8 rounded-full object-cover bg-gray-200 shrink-0"
+                      onError={(e) => {
+                        e.target.src = avatar;
+                      }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                          {comment.author}
+                        </span>
+                        <span className="flex items-center gap-2 text-[11px] uppercase text-slate-400 whitespace-nowrap shrink-0">
+                          {formatCommentTime(comment.time)}
+                          {String(comment.user_id) ===
+                            String(currentUserId) && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteComment(comment.id);
+                              }}
+                              className="text-red-400 hover:text-red-500 transition-colors"
+                            >
+                              <MaterialIcon
+                                name="delete"
+                                className="text-base"
+                              />
+                            </button>
+                          )}
+                        </span>
+                      </div>
+                      <span className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
+                        {comment.text}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="pt-4 text-center">
+                  <p className="text-sm text-slate-500">No comments yet.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Like / comment action row */}
+            <div className="px-4 py-3 border-t border-gray-200 dark:border-white/10 shrink-0">
+              <div className="flex items-center gap-4">
+                <button onClick={handleLike}>
+                  <MaterialIcon
+                    name="favorite"
+                    className={`text-3xl ${liked ? "text-[#00ff85]" : "text-slate-700 dark:text-white"}`}
+                    style={{
+                      fontVariationSettings: liked ? "'FILL' 1" : "'FILL' 0",
+                    }}
+                  />
+                </button>
+                <button>
+                  <MaterialIcon
+                    name="chat_bubble"
+                    className="text-3xl text-slate-700 dark:text-white"
+                    style={{ fontVariationSettings: "'FILL' 0" }}
+                  />
+                </button>
+              </div>
+              <p className="mt-2 text-sm font-bold text-slate-900 dark:text-white">
+                {likeCount} likes
+              </p>
+            </div>
+
+            {/* Comment input */}
+            <form
+              onSubmit={handleAddComment}
+              className="flex items-center gap-2 px-3 py-3 pb-4 border-t border-gray-200 dark:border-white/10 bg-white dark:bg-[#0b0b0b] shrink-0"
+            >
+              <input
+                type="text"
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Add a comment..."
+                className="flex-1 px-3 py-2 rounded-xl text-sm bg-gray-100 dark:bg-white/10 border-0 focus:ring-2 focus:ring-[#00ff85] outline-none text-slate-800 dark:text-white min-w-0"
+              />
+              <button
+                type="submit"
+                disabled={!commentText.trim()}
+                className="px-4 py-2 rounded-full bg-[#00ff85] text-black font-bold text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#00ff85]/90 transition-all shrink-0"
+              >
+                Post
+              </button>
+            </form>
+          </div>
+        </div>
+      </>,
+      document.body,
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // IMAGE / VIDEO POST → existing two-column modal
+  // ─────────────────────────────────────────────
+  return createPortal(
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm"
+        className="fixed inset-0 z-[9998] bg-black/50 backdrop-blur-md"
+        style={{
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+        }}
         onClick={onClose}
       />
 
       {/* Modal wrapper - bottom nav ke upar se shuru */}
-      <div className="fixed inset-x-0 top-0 bottom-16 md:top-[90px] md:bottom-0 z-[101] flex items-end md:items-center justify-center md:p-6">
+      {/* Modal wrapper - bottom nav ke upar se shuru */}
+      <div
+        className="fixed inset-x-0 top-0 bottom-16 md:inset-0 z-[9999] flex items-end md:items-center justify-center md:p-6"
+        onClick={onClose}
+      >
         <div
           className="
       relative
-      w-full md:w-[min(980px,calc(100vw-310px))]
-      h-full md:h-auto md:max-h-[88vh]
-      md:ml-[275px]
+      w-full md:w-[min(980px,calc(100vw-32px))]
+      h-full md:h-[85vh]
       bg-white dark:bg-[#0a0a0a]
       rounded-t-2xl md:rounded-2xl
       overflow-hidden shadow-2xl
@@ -413,10 +637,9 @@ const PostModal = ({ post, onClose }) => {
             <MaterialIcon name="close" className="text-xl sm:text-2xl" />
           </button>
 
-          {/* ── Content: phone=column, desktop=row ── */}
           {/* phone=column, desktop=row — FULL HEIGHT */}
           <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
-            {/* Left - Media: phone pe fixed height, desktop pe flex */}
+            {/* Left - Media */}
             <div className="w-full md:w-[540px] bg-gray-100 dark:bg-black flex items-center justify-center p-3 shrink-0 max-h-[38vh] md:max-h-none md:min-h-[300px]">
               {hasImage && (
                 <img
@@ -435,22 +658,9 @@ const PostModal = ({ post, onClose }) => {
                   className="max-w-full max-h-[35vh] md:max-h-[60vh] rounded-lg"
                 />
               )}
-              {!hasImage && !hasVideo && (
-                <div className="flex flex-col items-center justify-center text-center p-6">
-                  <div className="w-14 h-14 bg-[#00ff85]/20 rounded-full flex items-center justify-center mb-3">
-                    <MaterialIcon
-                      name="article"
-                      className="text-3xl text-[#00ff85]"
-                    />
-                  </div>
-                  <p className="text-slate-600 dark:text-slate-400 text-sm">
-                    Text post
-                  </p>
-                </div>
-              )}
             </div>
 
-            {/* Right - Comments: FLEX-1 + MIN-H-0 zaroori hai */}
+            {/* Right - Comments */}
             <div
               className="
     flex-1 flex flex-col min-h-0
@@ -459,7 +669,7 @@ const PostModal = ({ post, onClose }) => {
     border-gray-200 dark:border-white/10
   "
             >
-              {/* Author header - shrink nahi hoga */}
+              {/* Author header */}
               <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-white/10 shrink-0">
                 <img
                   src={avatarSrc}
@@ -479,7 +689,7 @@ const PostModal = ({ post, onClose }) => {
                 </div>
               </div>
 
-              {/* Scrollable area - yeh scroll karega, baaki fixed rahega */}
+              {/* Scrollable area */}
               <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5 min-h-0">
                 {post.post_text && (
                   <div className="flex gap-3">
@@ -566,7 +776,7 @@ const PostModal = ({ post, onClose }) => {
                 )}
               </div>
 
-              {/* Like count - shrink nahi hoga */}
+              {/* Like count */}
               <div className="px-4 py-3 border-t border-gray-200 dark:border-white/10 shrink-0">
                 <div className="flex items-center gap-4">
                   <button onClick={handleLike}>
@@ -591,7 +801,7 @@ const PostModal = ({ post, onClose }) => {
                 </p>
               </div>
 
-              {/* Comment input - hamesha visible rahega */}
+              {/* Comment input */}
               <form
                 onSubmit={handleAddComment}
                 className="flex items-center gap-2 px-3 py-3 pb-4 border-t border-gray-200 dark:border-white/10 bg-white dark:bg-[#0b0b0b] shrink-0"
@@ -615,10 +825,10 @@ const PostModal = ({ post, onClose }) => {
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body,
   );
 };
-
 
 // ✅ POLL MODAL
 const PollModal = ({ poll, onClose }) => {
@@ -631,22 +841,29 @@ const PollModal = ({ poll, onClose }) => {
 
   const totalVotes = parseInt(poll.total_votes || 0);
 
-  return (
+  return createPortal(
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm"
+        className="fixed inset-0 z-[9998] bg-black/50 backdrop-blur-md"
+        style={{
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+        }}
         onClick={onClose}
       />
 
       {/* Modal wrapper */}
-      <div className="fixed inset-x-0 top-0 bottom-16 md:top-[90px] md:bottom-0 z-[101] flex items-end md:items-center justify-center md:p-6">
+
+      <div
+        className="fixed inset-x-0 top-0 bottom-16 md:inset-0 z-[9999] flex items-end md:items-center justify-center md:p-6"
+        onClick={onClose}
+      >
         <div
           className="
             relative
-            w-full md:w-[min(620px,calc(100vw-310px))]
-            h-auto md:max-h-[88vh]
-            md:ml-[275px]
+            w-full md:w-[min(620px,calc(100vw-32px))]
+            h-full md:h-[75vh]
             bg-white dark:bg-[#0a0a0a]
             rounded-t-2xl md:rounded-2xl
             overflow-hidden shadow-2xl
@@ -663,7 +880,7 @@ const PollModal = ({ poll, onClose }) => {
           </button>
 
           {/* Header */}
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-white/10">
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-white/10 shrink-0">
             <img
               src={avatarSrc}
               alt={poll.name}
@@ -679,7 +896,9 @@ const PollModal = ({ poll, onClose }) => {
               </p>
 
               <p className="text-xs text-slate-400">
-                {new Date(String(poll.created_at).replace(" ", "T")).toLocaleDateString("en-IN", {
+                {new Date(
+                  String(poll.created_at).replace(" ", "T"),
+                ).toLocaleDateString("en-IN", {
                   day: "numeric",
                   month: "short",
                   year: "numeric",
@@ -689,7 +908,7 @@ const PollModal = ({ poll, onClose }) => {
           </div>
 
           {/* Content */}
-          <div className="px-4 py-4 space-y-4">
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
             <div className="flex gap-3">
               <img
                 src={avatarSrc}
@@ -773,9 +992,11 @@ const PollModal = ({ poll, onClose }) => {
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body,
   );
 };
+
 // ✅ POLL CARD
 const PollCard = ({ poll, onPollClick }) => {
   const avatarSrc =
@@ -815,7 +1036,9 @@ const PollCard = ({ poll, onPollClick }) => {
             </p>
 
             <p className="text-[11px] text-slate-400">
-              {new Date(String(poll.created_at).replace(" ", "T")).toLocaleDateString("en-IN", {
+              {new Date(
+                String(poll.created_at).replace(" ", "T"),
+              ).toLocaleDateString("en-IN", {
                 day: "numeric",
                 month: "short",
                 year: "numeric",
@@ -911,7 +1134,6 @@ const PollCard = ({ poll, onPollClick }) => {
     </div>
   );
 };
-
 
 // ✅ MAIN Myposts COMPONENT
 const Myposts = ({ viewMode = "grid", filter = "All Posts" }) => {
@@ -1016,7 +1238,7 @@ const Myposts = ({ viewMode = "grid", filter = "All Posts" }) => {
     setSelectedPost(post);
     document.body.style.overflow = "hidden";
   };
-  
+
   const handlePollClick = (poll) => {
     setSelectedPoll(poll);
     document.body.style.overflow = "hidden";
@@ -1027,8 +1249,6 @@ const Myposts = ({ viewMode = "grid", filter = "All Posts" }) => {
     setSelectedPoll(null);
     document.body.style.overflow = "auto";
   };
-
-
 
   const handleDeletePost = async (postId) => {
     try {
@@ -1052,8 +1272,7 @@ const Myposts = ({ viewMode = "grid", filter = "All Posts" }) => {
           prev.filter(
             (item) =>
               !(
-                item.feed_type === "post" &&
-                String(item.id) === String(postId)
+                item.feed_type === "post" && String(item.id) === String(postId)
               ),
           ),
         );

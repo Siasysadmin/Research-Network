@@ -8,6 +8,12 @@ import ShareModal, {
 } from "../../dashboard/ShareModal";
 import { toast } from "react-toastify";
 
+<<<<<<< HEAD
+=======
+
+// ✅ FIX 1: Module-level cache — component unmount hone pe bhi survive karta hai
+// Pehle cacheRef = useRef tha jo har baar component close hone pe destroy ho jata tha
+>>>>>>> b40b52ce4e14e78114b8290339d16cb192dd787b
 const profileCache = new Map();
 
 const MaterialIcon = ({ name, className = "", style }) => (

@@ -77,7 +77,12 @@ const NotificationItem = memo(function NotificationItem({
   actionState,
   onAccept,
   onReject,
+<<<<<<< HEAD:src/dashboard/Notificationpopup.jsx
 }) {
+=======
+}) => {
+  // ✅ States ab parent se aa rahi hain - reset nahi hongi
+>>>>>>> b40b52ce4e14e78114b8290339d16cb192dd787b:src/dashboard/NotificationPopup.jsx
   const {
     accepting = false,
     rejecting = false,
@@ -259,6 +264,7 @@ const NotificationPopup = ({ onClose }) => {
     }));
   }, []);
 
+<<<<<<< HEAD:src/dashboard/Notificationpopup.jsx
   // ✅ FIX #2: handlers receive the same trackKey that the item uses
   const handleAccept = useCallback(
     async (notif, trackKey) => {
@@ -304,6 +310,17 @@ const NotificationPopup = ({ onClose }) => {
     },
     [updateAction],
   );
+=======
+  const updateAction = (notifId, update) => {
+    setConnectionActions((prev) => ({
+      ...prev,
+      [notifId]: {
+        ...(prev[notifId] || {}),
+        ...update,
+      },
+    }));
+  };
+>>>>>>> b40b52ce4e14e78114b8290339d16cb192dd787b:src/dashboard/NotificationPopup.jsx
 
   const handleReject = useCallback(
     async (notif, trackKey) => {
@@ -380,6 +397,7 @@ const NotificationPopup = ({ onClose }) => {
     }
   }, []);
 
+<<<<<<< HEAD:src/dashboard/Notificationpopup.jsx
   // ✅ FIX #1: fetch immediately; only fire mark-as-read if there's
   // actually something unread. Saves a wasted round-trip on every open.
   useEffect(() => {
@@ -414,14 +432,35 @@ const NotificationPopup = ({ onClose }) => {
       })),
     [notifications],
   );
+=======
+  useEffect(() => {
+    const loadNotifications = async () => {
+      await fetchNotifications();
+
+      // LinkedIn jaisa: popup open hote hi unread notifications read ho jaye
+      setTimeout(() => {
+        markAllRead();
+      }, 500);
+    };
+
+    loadNotifications();
+  }, []);
+>>>>>>> b40b52ce4e14e78114b8290339d16cb192dd787b:src/dashboard/NotificationPopup.jsx
 
   return (
     <div
       className="
+<<<<<<< HEAD:src/dashboard/Notificationpopup.jsx
 fixed sm:absolute right-2 sm:right-0 top-[80px] sm:top-auto sm:mt-3
 w-[calc(100vw-16px)] sm:w-[340px] md:w-[360px] lg:w-[380px]
 max-h-[480px] bg-white text-slate-800
 border border-gray-200
+=======
+fixed sm:absolute right-2 sm:right-0 top-[80px] sm:top-auto sm:mt-3 
+w-[calc(100vw-16px)] sm:w-[340px] md:w-[360px] lg:w-[380px] 
+max-h-[480px] bg-white text-slate-800 
+border border-gray-200 
+>>>>>>> b40b52ce4e14e78114b8290339d16cb192dd787b:src/dashboard/NotificationPopup.jsx
 rounded-[18px] shadow-2xl overflow-hidden z-[60]
 
 dark:bg-[#0e1c14]
@@ -502,7 +541,11 @@ dark:bg-[#32ff9906] dark:border-[#32ff9912] dark:text-white"
               trackKey={trackKey}
               onClose={onClose}
               navigate={navigate}
+<<<<<<< HEAD:src/dashboard/Notificationpopup.jsx
               actionState={connectionActions[trackKey]}
+=======
+              actionState={connectionActions[notif.id] || {}}
+>>>>>>> b40b52ce4e14e78114b8290339d16cb192dd787b:src/dashboard/NotificationPopup.jsx
               onAccept={handleAccept}
               onReject={handleReject}
             />

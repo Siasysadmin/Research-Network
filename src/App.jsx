@@ -47,7 +47,10 @@ import CreatePost from "./dashboard/createpost";
 import Chats from "./dashboard/Chat/Chats";
 import Events from "./dashboard/Events";
 import UserProfile from "./dashboard/UserProfile";
+<<<<<<< HEAD
 import UserActivityPage from "./dashboard/UserActivityPage";
+=======
+>>>>>>> b40b52ce4e14e78114b8290339d16cb192dd787b
 import CreateGroup from "./dashboard/Chat/CreateGroup";
 import GroupDetails from "./dashboard/GroupDetails";
 import BoardMember from "./dashboard/BoardMember/BoardMember";
@@ -67,15 +70,26 @@ import { ThemeProvider } from "./context/ThemeContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicRoute from "./routes/PublicRoute";
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> b40b52ce4e14e78114b8290339d16cb192dd787b
 const App = () => {
   return (
     <ThemeProvider>
       <Routes>
         {/* Home */}
+<<<<<<< HEAD
         {/* Auth Routes */}
         <Route element={<PublicRoute />}>
           {" "}
           {/*added by vijay start */}
+=======
+        
+         
+        {/* Auth Routes */}
+        <Route element={<PublicRoute />}>  {/*added by vijay start */}
+>>>>>>> b40b52ce4e14e78114b8290339d16cb192dd787b
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot" element={<ForgotPassword />} />
@@ -83,6 +97,7 @@ const App = () => {
           <Route path="/reset" element={<ResetPassword />} />
           <Route path="/individual" element={<IndividualRegister />} />
           <Route path="/institute" element={<InstituteRegister />} />
+<<<<<<< HEAD
         </Route>{" "}
         {/*added by vijay end */}
         {/* Protected Routes */}
@@ -191,8 +206,113 @@ const App = () => {
           <Route path="/settings" element={<Settings />} />
         </Route>{" "}
         {/*added by vijay end */}
+=======
+        </Route>  {/*added by vijay end */}
+
+        {/* Protected Routes */}
+        <Route element={<ProtectedRoute />}> {/*added by vijay strat */}
+
+        <Route path="/application-approved" element={<ApplicationApproved />} />
+
+        {/* Individual Profile Flow - WITH STEP PARAM */}
+        <Route
+          path="/profile-individual-flow/:step"
+          element={<IndividualFlow />}
+        />
+        <Route path="/complet" element={<ProfileCompletion />} />
+
+        {/* Institute Profile Flow - WITH STEP PARAM */}
+        <Route
+          path="/organization-onboarding/:step"
+          element={<OrgOnboardingFlow />}
+        />
+        {/* <Route
+          path="/organization-onboarding"
+          element={<Navigate to="/organization-onboarding/1" />}
+        /> */}
+
+        <Route path="/profileorg" element={<OrgProfile />} />
+        <Route path="/welcome" element={<SustainbilityWelcome />} />
+
+        {/* ✅ ADMIN ROUTES */}
+        <Route path="/admin" element={<AdminHome />} />
+        <Route path="/admin/board-members" element={<BoardMembers />} />
+        <Route
+          path="/admin/institute-applications"
+          element={<InstituteApplications />}
+        />
+        <Route path="/admin/individual-applications" element={<Individual />} />
+        <Route
+          path="/admin/research-upload-requests"
+          element={<ResearchUploadRequests />}
+        />
+        <Route
+          path="/admin/view-research"
+          element={<ViewResearchApplication />}
+        />
+        <Route path="/admin/create-event" element={<CreateEvent />} />
+
+        <Route path="/admin/chat" element={<AdminChat />} />
+        <Route path="/admin/CreateGroup" element={<AdminCreateGroup />} />
+        <Route path="/admin/save" element={<AdminSavedPosts />} />
+        <Route path="/admin/events" element={<AdminEvents />} />
+        <Route path="/admin/event-approvals" element={<EventApprovals />} />
+
+        {/* Dashboard */}
+        <Route path="/dashboard" element={<MainContent />} />
+        <Route path="right" element={<RightSection />} />
+        <Route
+          path="/dashboard/upload-research"
+          element={<ResearchUploadForm />}
+        />
+        <Route path="/dashboard/board-review" element={<BoardReviewPortal />} />
+        <Route path="/dashboard/publications" element={<Mypublication />} />
+        <Route
+          path="/dashboard/individual-profile"
+          element={<IndividualResearcherProfile />}
+        />
+        <Route
+          path="dashboard/individual-edit-profile"
+          element={<IndividualEditProfile />}
+        />
+        <Route
+          path="/dashboard/institute-profile"
+          element={<InstituteProfile />}
+        />
+        <Route
+          path="/dashboard/institute-edit-profile"
+          element={<InstituteEditProfile />}
+        />
+        <Route path="/dashboard/library" element={<Library />} />
+        <Route
+          path="/dashboard/library-view-details"
+          element={<LibraryViewDetails />}
+        />
+        <Route path="/dashboard/board-members" element={<BoardMember />} />
+        <Route path="/dashboard/create-post" element={<CreatePost />} />
+        <Route path="/dashboard/chats" element={<Chats />} />
+        <Route path="/dashboard/events" element={<Events />} />
+        <Route path="/dashboard/CreateGroup" element={<CreateGroup />} />
+        <Route path="/user-profile" element={<UserProfile />} />
+        <Route path="/group" element={<GroupDetails />} />
+        <Route path="/dashboard/create-event" element={<Event />} />
+        <Route path="/dashboard/my-event" element={<MyEvents />} />
+        <Route
+          path="/dashboard/notifications"
+          element={<NotificationPopup />}
+        />
+
+        {/* Settings */}
+        <Route path="/settings" element={<Settings />} />
+        
+
+
+        </Route> {/*added by vijay end */}
+>>>>>>> b40b52ce4e14e78114b8290339d16cb192dd787b
         <Route path="/terms" element={<TermsConditions />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
+
+
       </Routes>
 
       <ToastContainer

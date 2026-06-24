@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: GIS_NW
+    env: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
