@@ -4,10 +4,8 @@ import avatar from "../assets/images/avatar.jpg";
 import { Layout } from "./Layout/Layout";
 import API_CONFIG from "../config/api.config";
 import { toast } from "react-toastify";
-<<<<<<< HEAD
-=======
+
 import UserProfile from "./porfile/AdminUserProfile";
->>>>>>> b40b52ce4e14e78114b8290339d16cb192dd787b
 
 // ==================== COMMENTS SECTION (reusable) ====================
 const CommentsSection = React.memo(
@@ -264,7 +262,6 @@ const MainContent = () => {
     return localStorage.getItem("token") || localStorage.getItem("authToken");
   };
 
-<<<<<<< HEAD
  const openUserProfile = (post) => {
     navigate("/admin/user-profile", {
       state: {
@@ -277,18 +274,6 @@ const MainContent = () => {
         },
       },
     });
-=======
-  const openUserProfile = (post) => {
-    setSelectedUser({
-      id: post.user_id || post.id,
-      name: post.name || post.postName,
-      email: post.email,
-      user_type: post.user_type,
-      registration_id: post.registration_id,
-    });
-
-    setShowProfile(true);
->>>>>>> b40b52ce4e14e78114b8290339d16cb192dd787b
   };
 
   const getCurrentUserId = () => {
@@ -2763,11 +2748,7 @@ const MainContent = () => {
             />
           </div>
         </div>
-<<<<<<< HEAD
       )} */}
-=======
-      )}
->>>>>>> b40b52ce4e14e78114b8290339d16cb192dd787b
 
       <style jsx global>{`
         ::-webkit-scrollbar {
