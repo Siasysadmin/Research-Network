@@ -37,13 +37,7 @@ const IndividualFlow = () => {
   const progress = (currentStep / totalSteps) * 100;
 
   // Authentication check
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login");
-    }
-  }, [navigate]);
-
+ 
   // Redirect if step invalid
   useEffect(() => {
     if (!stepMap[step]) {

@@ -55,17 +55,19 @@ const InstituteApprovedApplications = () => {
 
   if (loading) {
     return (
-      <div className="flex-1 p-8">
-        <div className="bg-[#13231a] rounded-xl p-12 text-center">
+      <div className="flex-1 p-4 sm:p-6 lg:p-8 bg-white dark:bg-[#0a0f0c]">
+        <div className="bg-white dark:bg-[#13231a] border border-gray-200 dark:border-[#1e3a2c] rounded-2xl p-12 text-center">
           <div className="w-12 h-12 border-2 border-[#00ff88]/20 border-t-[#00ff88] rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-slate-400">Loading approved institutes...</p>
+          <p className="text-gray-500 dark:text-slate-400">
+            Loading approved institutes...
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 h-full p-8">
+    <div className="flex-1 h-full p-4 sm:p-6 lg:p-8 bg-white dark:bg-[#0a0f0c]">
       <div className="h-full flex flex-col">
        
         <div className="flex-1 min-h-0">

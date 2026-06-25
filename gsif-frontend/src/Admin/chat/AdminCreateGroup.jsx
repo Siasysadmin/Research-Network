@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Layout from "../Layout/Layout";
+import { Layout } from "../Layout/Layout";
 import { useNavigate, useParams } from "react-router-dom";
 import API_CONFIG from "../../config/api.config";
 import { toast } from "react-toastify";
@@ -14,7 +14,6 @@ const MaterialIcon = ({ name, className = "", style = {} }) => (
 const CreateGroup = () => {
   const navigate = useNavigate();
   const { groupId } = useParams();
-  const [activeNav, setActiveNav] = useState("chats");
   const [groupName, setGroupName] = useState("");
   const [groupDescription, setGroupDescription] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -26,22 +25,27 @@ const CreateGroup = () => {
   const [groupImage, setGroupImage] = useState(null);
   const [groupImagePreview, setGroupImagePreview] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(true);
 
   const getAuthToken = () =>
     localStorage.getItem("token") || localStorage.getItem("authToken");
 
   const getCurrentUserId = () => {
-    try {
-      const userStr = localStorage.getItem("user");
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        return String(user.id || user.user_id || user.userId || "");
-      }
-      return "";
-    } catch (e) {
-      return "";
+  try {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      return String(user.id || user.user_id || user.userId || "");
     }
-  };
+    return "";
+  } catch (e) {
+    return "";
+  }
+};
+
+  const removeAnyMember = (id) => {
+  setMembers((prev) => prev.filter((m) => m.id !== id));
+};
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -81,13 +85,16 @@ const CreateGroup = () => {
                     user.user_type === "institute"
                       ? user.profile_institute_details?.profile_image
                       : user.profile_individual_details?.profile_image;
-                  return profileImg
-                    ? `${API_CONFIG.BASE_URL}/${profileImg}`
-                    : defaultAvatar;
+
+                  if (profileImg) {
+                    return `${API_CONFIG.BASE_URL}/${profileImg}`;
+                  }
+
+                  return defaultAvatar;
                 })(),
               };
             })
-            .filter((u) => u.id !== currentUserId);
+            
 
           setAllUsers(formatted);
           setFilteredUsers(formatted);
@@ -145,20 +152,23 @@ const CreateGroup = () => {
     } else {
       setFilteredUsers(
         allUsers.filter((u) =>
-          u.name.toLowerCase().includes(searchQuery.toLowerCase()),
+        (u.name || "").toLowerCase().includes(searchQuery.toLowerCase()),
         ),
       );
     }
   }, [searchQuery, allUsers]);
 
   const toggleMember = (user) => {
-    const isAlreadyAdded = members.find((m) => m.id === user.id);
-    if (isAlreadyAdded) {
-      setMembers((prev) => prev.filter((m) => m.id !== user.id));
-    } else {
-      setMembers((prev) => [...prev, user]);
-    }
-  };
+  const userId = String(user.id);
+
+  const isAlreadyAdded = members.find((m) => m.id === userId);
+
+  if (isAlreadyAdded) {
+    setMembers((prev) => prev.filter((m) => m.id !== userId));
+  } else {
+    setMembers((prev) => [...prev, { ...user, id: userId }]);
+  }
+};
 
   const removeMember = (id) => {
     setMembers((prev) => prev.filter((m) => m.id !== id));
@@ -209,25 +219,25 @@ const CreateGroup = () => {
 
         // ✅ SIRF YAHAN CHANGE HAI — naya group data pass karo
         navigate("/admin/chat", {
-          state: {
-            newGroup: {
-              id: `group_${result.group_id || result.data?.group_id || Date.now()}`,
-              groupId: String(result.group_id || result.data?.group_id || ""),
-              name: groupName,
-              isYou: false,
-              type: `Group · ${members.length + 1} member${members.length + 1 !== 1 ? "s" : ""}`,
-              lastMsg: "Group created",
-              isActive: false,
-              isGroup: true,
-              isAdmin: true,
-              timestamp: Date.now(),
-              unreadCount: 0,
-              avatars: [groupImagePreview || defaultAvatar],
-              messages: [],
-              messagesLoaded: false,
-            },
-          },
-        });
+  state: {
+    newGroup: {
+      id: `group_${result.group_id || result.data?.group_id || Date.now()}`,
+      groupId: String(result.group_id || result.data?.group_id || ""),
+      name: groupName,
+      isYou: false,
+      type: `Group · ${members.length + 1} member${members.length + 1 !== 1 ? "s" : ""}`,
+      lastMsg: "Group created",
+      isActive: false,
+      isGroup: true,
+      isAdmin: true,
+      timestamp: Date.now(),
+      unreadCount: 0,
+      avatars: [groupImagePreview || defaultAvatar],
+      messages: [],
+      messagesLoaded: false,
+    },
+  },
+});
       } else {
         toast.error(result.message || "Failed to create group");
       }
@@ -285,14 +295,18 @@ const CreateGroup = () => {
   };
 
   return (
-    <Layout activeNav={activeNav} setActiveNav={setActiveNav}>
+    <Layout>
       <style>{`
         .cyber-glow { box-shadow: 0 0 20px rgba(0, 255, 133, 0.15); }
         .cyber-glow-strong { box-shadow: 0 0 30px rgba(0, 255, 133, 0.4); }
         .glass-panel {
-          background: linear-gradient(145deg, rgba(13, 15, 14, 0.9) 0%, rgba(18, 20, 19, 0.95) 100%);
-          backdrop-filter: blur(12px);
-        }
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(12px);
+}
+
+.dark .glass-panel {
+  background: linear-gradient(145deg, rgba(13, 15, 14, 0.9) 0%, rgba(18, 20, 19, 0.95) 100%);
+}
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #3b4b3d; border-radius: 10px; }
@@ -311,31 +325,32 @@ const CreateGroup = () => {
         .animate-fadeInDown { animation: fadeInDown 0.15s ease-out; }
       `}</style>
 
-      <div className="flex-1 flex flex-col h-[calc(100vh-80px)] overflow-hidden w-full font-inter bg-[#0d0f0e] p-4 lg:p-6 box-border">
-        {/* Header */}
-        <div className="mb-3 glass-panel rounded-2xl h-14 lg:h-16 px-4 lg:px-8 flex items-center border border-[#3b4b3d]/30 shrink-0 max-w-[1200px] mx-auto w-full">
-          <button
+<div className="flex-1 flex flex-col min-h-[100dvh] lg:min-h-0 lg:h-[calc(100vh-80px)] overflow-y-auto lg:overflow-hidden w-full font-inter bg-gradient-to-br from-[#f3f6f4] via-[#eef4f0] to-[#f7f8f7] 
+dark:from-[#0d0f0e] dark:via-[#111513] dark:to-[#0d0f0e] p-3 sm:p-4 lg:p-6 box-border">         {/* Header */}
+<div className="mb-4 glass-panel rounded-[24px] min-h-14 lg:h-[72px] px-4 sm:px-5 lg:px-8 flex items-center border border-gray-200 dark:border-[#3b4b3d]/30 shrink-0 max-w-[1200px] mx-auto w-full shadow-sm"> 
+         <button
             onClick={handleBack}
-            className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-[#e2e3e0] transition-all mr-4 lg:mr-6"
+            className="w-9 h-9 lg:w-11 lg:h-11 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-[#1a1c1b] text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#252827] transition-all duration-200 mr-4 lg:mr-6 border border-gray-200 dark:border-[#2f3432]"
           >
-            <MaterialIcon name="arrow_back" className="text-[24px] lg:text-[28px]" />
+            <MaterialIcon
+              name="arrow_back"
+              className="text-[24px] lg:text-[28px]"
+            />
           </button>
           <div className="flex flex-col">
-            <h3 className="text-lg lg:text-xl font-extrabold text-white leading-none tracking-tight">
+            <h3 className="text-lg lg:text-xl font-extrabold text-slate-900 dark:text-white leading-none tracking-tight">
               {isEditMode ? "Edit Group" : "Create New Group"}
             </h3>
-            <p className="text-[9px] lg:text-[10px] font-mono text-[#94a3b8] uppercase tracking-widest mt-1.5">
+            <p className="text-[9px] lg:text-[10px] font-inter text-slate-500 dark:text-[#94a3b8] uppercase tracking-widest mt-1.5">
               {isEditMode
                 ? "Update group information"
                 : "Initiate encrypted communication hub"}
             </p>
           </div>
         </div>
-
         {/* Main Content */}
-        <div className="flex-1 glass-panel rounded-2xl overflow-hidden flex flex-col border border-[#3b4b3d]/30 bg-[#0d0f0e]/50 max-w-[1200px] mx-auto w-full">
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-10">
-            <div className="max-w-2xl mx-auto space-y-8 lg:space-y-10">
+<div className="flex-1 glass-panel rounded-[28px] overflow-hidden flex flex-col border border-gray-200 dark:border-[#3b4b3d]/30 bg-white/95 dark:bg-[#0d0f0e]/60 shadow-[0_10px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_0_40px_rgba(0,255,133,0.05)] max-w-[1200px] mx-auto w-full min-h-0 backdrop-blur-xl">   
+<div className="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-5 lg:p-10">            <div className="max-w-2xl mx-auto space-y-8 lg:space-y-10">
               {/* Image Upload */}
               <div className="flex flex-col items-center">
                 <label className="relative group cursor-pointer">
@@ -345,7 +360,7 @@ const CreateGroup = () => {
                     className="hidden"
                     onChange={handleImageChange}
                   />
-                  <div className="w-28 h-28 lg:w-32 lg:h-32 rounded-full border-2 border-dashed border-[#00FF85]/30 bg-[#121413]/40 flex flex-col items-center justify-center transition-all group-hover:border-[#00FF85] group-hover:bg-[#00FF85]/5 overflow-hidden">
+                  <div className="w-28 h-28 lg:w-32 lg:h-32 rounded-full border-2 border-dashed border-[#00FF85]/30 bg-gradient-to-br from-gray-100 to-white dark:from-[#121413] dark:to-[#1a1c1b] flex flex-col items-center justify-center transition-all duration-300 group-hover:border-[#00FF85] group-hover:scale-105 group-hover:shadow-[0_0_25px_rgba(0,255,133,0.15)] overflow-hidden">
                     {groupImagePreview ? (
                       <img
                         src={groupImagePreview}
@@ -364,14 +379,14 @@ const CreateGroup = () => {
                       </>
                     )}
                   </div>
-                  <div className="absolute bottom-1 right-1 w-8 h-8 lg:w-9 lg:h-9 bg-[#00FF85] text-[#0d0f0e] rounded-full flex items-center justify-center border-4 border-[#0d0f0e] cyber-glow">
+                  <div className="absolute bottom-1 right-1 w-8 h-8 lg:w-9 lg:h-9 bg-[#00FF85] text-[#0d0f0e] rounded-full flex items-center justify-center border-2 border-white dark:border-[#0d0f0e] shadow-md cyber-glow">
                     <MaterialIcon
                       name={isEditMode ? "edit" : "add_a_photo"}
                       className="text-xs lg:text-sm font-bold"
                     />
                   </div>
                 </label>
-                <p className="text-[9px] lg:text-[10px] font-mono text-[#94a3b8] uppercase mt-4">
+                <p className="text-[9px] lg:text-[10px] font-inter text-[#94a3b8] uppercase mt-4">
                   Group Identification Image
                 </p>
               </div>
@@ -379,61 +394,65 @@ const CreateGroup = () => {
               {/* Inputs */}
               <div className="space-y-5 lg:space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[9px] lg:text-[10px] font-mono text-[#00FF85] uppercase tracking-widest pl-1">
+                  <label className="text-[9px] lg:text-[10px] font-inter text-[#00FF85] uppercase tracking-widest pl-1">
                     Group Name
                   </label>
                   <input
                     type="text"
                     value={groupName}
                     onChange={(e) => setGroupName(e.target.value)}
-                    className="cg-input w-full bg-[#121413]/80 border border-[#3b4b3d]/50 rounded-xl px-4 py-3 lg:px-5 lg:py-3.5 text-sm text-white transition-all placeholder:text-[#94a3b8]/30 font-inter"
+                    className="cg-input w-full bg-gray-50 dark:bg-[#121413]/80 border border-gray-200 dark:border-[#3b4b3d]/50 rounded-2xl px-4 p-3 lg:px-5 lg:py-3 text-sm text-slate-900 dark:text-white transition-all duration-300 placeholder:text-slate-400 dark:placeholder:text-[#94a3b8]/30 font-inter focus:border-[#00FF85] focus:bg-gray-50 dark:focus:bg-[#121413]/80"
                     placeholder="e.g. Research_Division_X"
                   />
                 </div>
               </div>
 
               {/* Member Selection - Only in create mode */}
-              {!isEditMode && (
+              {true && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <label className="text-[9px] lg:text-[10px] font-mono text-[#00FF85] uppercase tracking-widest pl-1">
+                    <label className="text-[9px] lg:text-[10px] font-inter text-[#00FF85] uppercase tracking-widest pl-1">
                       Add Members
                     </label>
-                    <span className="text-[9px] lg:text-[10px] font-mono text-[#94a3b8]/60 uppercase">
+                    <span className="text-[9px] lg:text-[10px] font-inter text-[#94a3b8]/60 uppercase">
                       {members.length} selected
                     </span>
                   </div>
 
                   <div className="relative">
-                    <div className="flex items-center gap-3 p-2 bg-[#121413]/50 border border-[#3b4b3d]/30 rounded-xl min-h-[44px]">
-                      <div className="flex flex-wrap gap-2 flex-1">
-                        {members.map((member) => (
+                    <div className="flex items-center gap-3 px-4 py-2 lg:px-5 lg:py-2.5 bg-gray-50 dark:bg-[#121413]/80 border border-gray-200 dark:border-[#3b4b3d]/50 rounded-2xl transition-all duration-300 focus-within:border-[#00FF85]">
+                      <div className="flex flex-wrap items-center gap-2 flex-1">
+                        {(members || []).map((member) => (
                           <div
                             key={member.id}
-                            className="flex items-center gap-2 bg-[#00FF85]/10 border border-[#00FF85]/30 rounded-full pl-1.5 pr-1.5 py-1 transition-all hover:border-[#00FF85]"
+                            className="flex items-center gap-2 bg-[#dcfce7] dark:bg-[#00FF85]/10 border border-[#86efac] dark:border-[#00FF85]/30 rounded-full pl-1.5 pr-2 py-1 shadow-sm transition-all hover:border-[#00FF85]"
                           >
                             <img
                               className="w-5 h-5 rounded-full object-cover"
                               src={member.avatar}
                               alt={member.name}
                               onError={(e) => {
-                                e.target.src = defaultAvatar;
+                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=1a1c1b&color=00ff85`;
                               }}
                             />
-                            <span className="text-xs font-bold text-[#00FF85]">
+                            <span className="text-xs font-semibold text-emerald-700 dark:text-[#00FF85]">
                               {member.name}
                             </span>
+                            
                             <button
                               onClick={() => removeMember(member.id)}
-                              className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-[#00FF85]/20 text-[#00FF85]"
+                              className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-emerald-200 dark:hover:bg-[#00FF85]/20 text-emerald-700 dark:text-[#00FF85] transition-all"
                             >
-                              <MaterialIcon name="close" className="text-[14px]" />
+                              <MaterialIcon
+                                name="close"
+                                className="text-[14px]"
+                              />
                             </button>
                           </div>
                         ))}
 
                         {members.length === 0 && (
-                          <div className="text-xs text-slate-500 py-1 px-2 italic font-mono">
+                          <div className="text-xs text-slate-500 py-1 px-2  font-inter">
                             No members selected
                           </div>
                         )}
@@ -442,47 +461,61 @@ const CreateGroup = () => {
                       <button
                         type="button"
                         className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-[#00FF85]/10 border border-[#00FF85]/30 text-[#00FF85] hover:bg-[#00FF85] hover:text-[#0d0f0e] transition-all"
-                        onClick={() =>
-                          setSearchQuery(searchQuery === "" ? " " : "")
-                        }
+                        onClick={() => setSearchQuery((prev) => (prev ? "" : " "))}
                       >
-                        <MaterialIcon name="add" className="text-[20px] font-bold" />
+                        <MaterialIcon
+                          name="add"
+                          className="text-[20px] font-bold"
+                        />
                       </button>
                     </div>
 
                     {searchQuery !== "" && filteredUsers.length > 0 && (
-                      <div className="absolute z-50 w-full mt-2 bg-[#121413] border border-[#3b4b3d]/50 rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto custom-scrollbar animate-fadeInDown">
+                      <div className="absolute z-50 w-full mt-3 bg-white/95 dark:bg-[#121413]/95 backdrop-blur-xl border border-gray-200 dark:border-[#3b4b3d]/50 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)] overflow-hidden max-h-60 overflow-y-auto custom-scrollbar animate-fadeInDown">
                         {filteredUsers.map((user) => {
-                          const isSelected = members.find((m) => m.id === user.id);
+                          const isSelected = members.find(
+                            (m) => m.id === user.id,
+                          );
                           return (
                             <div
                               key={user.id}
                               onClick={() => toggleMember(user)}
                               className={`flex items-center gap-3 px-4 py-3 cursor-pointer border-b border-[#3b4b3d]/10 last:border-0 transition-all ${
-                                isSelected ? "bg-[#00FF85]/15" : "hover:bg-[#00FF85]/10"
+                                isSelected
+                                  ? "bg-[#00FF85]/15"
+                                  : "hover:bg-[#00FF85]/10"
                               }`}
                             >
                               <img
                                 src={user.avatar}
                                 className={`w-10 h-10 rounded-full object-cover border ${
-                                  isSelected ? "border-[#00FF85]" : "border-[#00FF85]/20"
+                                  isSelected
+                                    ? "border-[#00FF85]"
+                                    : "border-[#00FF85]/20"
                                 }`}
-                                  alt={user.name}
-                                onError={(e) => { e.target.src = defaultAvatar; }}
+                                alt={user.name}
                               />
                               <div className="flex flex-col flex-1">
-                                <span className={`text-sm font-bold ${isSelected ? "text-[#00FF85]" : "text-white"}`}>
+                                <span
+                                  className={`text-sm font-bold ${isSelected ? "text-[#00FF85]" : "text-slate-900 dark:text-white"}`}
+                                >
                                   {user.name}
                                 </span>
-                                <span className="text-[10px] font-mono text-[#94a3b8] mt-0.5">
+                                <span className="text-[10px] font-inter text-[#94a3b8] mt-0.5">
                                   REG_ID: {user.registerId || user.id}
                                 </span>
                               </div>
                               <div className="ml-auto">
                                 {isSelected ? (
-                                  <MaterialIcon name="check_circle" className="text-[#00FF85]" />
+                                  <MaterialIcon
+                                    name="check_circle"
+                                    className="text-[#00FF85]"
+                                  />
                                 ) : (
-                                  <MaterialIcon name="add_circle" className="text-[#00FF85]/30" />
+                                  <MaterialIcon
+                                    name="add_circle"
+                                    className="text-[#00FF85]/30"
+                                  />
                                 )}
                               </div>
                             </div>
@@ -497,7 +530,7 @@ const CreateGroup = () => {
           </div>
 
           {/* Footer Button */}
-          <div className="p-4 lg:p-6 border-t border-[#3b4b3d]/30 bg-[#0d0f0e] backdrop-blur-md flex justify-center shrink-0">
+          <div className="p-4 lg:p-6 border-t border-gray-300 dark:border-[#3b4b3d]/30 bg-white dark:bg-[#0d0f0e] backdrop-blur-md flex justify-center shrink-0">
             <button
               onClick={isEditMode ? handleUpdateGroup : handleCreateGroup}
               disabled={creating}
@@ -520,8 +553,33 @@ const CreateGroup = () => {
       </div>
 
       <style>{`
-        html, body { overflow: hidden; height: 100%; margin: 0; }
-        .flex-1 { min-height: 0; }
+  html, body, #root {
+    margin: 0;
+    min-height: 100%;
+    background: #f3f4f6;
+  }
+
+  .dark html,
+  .dark body,
+  .dark #root {
+    background: #0d0f0e;
+  }
+
+  .flex-1 {
+    min-height: 0;
+  }
+`}</style>
+ <style jsx global>{`
+        ::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
+        }
+        * {
+        font-family: Inter, sans-serif;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
       `}</style>
     </Layout>
   );

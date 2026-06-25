@@ -3,9 +3,18 @@ import RejectedRequestsTable from "./RejectedRequestsTable";
 import API_CONFIG from "../../config/api.config";
 import { useNavigate } from "react-router-dom";
 
-const RejectedRequests = ({ searchQuery, onViewDetails }) => {
-const navigate = useNavigate();
+const RejectedRequests = ({ searchQuery }) => {
+  const navigate = useNavigate();
+
   const [requests, setRequests] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
 
   useEffect(() => {
     fetchRejectedResearch();
@@ -13,7 +22,6 @@ const navigate = useNavigate();
 
   const fetchRejectedResearch = async () => {
     try {
-
       const token = localStorage.getItem("token");
 
       const response = await fetch(
@@ -27,18 +35,17 @@ const navigate = useNavigate();
 
       const result = await response.json();
 
-
       if (result.status) {
         setRequests(result.data || []);
+        setCurrentPage(1);
       }
-
     } catch (error) {
       console.error("Rejected fetch error:", error);
     }
   };
 
-  // search filter
-  const filteredRequests = requests.filter((request) => {
+  // SEARCH FILTER
+  const filteredRequests = (requests || []).filter((request) => {
     return (
       searchQuery === "" ||
       Object.values(request).some(
@@ -49,14 +56,32 @@ const navigate = useNavigate();
     );
   });
 
-   const handleViewDetails = (id) => {
-  navigate("/admin/view-research", { state: { id } });
-};
+  // PAGINATION
+  const totalPages = Math.ceil(
+    filteredRequests.length / itemsPerPage
+  );
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+
+  const endIndex = startIndex + itemsPerPage;
+
+  const currentRequests = filteredRequests.slice(
+    startIndex,
+    endIndex
+  );
+
+  const handleViewDetails = (id) => {
+    navigate("/admin/view-research", { state: { id } });
+  };
+
   return (
     <RejectedRequestsTable
-      requests={filteredRequests}
-      onViewDetails={ handleViewDetails }
-    />
+  currentRequests={currentRequests}
+  currentPage={currentPage}
+  totalPages={totalPages}
+  onPageChange={setCurrentPage}
+  onViewDetails={handleViewDetails}
+/>
   );
 };
 

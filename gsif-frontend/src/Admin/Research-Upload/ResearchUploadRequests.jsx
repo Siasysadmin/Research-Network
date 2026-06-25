@@ -66,36 +66,43 @@ const ResearchUploadRequests = () => {
 
   return (
     <Layout activeNav={activeNav} setActiveNav={setActiveNav} user={user}>
-      <div className="flex flex-col h-[calc(100vh-64px)] w-full bg-[#0a120e] overflow-hidden ">
+      <div className="flex flex-col h-[calc(100vh-64px)] w-full bg-white dark:bg-[#0a0f0c] text-gray-900 dark:text-white overflow-hidden">
         {/* Fixed Header */}
-        <div className="flex-none border-b border-[#1e3a2c] bg-[#0a120e] z-30 w-full max-w-full overflow-hidden">
+        <div className="flex-none border-b border-gray-200 dark:border-[#1e3a2c] bg-white dark:bg-[#0a0f0c] z-30 w-full max-w-full overflow-hidden">
           <div className="pt-1 px-6 pb-4 max-w-full overflow-hidden">
             <div className="flex items-center justify-between gap-6">
               <div className="flex-1 min-w-0 overflow-hidden">
-               <h2 className="text-lg sm:text-2xl font-bold text-white truncate">
+               <h2 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white truncate">
   Research Upload Requests
 </h2>
 
-                <p className="text-sm text-slate-400 mt-1 whitespace-nowrap overflow-hidden text-ellipsis">
+                <p className="text-sm text-gray-500 dark:text-slate-400 mt-1 whitespace-nowrap overflow-hidden text-ellipsis">
                   Monitor and manage all research paper upload submissions.
                 </p>
               </div>
 
-              <div className="hidden md:block relative w-[320px] max-w-full flex-shrink-0">
-                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xl">
-                  search
-                </span>
+              <div className="hidden md:block relative w-[320px] max-w-full flex-shrink-0 group focus-within:rounded-lg focus-within:border-[#00ff88] dark:focus-within:border-[#00ff88] focus-within:ring-1 focus-within:ring-[#00ff88]/40 dark:focus-within:ring-[#00ff88]/30 transition-all">
 
-                <input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-[#0a120e] border border-[#1e3a2c] rounded-lg py-2.5 pl-12 pr-4 text-sm text-white outline-none focus:ring-0 focus:border-[#1e3a2c] transition-all"
-                  placeholder="Search requests..."
-                />
+                <div className="absolute -inset-0.2 bg-gradient-to-r from-[#00ff88] to-[#00a365] rounded-lg blur opacity-20 group-hover:opacity-40 group-focus-within:opacity-50 transition duration-300 pointer-events-none"></div>
+
+                <div className="relative flex items-center bg-white dark:bg-[#131a15] border border-gray-200 dark:border-[#1e2922] rounded-lg">
+
+                  <span className="material-symbols-outlined ml-3 text-slate-400">
+                    search
+                  </span>
+
+                  <input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-transparent border-none py-2.5 pl-2 pr-4 text-sm focus:ring-0 outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-600"
+                    placeholder="Search requests..."
+                  />
+                  
+                </div>
               </div>
             </div>
 
-            <div className="mt-3 flex gap-6 overflow-hidden">
+            <div className="mt-3 flex gap-4 overflow-x-auto scrollbar-hide">
               {tabs.map((tab) => {
                 const count = tab.id === "all" ? null : getCount(tab.id);
 
@@ -111,10 +118,10 @@ const ResearchUploadRequests = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`py-4 px-2 text-sm font-medium transition-all relative flex items-center gap-2 whitespace-nowrap ${
+                   className={`flex-shrink-0 py-4 px-2 text-sm font-medium transition-all relative flex items-center gap-2 whitespace-nowrap ${
                       activeTab === tab.id
-                        ? "text-[#00ff88] border-b-2 border-[#00ff88]"
-                        : "text-slate-500 hover:text-slate-300"
+                        ? "text-green-600 dark:text-[#00ff88] border-green-600 dark:border-[#00ff88]"
+                        : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200"
                     }`}
                   >
                     {tab.label}

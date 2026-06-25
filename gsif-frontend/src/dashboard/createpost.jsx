@@ -16,19 +16,24 @@ const CreatePost = () => {
   const [videoFile, setVideoFile] = useState(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [tagInput, setTagInput] = useState("");
+  const [tags, setTags] = useState([]);
+  const [isPollOpen, setIsPollOpen] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState(["", ""]);
+  const [activeComposer, setActiveComposer] = useState("post");
 
   // Helper function to get auth token
   const getAuthToken = () => {
-    const token = localStorage.getItem("token");
+    const token =
+      localStorage.getItem("auth_token") ||
+      localStorage.getItem("token") ||
+      sessionStorage.getItem("auth_token");
     
     if (token) {
       console.log("Token preview:", `${token.substring(0, 50)}...`);
     }
-    
-    if (!token) {
-      console.error("No authentication token found in localStorage");
-      return null;
-    }
+   
     return token;
   };
 
@@ -45,17 +50,21 @@ const CreatePost = () => {
     const file = e.target.files[0];
     setUploadError("");
     
+    if (isPollOpen) {
+      setUploadError("You can only add one thing at a time. Discard the poll to upload a photo.");
+      return;
+    }
+
     if (file) {
       // Check file size - 100MB limit
       if (file.size > 100 * 1024 * 1024) {
         setUploadError(`File size (${formatFileSize(file.size)}) exceeds 100MB limit. Please select a smaller file.`);
         return;
       }
-      
-      // Validate image type
-      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-      if (!validTypes.includes(file.type)) {
-        setUploadError(`Invalid file type (${file.type}). Please upload JPG, JPEG, PNG, GIF, or WEBP image.`);
+
+      // Allow all image types (no strict format restriction)
+      if (file.type && !file.type.startsWith("image/")) {
+        setUploadError(`Invalid file type (${file.type}). Please upload an image.`);
         return;
       }
       
@@ -73,17 +82,21 @@ const CreatePost = () => {
     const file = e.target.files[0];
     setUploadError("");
     
+    if (isPollOpen) {
+      setUploadError("You can only add one thing at a time. Discard the poll to upload a video.");
+      return;
+    }
+
     if (file) {
       // Check file size - 100MB limit
       if (file.size > 100 * 1024 * 1024) {
         setUploadError(`File size (${formatFileSize(file.size)}) exceeds 100MB limit. Please select a smaller video.`);
         return;
       }
-      
-      // Validate video type
-      const validTypes = ['video/mp4', 'video/mov', 'video/avi', 'video/mkv', 'video/webm'];
-      if (!validTypes.includes(file.type)) {
-        setUploadError(`Invalid file type (${file.type}). Please upload MP4, MOV, AVI, MKV, or WEBM video.`);
+
+      // Allow all video types (no strict format restriction)
+      if (file.type && !file.type.startsWith("video/")) {
+        setUploadError(`Invalid file type (${file.type}). Please upload a video.`);
         return;
       }
       
@@ -98,295 +111,659 @@ const CreatePost = () => {
   };
 
   const handleRemovePhoto = (e) => {
-    e.stopPropagation();
+    e?.stopPropagation?.();
     setSelectedPhoto(null);
     setPhotoFile(null);
     setUploadError("");
   };
 
   const handleRemoveVideo = (e) => {
-    e.stopPropagation();
+    e?.stopPropagation?.();
     setSelectedVideo(null);
     setVideoFile(null);
     setUploadError("");
   };
 
-  const handlePublish = async () => {
+  const normalizeTag = (raw) =>
+    raw
+      .trim()
+      .replace(/^#+/, "")
+      .replace(/\s+/g, "")
+      .slice(0, 32);
+
+  const commitTag = () => {
+    const normalized = normalizeTag(tagInput);
+    if (!normalized) return;
+    setTags((prev) => {
+      const exists = prev.some((t) => t.toLowerCase() === normalized.toLowerCase());
+      return exists ? prev : [...prev, normalized];
+    });
+    setTagInput("");
+  };
+
+  const removeTag = (tag) => setTags((prev) => prev.filter((t) => t !== tag));
+
+ const openPoll = () => {
+  setUploadError("");
+  setActiveComposer("poll");
+  setIsPollOpen(true);
+
+  setSelectedPhoto(null);
+  setPhotoFile(null);
+  setSelectedVideo(null);
+  setVideoFile(null);
+};
+
+const openPost = () => {
+  setUploadError("");
+  setActiveComposer("post");
+  setIsPollOpen(false);
+};
+
+  const discardPoll = () => {
+    setIsPollOpen(false);
+    setPollQuestion("");
+    setPollOptions(["", ""]);
     setUploadError("");
-    
-    // Basic validation
-    if (!content.trim() && !photoFile && !videoFile) {
-      console.log("Validation failed: No content or media");
-      alert("Please add some text or media before publishing.");
+  };
+
+  const updatePollOption = (index, value) => {
+    setPollOptions((prev) => prev.map((opt, i) => (i === index ? value : opt)));
+  };
+
+  const removePollOption = (index) => {
+    setPollOptions((prev) => {
+      if (prev.length <= 2) return prev.map((opt, i) => (i === index ? "" : opt));
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const addPollOption = () => setPollOptions((prev) => [...prev, ""]);
+
+  const getPollPayload = () => {
+    if (!isPollOpen) return { hasDraft: false, isValid: false, payload: null };
+
+    const hasDraft =
+      Boolean(pollQuestion.trim()) ||
+      pollOptions.some((o) => Boolean(String(o ?? "").trim()));
+
+    const question = pollQuestion.trim();
+    const options = pollOptions
+      .map((o) => String(o ?? "").trim())
+      .filter(Boolean)
+      .slice(0, 10);
+
+    const isValid = Boolean(question) && options.length >= 2;
+
+    return {
+      hasDraft,
+      isValid,
+      payload: isValid ? { question, options } : null,
+    };
+  };
+
+  const createPoll = async ({ token, question, options }) => {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/poll/create-poll`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ question, options }),
+    });
+
+    const responseText = await response.text();
+
+    if (responseText.includes("PHP Error") || responseText.includes("<div")) {
+      throw new Error("Server error occurred while creating poll.");
+    }
+
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      throw new Error("Invalid response format from server (poll).");
+    }
+
+    if (!data?.status) {
+      throw new Error(data?.message || "Failed to create poll.");
+    }
+
+    return data.poll_id;
+  };
+
+
+  //create poll function
+const handleCreatePoll = async () => {
+  setUploadError("");
+
+  const poll = getPollPayload();
+
+  if (!poll.isValid) {
+    alert("Please add poll question and at least 2 options.");
+    return;
+  }
+
+  const token = getAuthToken();
+
+  if (!token) {
+    alert("Authentication required. Please login again.");
+    navigate("/login");
+    return;
+  }
+
+  setIsPublishing(true);
+
+  try {
+    const pollId = await createPoll({
+      token,
+      question: poll.payload.question,
+      options: poll.payload.options,
+    });
+
+
+    navigate("/dashboard");
+  } catch (error) {
+    alert(error?.message || "Failed to create poll. Please try again.");
+  } finally {
+    setIsPublishing(false);
+  }
+};
+
+
+ const handlePublish = async () => {
+  setUploadError("");
+
+  // Basic validation for normal post only
+  if (!content.trim() && !photoFile && !videoFile) {
+    alert("Please add some text, photo, or video before publishing.");
+    return;
+  }
+
+  // Check for authentication token
+  const token = getAuthToken();
+
+  if (!token) {
+    alert("Authentication required. Please login again.");
+    navigate("/login");
+    return;
+  }
+
+  setIsPublishing(true);
+
+  try {
+    // Create FormData for file upload
+    const formData = new FormData();
+
+    // Add post_text only if available
+    const postText = content.trim();
+
+    if (postText) {
+      formData.append("post_text", postText);
+    }
+
+    // Tags/hashtags append karo
+    tags.forEach((tag) => {
+      formData.append("hash_tag[]", `#${tag}`);
+    });
+
+    // Add image
+    if (photoFile) {
+  formData.append("post_image", photoFile);
+}
+
+if (videoFile) {
+  formData.append("post_video", videoFile);
+}
+
+    // Make API call with authentication headers
+    const response = await fetch(`${API_CONFIG.BASE_URL}/post/create-post`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    // Get the raw response text
+    const responseText = await response.text();
+
+    // Check if response is HTML error
+    if (responseText.includes("PHP Error") || responseText.includes("<div")) {
+
+      if (
+        responseText.includes("CI::$upload") ||
+        responseText.includes("initialize() on null")
+      ) {
+        alert("Server upload configuration error. Please contact administrator.");
+      } else {
+        alert("Server error occurred. Please try again later.");
+      }
       return;
     }
 
-    // Check for authentication token
-    const token = getAuthToken();
-    
-    if (!token) {
-      alert("Authentication required. Please login again.");
-      navigate("/login");
-      return;
-    }
-
-    setIsPublishing(true);
+    // Try to parse as JSON
+    let data;
 
     try {
-      // Create FormData for file upload
-      const formData = new FormData();
-      
-      // Add post_text
-      formData.append("post_text", content.trim());
-      
-      // Add media based on type
-      if (photoFile) {
-        formData.append("post_image", photoFile);
-        console.log("Photo file attached:", {
-          name: photoFile.name,
-          type: photoFile.type,
-          size: formatFileSize(photoFile.size)
-        });
-      }
-      
-      if (videoFile) {
-        formData.append("post_video", videoFile);
-        console.log("Video file attached:", {
-          name: videoFile.name,
-          type: videoFile.type,
-          size: formatFileSize(videoFile.size)
-        });
-      }
-
-      
-      // Make API call with authentication headers
-      const response = await fetch(`${API_CONFIG.BASE_URL}/post/create-post`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-     
-      // Get the raw response text
-      const responseText = await response.text();
-
-      // Check if response is HTML error
-      if (responseText.includes("PHP Error") || responseText.includes("<div")) {
-        console.error("Server returned HTML error");
-        
-        if (responseText.includes("CI::$upload") || responseText.includes("initialize() on null")) {
-          alert("Server upload configuration error. Please contact administrator.");
-        } else {
-          alert("Server error occurred. Please try again later.");
-        }
-        return;
-      }
-
-      // Try to parse as JSON
-      let data;
-      try {
-        data = JSON.parse(responseText);
-        console.log("  Parsed JSON:", data);
-      } catch (parseError) {
-        console.error("  Failed to parse response as JSON:", parseError);
-        throw new Error("Invalid response format from server");
-      }
-
-      if (data.status) {
-        console.log("✅ SUCCESS: Post created! Post ID:", data.post_id);
-        navigate("/dashboard");
-      } else {
-        console.log("❌ API ERROR:", data.message || data.msg);
-        
-        if (data.message === "Token missing" || data.message === "Invalid token") {
-          alert("Session expired. Please login again.");
-          localStorage.removeItem("token");
-          navigate("/login");
-        } else {
-          alert(data.message || data.msg || "Failed to create post. Please try again.");
-        }
-      }
-    } catch (error) {
-      console.error("❌ NETWORK ERROR:", error);
-      alert("Network error. Please check your connection and try again.");
-    } finally {
-      setIsPublishing(false);
-      console.log("=== PUBLISH POST ENDED ===\n");
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      throw new Error("Invalid response format from server");
     }
-  };
+
+    if (data.status) {
+      navigate("/dashboard");
+    } else {
+
+      if (data.message === "Token missing" || data.message === "Invalid token") {
+        alert("Session expired. Please login again.");
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("token");
+        sessionStorage.removeItem("auth_token");
+        navigate("/login");
+      } else {
+        alert(data.message || data.msg || "Failed to create post. Please try again.");
+      }
+    }
+  } catch (error) {
+    alert(error?.message || "Network error. Please check your connection and try again.");
+  } finally {
+    setIsPublishing(false);
+    console.log("=== PUBLISH POST ENDED ===\n");
+  }
+};
 
   return (
     <DashboardLayout>
-      <div className="max-w-5xl mx-auto px-4 sm:px-8 py-10 w-full font-sans">
-        <header className="mb-10 text-center">
-          <h1 className="text-4xl font-extrabold text-white tracking-tight mb-3">
-            Compose Research Insight
-          </h1>
-          <p className="text-slate-400 text-lg">
-            Share your latest findings with the global elite network.
-          </p>
-        </header>
+      <div className="w-full flex justify-center px-4 sm:px-6 py-6 md:py-10 font-sans">
+        <div className="w-full max-w-3xl bg-white border border-gray-200 rounded-xl p-6 sm:p-8 md:p-10 shadow-[0_0_25px_rgba(0,0,0,0.08)] dark:bg-[#1a1c1b]/35 dark:border-[#3b4b3d]/20 dark:shadow-[0_0_25px_rgba(0,0,0,0.6)]">
+          <div className="flex flex-col gap-8">
+         {/* tab button  */}
+            <div className="grid grid-cols-2 gap-3 bg-gray-100 dark:bg-[#121413] p-2 rounded-2xl border border-gray-200 dark:border-[#3b4b3d]/25">
+  <button
+    type="button"
+    onClick={openPost}
+    className={`py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+      activeComposer === "post"
+        ? "bg-[#00ff88] text-[#003919] shadow-[0_0_20px_rgba(0,255,136,0.25)]"
+        : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+    }`}
+  >
+    <MaterialIcon name="edit_square" className="text-sm" />
+    Create Post
+  </button>
 
-        <div className="w-full">
-          <div className="bg-[#0f172a] border border-[#1e293b] rounded-xl overflow-hidden shadow-2xl shadow-black/50">
-            
-            {/* Text Area Section */}
-            <div className="p-8 border-b border-[#1e293b]/50">
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">
+  <button
+    type="button"
+    onClick={openPoll}
+    className={`py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+      activeComposer === "poll"
+        ? "bg-[#00ff88] text-[#003919] shadow-[0_0_20px_rgba(0,255,136,0.25)]"
+        : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+    }`}
+  >
+    <MaterialIcon name="poll" className="text-sm" />
+    Create Poll
+  </button>
+</div>
+
+{/* image video text type post section */}
+        {activeComposer === "post" && (
+  <>
+       {/* Text */}
+            <div className="flex flex-col gap-4">
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#00ff88] animate-pulse" />
                 Research Abstract & Insights
               </label>
-              <textarea
-                className="w-full bg-transparent border-none focus:ring-0 text-xl text-slate-200 placeholder-slate-600 resize-none min-h-[300px] outline-none"
-                placeholder="What breakthroughs have you made today?"
-                rows="10"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                disabled={isPublishing}
-              ></textarea>
+             <textarea
+  className="w-full bg-[#f8fafc] border border-gray-300 shadow-sm text-slate-900 placeholder:text-slate-500 focus:border-[#00ff88]/60 focus:ring-2 focus:ring-[#00ff88]/15 rounded-lg p-4 text-sm leading-relaxed transition-all outline-none dark:bg-[#1a1c1b] dark:border-[#3b4b3d]/25 dark:text-slate-200 dark:placeholder:text-slate-500/60"
+  placeholder="What breakthroughs have you made today?"
+  value={content}
+  onChange={(e) => setContent(e.target.value)}
+  disabled={isPublishing}
+/>
             </div>
 
-            {/* Media Upload Section */}
-            <div className="p-8 bg-[#020617]/40">
-              <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">
-                  Visual Media (Max 100MB)
-                </label>
-                
-                {/* Error Message */}
-                {uploadError && (
-                  <div className="mb-4 p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm">
-                    <MaterialIcon name="error" className="text-sm mr-1 align-middle" />
-                    <span className="align-middle">{uploadError}</span>
-                  </div>
-                )}
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  
-                  {/* Photo Upload Area */}
-                  <div className="relative w-full h-full min-h-[200px]">
-                    {selectedPhoto ? (
-                      <div className="relative w-full h-full rounded-xl overflow-hidden border border-slate-700 bg-black flex items-center justify-center">
-                        <img 
-                          src={selectedPhoto} 
-                          alt="Selected preview" 
-                          className="w-full h-full object-contain max-h-[300px]" 
-                        />
-                        <button 
-                          onClick={handleRemovePhoto}
-                          className="absolute top-2 right-2 bg-red-500/80 hover:bg-red-600 text-white p-1.5 rounded-full transition-colors z-10"
-                          disabled={isPublishing}
-                        >
-                          <MaterialIcon name="close" className="text-sm" />
-                        </button>
-                        <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                          {photoFile && formatFileSize(photoFile.size)}
-                        </div>
-                      </div>
-                    ) : (
-                      <label className="flex flex-col items-center justify-center h-full p-14 rounded-xl border border-dashed border-slate-700 hover:border-[#0fbd6c]/50 hover:bg-[#0fbd6c]/5 transition-all group cursor-pointer h-[200px]">
-                        <MaterialIcon 
-                          name="image" 
-                          className="text-slate-500 group-hover:text-[#0fbd6c] mb-2 text-5xl transition-colors" 
-                        />
-                        <span className="text-sm font-medium text-slate-400 group-hover:text-slate-200 transition-colors">
-                          Upload Photo
-                        </span>
-                        <span className="text-xs text-slate-500 mt-1">Max 100MB (JPG, PNG, GIF)</span>
-                        <input 
-                          type="file" 
-                          accept="image/*" 
-                          className="hidden"
-                          onChange={handlePhotoUpload}
-                          disabled={isPublishing || videoFile !== null}
-                        />
-                      </label>
-                    )}
-                  </div>
-
-                  {/* Video Upload Area */}
-                  <div className="relative w-full h-full min-h-[200px]">
-                    {selectedVideo ? (
-                      <div className="relative w-full h-full rounded-xl overflow-hidden border border-slate-700 bg-black flex items-center justify-center">
-                        <video 
-                          src={selectedVideo} 
-                          controls 
-                          className="w-full h-full max-h-[300px]" 
-                        />
-                        <button 
-                          onClick={handleRemoveVideo}
-                          className="absolute top-2 right-2 bg-red-500/80 hover:bg-red-600 text-white p-1.5 rounded-full transition-colors z-10"
-                          disabled={isPublishing}
-                        >
-                          <MaterialIcon name="close" className="text-sm" />
-                        </button>
-                        <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                          {videoFile && formatFileSize(videoFile.size)}
-                        </div>
-                      </div>
-                    ) : (
-                      <label className={`flex flex-col items-center justify-center h-full p-14 rounded-xl border border-dashed border-slate-700 hover:border-[#0fbd6c]/50 hover:bg-[#0fbd6c]/5 transition-all group cursor-pointer h-[200px] ${photoFile ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                        <MaterialIcon 
-                          name="videocam" 
-                          className="text-slate-500 group-hover:text-[#0fbd6c] mb-2 text-5xl transition-colors" 
-                        />
-                        <span className="text-sm font-medium text-slate-400 group-hover:text-slate-200 transition-colors">
-                          Upload Video
-                        </span>
-                        <span className="text-xs text-slate-500 mt-1">Max 100MB (MP4, MOV, AVI)</span>
-                        <input 
-                          type="file" 
-                          accept="video/*" 
-                          className="hidden"
-                          onChange={handleVideoUpload}
-                          disabled={isPublishing || photoFile !== null}
-                        />
-                      </label>
-                    )}
-                  </div>
-
-                </div>
-                {(photoFile || videoFile) && (
-                  <p className="text-xs text-slate-500 mt-3 text-center">
-                    {photoFile ? `Photo selected (${formatFileSize(photoFile.size)})` : `Video selected (${formatFileSize(videoFile.size)})`}
-                    <br />
-                    Only one media type (Photo or Video) can be uploaded per post.
-                  </p>
-                )}
+            {/* Tags */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2 border-b border-gray-300 pb-2 focus-within:border-[#00ff88]/50 transition-colors dark:border-[#3b4b3d]/25">
+                <MaterialIcon name="tag" className="text-slate-500/70 dark:text-slate-400/70 text-sm" />
+                <input
+                  className="bg-transparent border-none focus:ring-0 text-slate-900 dark:text-slate-200 text-sm w-full placeholder:text-slate-500 outline-none"
+                  placeholder="Add relevant tags... (press Enter)"
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === ",") {
+                      e.preventDefault();
+                      commitTag();
+                    }
+                    if (e.key === "Backspace" && !tagInput && tags.length > 0) {
+                      removeTag(tags[tags.length - 1]);
+                    }
+                  }}
+                  disabled={isPublishing}
+                />
               </div>
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((t) => (
+                    <span
+                      key={t}
+                      className="bg-gray-100 text-[#00ff88] dark:bg-[#333534] px-3 py-1 rounded-full text-xs flex items-center gap-1 border border-[#00ff88]/20"
+                    >
+                      #{t}
+                      <button
+                        type="button"
+                        onClick={() => removeTag(t)}
+                        className="hover:text-red-400 transition-colors"
+                        disabled={isPublishing}
+                      >
+                        <MaterialIcon name="close" className="text-[14px]" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Submit Section */}
-            <div className="p-8 flex items-center justify-center bg-[#0f172a]/80 border-t border-[#1e293b]">
-              <button 
+          
+
+            {/* Media */}
+            <div className="flex flex-col gap-4">
+                <label className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 px-1">
+                Visual Media (Max 100MB)
+              </label>
+
+              {uploadError && (
+                <div className="p-3 bg-red-50 border border-red-300 rounded-lg text-red-600 text-sm dark:bg-red-500/10 dark:border-red-500/35 dark:text-red-300">
+                  <MaterialIcon name="error" className="text-sm mr-1 align-middle" />
+                  <span className="align-middle">{uploadError}</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <label
+                  className={`bg-white hover:bg-gray-50 border-2 border-dashed border-gray-300 hover:border-[#00ff88]/50 rounded-xl h-32 flex flex-col items-center justify-center gap-2 transition-all group cursor-pointer dark:bg-[#1e201f] dark:hover:bg-[#333534] dark:border-[#3b4b3d]/40 ${
+                    isPublishing || videoFile || isPollOpen ? "opacity-50 cursor-not-allowed hover:bg-white dark:hover:bg-[#1e201f]" : ""
+                  }`}
+                >
+                  <MaterialIcon
+                    name="image"
+                    className="text-slate-500 dark:text-slate-400 group-hover:text-[#00ff88] text-3xl transition-colors"
+                  />
+                  <span className="text-xs text-slate-800 dark:text-slate-300 group-hover:text-[#00ff88] font-medium uppercase tracking-tighter">
+                    Upload Photo
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePhotoUpload}
+                    disabled={isPublishing || videoFile !== null || isPollOpen}
+                  />
+                </label>
+
+                <label
+                  className={`bg-white hover:bg-gray-50 border-2 border-dashed border-gray-300 hover:border-[#00ff88]/50 rounded-xl h-32 flex flex-col items-center justify-center gap-2 transition-all group cursor-pointer dark:bg-[#1e201f] dark:hover:bg-[#333534] dark:border-[#3b4b3d]/40 ${
+                    isPublishing || photoFile || isPollOpen ? "opacity-50 cursor-not-allowed hover:bg-white dark:hover:bg-[#1e201f]" : ""
+                  }`}
+                >
+                  <MaterialIcon
+                    name="movie"
+                    className="text-slate-500 dark:text-slate-400 group-hover:text-[#00ff88] text-3xl transition-colors"
+                  />
+                  <span className="text-xs text-slate-800 dark:text-slate-300 group-hover:text-[#00ff88] font-medium uppercase tracking-tighter">
+                    Upload Video
+                  </span>
+                  <input
+                    type="file"
+                    accept="video/*"
+                    className="hidden"
+                    onChange={handleVideoUpload}
+                    disabled={isPublishing || photoFile !== null || isPollOpen}
+                  />
+                </label>
+              </div>
+
+              {(selectedPhoto || selectedVideo) && (
+                <div className="rounded-xl border border-gray-200 bg-white overflow-hidden dark:border-[#3b4b3d]/30 dark:bg-[#121413]">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-[#3b4b3d]/20">
+                    <div className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">
+                      Preview
+                    </div>
+                    <button
+                      type="button"
+                      onClick={selectedPhoto ? handleRemovePhoto : handleRemoveVideo}
+                      className="text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 border border-red-300 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed dark:text-red-300 dark:hover:text-red-200 dark:bg-red-500/10 dark:border-red-500/25"
+                      disabled={isPublishing}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <div className="bg-black/40 flex items-center justify-center p-3">
+                    {selectedPhoto ? (
+                      <img
+                        src={selectedPhoto}
+                        alt="Selected preview"
+                        className="w-full max-h-[340px] object-contain"
+                      />
+                    ) : (
+                      <video
+                        src={selectedVideo}
+                        controls
+                        className="w-full max-h-[340px]"
+                      />
+                    )}
+                  </div>
+                  <div className="px-4 py-3 text-xs text-slate-500 flex items-center justify-between gap-4">
+                    <span className="truncate">
+                      {photoFile?.name || videoFile?.name || ""}
+                    </span>
+                    <span className="shrink-0">
+                      {photoFile
+                        ? formatFileSize(photoFile.size)
+                        : videoFile
+                        ? formatFileSize(videoFile.size)
+                        : ""}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {(photoFile || videoFile) && (
+                <p className="text-[11px] text-slate-500 text-center leading-relaxed">
+                  Only one media type (Photo or Video) can be uploaded per post.
+                </p>
+              )}
+            </div>
+
+            {/* Publish */}
+            <div className="pt-6 border-t border-gray-200 dark:border-[#3b4b3d]/25 flex justify-end">
+              <button
+                type="button"
                 onClick={handlePublish}
-                disabled={isPublishing || (!content.trim() && !photoFile && !videoFile)}
-                className={`w-full md:w-auto px-24 py-5 rounded-xl text-base font-extrabold text-[#020617] bg-[#0fbd6c] transition-all 
-                  ${isPublishing ? 'opacity-70 cursor-wait' : 'shadow-[0_0_25px_rgba(15,189,108,0.3)] hover:shadow-[0_0_40px_rgba(15,189,108,0.6)] active:scale-95'}
-                  ${(!content.trim() && !photoFile && !videoFile) ? 'opacity-50 cursor-not-allowed' : ''}
-                `}
+                
+                disabled={
+                  isPublishing ||
+                  (!content.trim() && !photoFile && !videoFile && !getPollPayload().isValid)
+                }
+                className="bg-gradient-to-br from-[#00ff88] to-[#7dda94] text-[#003919] font-black py-4 px-10 rounded-xl shadow-[0_0_20px_rgba(0,255,136,0.25)] hover:shadow-[0_0_35px_rgba(0,255,136,0.45)] transition-all duration-300 flex items-center gap-3 uppercase tracking-widest text-xs disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isPublishing ? (
-                  <span className="flex items-center gap-2">
-                    <MaterialIcon name="sync" className="animate-spin" /> Publishing...
-                  </span>
+                  <>
+                    Publishing
+                    <MaterialIcon name="sync" className="text-sm animate-spin" />
+                  </>
                 ) : (
-                  "Publish Insight"
+                  <>
+                    Publish Insight
+                    <MaterialIcon name="send" className="text-sm" />
+                  </>
                 )}
               </button>
             </div>
-            
-          </div>
+  </>
+)}
 
-          {/* Footer Text */}
-          <div className="mt-12 text-center">
-            <p className="text-slate-600 text-xs font-medium uppercase tracking-[0.2em]">
-              Research Protocol v2.4 Active | Max file size: 100MB
-            </p>
+{/* poll type post section  */}
+{activeComposer === "poll" && (
+  <>
+  {/* Poll */}
+            {!isPollOpen ? (
+              <button
+                type="button"
+                onClick={openPoll}
+                disabled={isPublishing || Boolean(photoFile || videoFile)}
+                className="w-full flex items-center justify-between p-6 bg-gray-50 hover:bg-gray-100 border-2 border-dashed border-gray-300 hover:border-[#00ff88]/40 rounded-xl transition-all duration-300 relative overflow-hidden group disabled:opacity-60 disabled:cursor-not-allowed dark:bg-[#1e201f]/40 dark:hover:bg-[#1e201f]/60 dark:border-[#3b4b3d]/30"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-[#00ff88]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="flex items-center gap-5 relative z-10">
+                  <div className="w-12 h-12 rounded-xl bg-white border border-gray-300 flex items-center justify-center group-hover:border-[#00ff88]/35 group-hover:shadow-[0_0_20px_rgba(0,255,136,0.15)] transition-all duration-300 dark:bg-[#282a29] dark:border-[#3b4b3d]/30">
+                    <MaterialIcon
+                      name="poll"
+                      className="text-slate-500 dark:text-slate-400 group-hover:text-[#00ff88] text-2xl transition-colors"
+                    />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-sm font-black text-slate-800 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 uppercase tracking-[0.15em] transition-colors">
+                      Create Research Poll
+                    </h3>
+                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mt-1 group-hover:text-slate-600 dark:text-slate-500/70 dark:group-hover:text-slate-400/80">
+                      Incorporate quantitative data points from your network
+                    </p>
+                  </div>
+                </div>
+                <div className="relative z-10 flex items-center gap-3 text-slate-500 group-hover:text-[#00ff88] transition-all dark:text-slate-500/50">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-opacity">
+                    Launch
+                  </span>
+                  <MaterialIcon name="add_circle" className="text-2xl" />
+                </div>
+              </button>
+            ) : (
+              <div className="flex flex-col gap-4 bg-white border border-gray-200 rounded-xl p-6 relative overflow-hidden dark:bg-[#1e201f] dark:border-[#3b4b3d]/20">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#00ff88]/5 to-transparent pointer-events-none" />
+                <div className="flex justify-between items-center z-10">
+                  <div className="flex items-center gap-2 text-[#00ff88] font-bold text-xs uppercase tracking-widest">
+                    <MaterialIcon name="poll" className="text-lg" />
+                    Active Poll Creator
+                  </div>
+                  <button
+                    type="button"
+                    onClick={discardPoll}
+                    className="text-slate-500 hover:text-red-400 dark:text-slate-400 transition-colors flex items-center gap-1 text-[10px] uppercase font-bold tracking-tighter"
+                    disabled={isPublishing}
+                  >
+                    Discard Poll
+                  </button>
+                </div>
+
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 flex flex-col gap-5 z-10 shadow-lg dark:bg-[#121413] dark:border-[#3b4b3d]/30">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest px-1">
+                      Question
+                    </label>
+                    <input
+                      className="w-full bg-gray-100 border border-gray-300 text-slate-900 placeholder:text-slate-500 focus:border-[#00ff88]/60 focus:ring-1 focus:ring-[#00ff88]/15 rounded-lg p-3 text-sm transition-all outline-none dark:bg-[#1a1c1b] dark:border-[#3b4b3d]/25 dark:text-slate-200 dark:placeholder:text-slate-500/60"
+                      placeholder="Poll Question..."
+                      type="text"
+                      value={pollQuestion}
+                      onChange={(e) => setPollQuestion(e.target.value)}
+                      disabled={isPublishing}
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest px-1">
+                      Options
+                    </label>
+                    <div className="flex flex-col gap-2">
+                      {pollOptions.map((opt, idx) => (
+                        <div key={idx} className="group relative flex items-center">
+                          <input
+                            className="w-full bg-gray-100 border border-gray-300 text-slate-900 placeholder:text-slate-500 focus:border-[#00ff88]/60 focus:ring-1 focus:ring-[#00ff88]/15 rounded-lg p-3 pr-10 text-sm transition-all outline-none dark:bg-[#1a1c1b] dark:border-[#3b4b3d]/25 dark:text-slate-300 dark:placeholder:text-slate-500/60"
+                            type="text"
+                            placeholder={`Option ${idx + 1}`}
+                            value={opt}
+                            onChange={(e) => updatePollOption(idx, e.target.value)}
+                            disabled={isPublishing}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removePollOption(idx)}
+                            className="absolute right-3 text-slate-500 hover:text-red-400 dark:text-slate-500/70 transition-colors"
+                            disabled={isPublishing}
+                          >
+                            <MaterialIcon name="delete" className="text-[18px]" />
+                          </button>
+                        </div>
+                      ))}
+
+                      <button
+                        type="button"
+                        onClick={addPollOption}
+                        className="w-full py-3 rounded-lg border-2 border-dashed border-[#00ff88]/30 text-[#00ff88] hover:bg-[#00ff88]/5 hover:border-[#00ff88]/45 transition-all flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest mt-1 disabled:opacity-60 disabled:cursor-not-allowed"
+                        disabled={isPublishing}
+                      >
+                        <MaterialIcon name="add_circle" className="text-[18px]" />
+                        Add Option
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Poll Publish */}
+<div className="pt-6 border-t border-gray-200 dark:border-[#3b4b3d]/25 flex justify-end">
+  <button
+    type="button"
+    onClick={handleCreatePoll}
+    disabled={isPublishing || !getPollPayload().isValid}
+    className="bg-gradient-to-br from-[#00ff88] to-[#7dda94] text-[#003919] font-black py-4 px-10 rounded-xl shadow-[0_0_20px_rgba(0,255,136,0.25)] hover:shadow-[0_0_35px_rgba(0,255,136,0.45)] transition-all duration-300 flex items-center gap-3 uppercase tracking-widest text-xs disabled:opacity-60 disabled:cursor-not-allowed"
+  >
+    {isPublishing ? (
+      <>
+        Publishing Poll
+        <MaterialIcon name="sync" className="text-sm animate-spin" />
+      </>
+    ) : (
+      <>
+        Publish Poll
+        <MaterialIcon name="send" className="text-sm" />
+      </>
+    )}
+  </button>
+</div>
+
+  </>
+)}
           </div>
         </div>
       </div>
+
+
+
+      <style jsx global>{`
+  /* Chrome, Safari aur Opera ke liye */
+  ::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  /* Firefox ke liye */
+  * {
+    scrollbar-width: none;
+  }
+
+  /* IE aur Edge ke liye */
+  * {
+    -ms-overflow-style: none;
+  }
+`}</style>
     </DashboardLayout>
   );
 };

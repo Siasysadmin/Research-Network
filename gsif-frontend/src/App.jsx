@@ -26,15 +26,17 @@ import ResearchUploadRequests from "./Admin/Research-Upload/ResearchUploadReques
 import BoardMembers from "./Admin/BoardMemberCard";
 import ViewResearchApplication from "./Admin/Research-Upload/ViewResearchApplication";
 import CreateEvent from "./Admin/CreateEvent/CreateEvent";
-import AdminChat from './Admin/chat/AdminChat';
-import AdminCreateGroup from './Admin/chat/AdminCreateGroup';
-import AdminEvents from './Admin/Events/AdminEvents';
+import AdminChat from "./Admin/chat/AdminChat";
+import AdminCreateGroup from "./Admin/chat/AdminCreateGroup";
+import AdminEvents from "./Admin/Events/AdminEvents";
+import EventApprovals from "./Admin/Events/EventApprovals";
+import AdminUserProfile from "./Admin/porfile/AdminUserProfile";
 //Dashboard
-import MainContent from "./dashboard/MainContent";
+import MainContent from "./dashboard/components/MainContent";
 import RightSection from "./dashboard/RightSection";
 import ResearchUploadForm from "./dashboard/ResearchUploadForm";
 import BoardReviewPortal from "./dashboard/BoardReviewPortal";
-import PublicationCard from "./dashboard/PublicationCard";
+import Mypublication from "./dashboard/MyPublications/Mypublication";
 import IndividualResearcherProfile from "./dashboard/IndividualResearcherProfile";
 import IndividualEditProfile from "./dashboard/IndividualEditProfile";
 import InstituteProfile from "./dashboard/InstituteProfile";
@@ -42,123 +44,163 @@ import InstituteEditProfile from "./dashboard/InstituteEditProfile";
 import Library from "./dashboard/Library";
 import LibraryViewDetails from "./dashboard/LibraryViewDetails";
 import CreatePost from "./dashboard/createpost";
-import Chats from "./dashboard/Chats";
+import Chats from "./dashboard/Chat/Chats";
 import Events from "./dashboard/Events";
 import UserProfile from "./dashboard/UserProfile";
-import CreateGroup from "./dashboard/CreateGroup";
+import UserActivityPage from "./dashboard/UserActivityPage";
+import CreateGroup from "./dashboard/Chat/CreateGroup";
 import GroupDetails from "./dashboard/GroupDetails";
+import BoardMember from "./dashboard/BoardMember/BoardMember";
+import Event from "./dashboard/Event/CreateEvent";
+import MyEvents from "./dashboard/Event/MyEvents";
+import NotificationPopup from "./dashboard/NotificationPopup";
+import ResearchReSubmited from "./dashboard/MyPublications/ResearchReSubmited";
 
 // settings
 import Settings from "./settings/setting";
 import TermsConditions from "./Legals/TermsConditions";
 import PrivacyPolicy from "./Legals/PrivacyPolicy";
 import AdminSavedPosts from "./Admin/save/AdminSavedPosts";
-import { useTheme } from "./context/ThemeContext";
+import { ThemeProvider } from "./context/ThemeContext";
+
+//ROUTES COMPONENT {/*added by vijay */}
+import ProtectedRoute from "./routes/ProtectedRoute";
+import PublicRoute from "./routes/PublicRoute";
 
 const App = () => {
-  const { theme } = useTheme();
   return (
-    <>
+    <ThemeProvider>
       <Routes>
         {/* Home */}
-        <Route path="/" element={<Home />} />
-
         {/* Auth Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/forgot" element={<ForgotPassword />} />
-        <Route path="/verify" element={<VerifyOTP />} />
-        <Route path="/reset" element={<ResetPassword />} />
-        <Route path="/individual" element={<IndividualRegister />} />
-        <Route path="/institute" element={<InstituteRegister />} />
-        <Route path="/application-approved" element={<ApplicationApproved />} />
-
-        {/* Individual Profile Flow - WITH STEP PARAM */}
-        <Route
-          path="/profile-individual-flow/:step"
-          element={<IndividualFlow />}
-        />
-        <Route path="/complet" element={<ProfileCompletion />} />
-
-        {/* Institute Profile Flow - WITH STEP PARAM */}
-        <Route
-          path="/organization-onboarding/:step"
-          element={<OrgOnboardingFlow />}
-        />
-        <Route
+        <Route element={<PublicRoute />}>
+          {" "}
+          {/*added by vijay start */}
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgot" element={<ForgotPassword />} />
+          <Route path="/verify" element={<VerifyOTP />} />
+          <Route path="/reset" element={<ResetPassword />} />
+          <Route path="/individual" element={<IndividualRegister />} />
+          <Route path="/institute" element={<InstituteRegister />} />
+        </Route>{" "}
+        {/*added by vijay end */}
+        {/* Protected Routes */}
+        <Route element={<ProtectedRoute />}>
+          {" "}
+          {/*added by vijay strat */}
+          <Route
+            path="/application-approved"
+            element={<ApplicationApproved />}
+          />
+          {/* Individual Profile Flow - WITH STEP PARAM */}
+          <Route
+            path="/profile-individual-flow/:step"
+            element={<IndividualFlow />}
+          />
+          <Route path="/complet" element={<ProfileCompletion />} />
+          {/* Institute Profile Flow - WITH STEP PARAM */}
+          <Route
+            path="/organization-onboarding/:step"
+            element={<OrgOnboardingFlow />}
+          />
+          {/* <Route
           path="/organization-onboarding"
           element={<Navigate to="/organization-onboarding/1" />}
-        />
-
-        <Route path="/profileorg" element={<OrgProfile />} />
-        <Route path="/welcome" element={<SustainbilityWelcome />} />
-
-        {/* ✅ ADMIN ROUTES */}
-        <Route path="/admin" element={<AdminHome />} />
-        <Route path="/admin/board-members" element={<BoardMembers />} />
-        <Route
-          path="/admin/institute-applications"
-          element={<InstituteApplications />}
-        />
-        <Route path="/admin/individual-applications" element={<Individual />} />
-        <Route
-          path="/admin/research-upload-requests"
-          element={<ResearchUploadRequests />}
-        />
-        <Route
-          path="/admin/view-research"
-          element={<ViewResearchApplication />}
-        />
-        <Route path="/admin/create-event" element={<CreateEvent />} />
-
-        <Route path="/admin/chat" element ={<AdminChat/>}/>
-        <Route path="/admin/CreateGroup" element ={<AdminCreateGroup/>}/>
-        <Route path="/admin/save" element ={<AdminSavedPosts/>}/>
-        <Route path="/admin/events" element={<AdminEvents />}/>
-
-        {/* Dashboard */}
-        <Route path="/dashboard" element={<MainContent />} />
-        <Route path="right" element={<RightSection />} />
-        <Route
-          path="/dashboard/upload-research"
-          element={<ResearchUploadForm />}
-        />
-        <Route path="/dashboard/board-review" element={<BoardReviewPortal />} />
-        <Route path="/dashboard/publications" element={<PublicationCard />} />
-        <Route
-          path="/dashboard/individual-profile"
-          element={<IndividualResearcherProfile />}
-        />
-        <Route
-          path="dashboard/individual-edit-profile"
-          element={<IndividualEditProfile />}
-        />
-        <Route
-          path="/dashboard/institute-profile"
-          element={<InstituteProfile />}
-        />
-        <Route
-          path="/dashboard/institute-edit-profile"
-          element={<InstituteEditProfile />}
-        />
-        <Route path="/dashboard/library" element={<Library />} />
-        <Route
-          path="/dashboard/library-view-details"
-          element={<LibraryViewDetails />}
-        />
-        <Route path="/dashboard/create-post" element={<CreatePost />} />
-        <Route path="/dashboard/chats" element={<Chats />} />
-        <Route path="/dashboard/events" element={<Events />} />
-        <Route path="/dashboard/CreateGroup" element={<CreateGroup />} />
-        <Route path="/user-profile" element={<UserProfile />} />
-        <Route path="/group" element={<GroupDetails />} />
-
-        {/* Settings */}
-        <Route path="/settings" element={<Settings />} />
+        /> */}
+          <Route path="/profileorg" element={<OrgProfile />} />
+          <Route path="/welcome" element={<SustainbilityWelcome />} />
+          {/* ✅ ADMIN ROUTES */}
+          <Route path="/admin" element={<AdminHome />} />
+          <Route path="/admin/board-members" element={<BoardMembers />} />
+          <Route
+            path="/admin/institute-applications"
+            element={<InstituteApplications />}
+          />
+          <Route
+            path="/admin/individual-applications"
+            element={<Individual />}
+          />
+          <Route
+            path="/admin/research-upload-requests"
+            element={<ResearchUploadRequests />}
+          />
+          <Route
+            path="/admin/view-research"
+            element={<ViewResearchApplication />}
+          />
+          <Route path="/admin/create-event" element={<CreateEvent />} />
+          <Route path="/admin/chat" element={<AdminChat />} />
+          <Route path="/admin/CreateGroup" element={<AdminCreateGroup />} />
+          <Route path="/admin/save" element={<AdminSavedPosts />} />
+          <Route path="/admin/events" element={<AdminEvents />} />
+          <Route path="/admin/event-approvals" element={<EventApprovals />} />
+          <Route path="/admin/user-profile" element={<AdminUserProfile />} />
+          {/* Dashboard */}
+          <Route path="/dashboard" element={<MainContent />} />
+          <Route path="right" element={<RightSection />} />
+          <Route
+            path="/dashboard/upload-research"
+            element={<ResearchUploadForm />}
+          />
+          <Route
+            path="/dashboard/board-review"
+            element={<BoardReviewPortal />}
+          />
+          <Route path="/dashboard/publications" element={<Mypublication />} />
+          <Route
+            path="/dashboard/research-resubmission"
+            element={<ResearchReSubmited />}
+          />
+          <Route
+            path="/dashboard/individual-profile"
+            element={<IndividualResearcherProfile />}
+          />
+          <Route
+            path="dashboard/individual-edit-profile"
+            element={<IndividualEditProfile />}
+          />
+          <Route
+            path="/dashboard/institute-profile"
+            element={<InstituteProfile />}
+          />
+          <Route
+            path="/dashboard/institute-edit-profile"
+            element={<InstituteEditProfile />}
+          />
+          <Route path="/dashboard/library" element={<Library />} />
+          <Route
+            path="/dashboard/library-view-details"
+            element={<LibraryViewDetails />}
+          />
+          <Route path="/dashboard/board-members" element={<BoardMember />} />
+          <Route path="/dashboard/create-post" element={<CreatePost />} />
+          <Route path="/dashboard/chats" element={<Chats />} />
+          <Route path="/dashboard/events" element={<Events />} />
+          <Route path="/dashboard/CreateGroup" element={<CreateGroup />} />
+          <Route path="/user-profile" element={<UserProfile />} />
+          <Route path="/user-activity" element={<UserActivityPage />} />
+          <Route path="/group" element={<GroupDetails />} />
+          <Route path="/dashboard/create-event" element={<Event />} />
+          <Route path="/dashboard/my-event" element={<MyEvents />} />
+          <Route
+            path="/dashboard/notifications"
+            element={<NotificationPopup />}
+          />
+          {/* Settings */}
+          <Route path="/settings" element={<Settings />} />
+        </Route>{" "}
+        {/*added by vijay end */}
         <Route path="/terms" element={<TermsConditions />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
+
+
       </Routes>
 
       <ToastContainer
+        key={
+          document.documentElement.classList.contains("dark") ? "dark" : "light"
+        }
         position="top-right" // Laptop ke liye default
         autoClose={2000}
         hideProgressBar={false}
@@ -167,10 +209,12 @@ const App = () => {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme={theme} // AAPKE THEME KE HISAB SE AUTOMATIC ADJUST HOGA
+        theme={
+          document.documentElement.classList.contains("dark") ? "dark" : "light"
+        }
         limit={3} // Mobile par screen na bhar jaye isliye limit set karein
       />
-    </>
+    </ThemeProvider>
   );
 };
 

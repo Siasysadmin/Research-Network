@@ -18,6 +18,7 @@ const EditInstituteProfile = () => {
 
   // Form States
   const [profileData, setProfileData] = useState({
+    user_id: "",                  //added by vijay for common user api sync
     organization_name: "",
     organization_type: "",
     country: "",
@@ -85,6 +86,7 @@ const EditInstituteProfile = () => {
         const data = result.data;
 
         setProfileData({
+          user_id: data.id || data.user_id || data.institute_id || "",    //added by vijay for common user api sync
           organization_name:
             data.organization_name || data.institute_name || "",
           organization_type: data.organization_type || "",
@@ -104,6 +106,9 @@ const EditInstituteProfile = () => {
           institute_description: data.institute_description || "",
           profile_image: data.profile_image || "",
         });
+
+
+       
 
         setResearchFocus(
           Array.isArray(data.research_focus) ? data.research_focus : [],
@@ -138,6 +143,108 @@ const EditInstituteProfile = () => {
       ? getFullImageUrl(profileData.profile_image)
       : avatar);
 
+
+
+
+
+
+
+
+  // sync Common User Api start vijay
+  const syncCommonUserApi = async () => {
+    try {
+      const localUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+      const finalUserId =
+        profileData.user_id ||
+        localStorage.getItem("user_id") ||
+        localUser.user_id ||
+        localUser.id;
+
+      if (!finalUserId) {
+        console.error("Institute Common User Sync Failed: local user id not found");
+        return false;
+      }
+
+      const commonUserPayload = {
+        // simple/common fields
+        name: profileData.organization_name,
+        email: profileData.email,
+        mobile: profileData.contact_no,
+        address: profileData.address,
+        country: profileData.country,
+        state: profileData.state,
+        city: profileData.city,
+        pincode: "",
+        age: null,
+
+        category: "Institute",
+        platform: "RESEARCH_NETWORK",
+        platform_user_id: String(finalUserId),
+
+        // institute extra fields
+        extra_data: {
+          institute_website: profileData.personal_website,
+          admin_name: profileData.name,
+          professional_role: profileData.professional_role,
+          organization_type: profileData.organization_type,
+          establishment_year: profileData.establishment_year,
+          institute_description: profileData.institute_description,
+          research_focus: researchFocus,
+          platform_goals: platforms,
+          linkedin: profileData.linkedin,
+          research_gate: profileData.research_gate,
+          orc_id: profileData.orc_id,
+        },
+      };
+
+      console.log("Institute Common User Payload:", commonUserPayload);
+
+      const commonResponse = await fetch(
+        "https://common-users.onrender.com/api/users/register",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "x-api-key": "beej_bhandar_common_secret_123",
+          },
+          body: JSON.stringify(commonUserPayload),
+        }
+      );
+
+      const commonText = await commonResponse.text();
+
+      let commonData = {};
+      try {
+        commonData = commonText ? JSON.parse(commonText) : {};
+      } catch (err) {
+        commonData = { rawResponse: commonText };
+      }
+
+      console.log("Institute Common User API Status:", commonResponse.status);
+      console.log("Institute Common User API Response:", commonData);
+
+      if (!commonResponse.ok || commonData.status === false) {
+        console.error("Institute Common User API Sync Failed:", commonData);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Institute Common User API Error:", error);
+      return false;
+    }
+  };
+  // sync Common User Api end vijay
+
+
+
+
+
+
+
+
   // POST API - Save profile data
   const handleSaveChanges = async () => {
     try {
@@ -163,30 +270,66 @@ const EditInstituteProfile = () => {
         research_gate: profileData.research_gate,
         orc_id: profileData.orc_id,
         personal_website: profileData.personal_website,
-        // Always send profile_image, even if empty string (for deletion)
         profile_image: profileData.profile_image || "",
+      };
+
+      // ✅ Percent calculation ke liye sirf wahi 11 fields save karo
+      const profileForPercent = {
+        organization_name: payload.organization_name || "",
+        organization_type: payload.organization_type || "",
+
+        country: payload.country || "",
+        state: payload.state || "",
+        city: payload.city || "",
+
+        address: payload.address || "",
+        email: payload.email || "",
+        contact_no: payload.contact_no || "",
+        name: payload.name || "",
+        professional_role: payload.professional_role || "",
+        establishment_year: payload.establishment_year || "",
+        institute_description: payload.institute_description || "",
+
+        research_focus: payload.research_focus || [],
+        platform: payload.platform || [],
+
+        linkedin: payload.linkedin || "",
+        research_gate: payload.research_gate || "",
+        orc_id: payload.orc_id || "",
+        personal_website: payload.personal_website || "",
+
+        profile_image: payload.profile_image || "",
       };
 
       const response = await fetch(
         `${API_CONFIG.BASE_URL}/profile/profile-institute`,
         {
-          method: "POST", // Changed to POST as per standard form updates, adjust if your backend specifically requires PATCH
+          method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
             Accept: "application/json",
           },
           body: JSON.stringify(payload),
-        },
+        }
       );
 
       const result = await response.json();
 
       if (result.status || response.ok) {
-        setSuccessMessage("Profile updated successfully!");
 
-        // Trigger update event for profile page
+        await syncCommonUserApi();  //added by vijay for common user api sync
+
+        // ✅ Local percent data update
+        localStorage.setItem(
+          "latestInstituteProfile",
+          JSON.stringify(profileForPercent)
+        );
+
+        // ✅ Dashboard ko refresh signal
         window.dispatchEvent(new Event("profileUpdated"));
+
+        setSuccessMessage("Profile updated successfully!");
 
         setTimeout(() => navigate("/dashboard/institute-profile"), 1500);
       } else {
@@ -356,9 +499,9 @@ const EditInstituteProfile = () => {
     setPlatforms(platforms.filter((_, i) => i !== index));
 
   const inputClass =
-    "w-full bg-black/40 border border-[#1a1a1a] rounded-lg px-4 py-3 text-white focus:border-[#0df287] focus:ring-1 focus:ring-[#0df287] outline-none transition-all placeholder:text-slate-600";
+    "w-full bg-[#fcfdfc] dark:bg-black/40 border border-[#e5ece7] dark:border-[#1a1a1a] rounded-lg px-4 py-3 text-slate-800 dark:text-white focus:border-[#0df287] focus:ring-1 focus:ring-[#0df287] outline-none transition-all placeholder:text-slate-500 dark:placeholder:text-slate-600";
   const labelClass =
-    "text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block";
+    "text-xs font-bold text-slate-600 dark:text-slate-500 uppercase tracking-wider mb-2 block";
 
   if (loading) {
     return (
@@ -372,34 +515,32 @@ const EditInstituteProfile = () => {
 
   return (
     <DashboardLayout>
-      <div className="mx-auto px-4 py-4 pb-24 max-w-7xl">
+      <div className="mx-auto px-4 py-4 pb-24 max-w-7xl text-slate-900 dark:text-white">
+        {" "}
         <header className="mb-10">
-          <h2 className="text-3xl font-bold text-white">
+          <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
             Edit Institute Profile
           </h2>
-          <p className="text-slate-400 mt-1">
+          <p className="text-slate-600 dark:text-slate-400 mt-1">
             Update your institute's information, focus areas, and external
             links.
           </p>
         </header>
-
         {successMessage && (
           <div className="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400">
             {successMessage}
           </div>
         )}
-
         {error && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400">
             {error}
           </div>
         )}
-
         <div className="flex flex-col gap-6">
-          <section className="bg-[#0a0a0a]/50 p-8 rounded-2xl border border-[#1a1a1a] flex flex-col md:flex-row items-center gap-8">
+          <section className="bg-white dark:bg-[#0a0a0a]/50 p-8 rounded-2xl border border-slate-200 dark:border-[#1a1a1a] flex flex-col md:flex-row items-center gap-8">
             <div className="flex flex-col items-center gap-3">
               <div className="relative group">
-                <div className="w-32 h-32 rounded-full ring-4 ring-[#0df287]/20 p-1 overflow-hidden relative bg-black/40 flex items-center justify-center">
+                <div className="w-32 h-32 rounded-full ring-4 ring-[#0df287]/20 p-1 overflow-hidden relative bg-slate-50 dark:bg-black/40 flex items-center justify-center">
                   <img
                     src={finalImage}
                     className="w-full h-full object-cover rounded-full"
@@ -409,9 +550,9 @@ const EditInstituteProfile = () => {
                   <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
                     <MaterialIcon
                       name="photo_camera"
-                      className="text-white text-2xl"
+                      className="text-slate-900 dark:text-white text-2xl"
                     />
-                    <span className="text-[10px] text-white font-bold uppercase mt-1">
+                    <span className="text-[10px] text-slate-900 dark:text-white font-bold uppercase mt-1">
                       {uploading ? "Uploading..." : "Upload"}
                     </span>
                     <input
@@ -448,7 +589,7 @@ const EditInstituteProfile = () => {
                 <div>
                   <label className={labelClass}>Institute Name</label>
                   <input
-                    className={`${inputClass} bg-black/60 cursor-not-allowed`}
+                    className={`${inputClass} bg-slate-100 dark:bg-black/60 cursor-not-allowed`}
                     placeholder="Enter institute name"
                     type="text"
                     value={profileData.organization_name}
@@ -481,11 +622,11 @@ const EditInstituteProfile = () => {
             </div>
           </section>
 
-          <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl">
-            <div className="px-8 py-6 border-b border-[#1a1a1a] flex justify-between items-center">
+          <div className="bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl">
+            <div className="px-8 py-6 border-b border-slate-200 dark:border-[#1a1a1a] flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <MaterialIcon name="domain" className="text-[#0df287]" />
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                   Institute Details
                 </h2>
               </div>
@@ -502,13 +643,13 @@ const EditInstituteProfile = () => {
                     value={profileData.establishment_year}
                     max={new Date().getFullYear()} // ✅ current year se aage nahi
                     min={1800}
-                   onChange={(e) => {
-    const val = parseInt(e.target.value);
-    const currentYear = new Date().getFullYear();
-    if (val <= currentYear || e.target.value === "") {
-      handleInputChange("establishment_year", e.target.value);
-    }
-  }}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      const currentYear = new Date().getFullYear();
+                      if (val <= currentYear || e.target.value === "") {
+                        handleInputChange("establishment_year", e.target.value);
+                      }
+                    }}
                     disabled={saving}
                   />
                 </div>
@@ -581,7 +722,7 @@ const EditInstituteProfile = () => {
 
               <div>
                 <label className={labelClass}>Focus Areas</label>
-                <div className="flex flex-wrap gap-2 p-3 bg-black/40 border border-[#1a1a1a] rounded-xl">
+                <div className="flex flex-wrap gap-2 p-3 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-[#1a1a1a] rounded-xl">
                   {researchFocus.map((area, index) => (
                     <span
                       key={index}
@@ -590,13 +731,13 @@ const EditInstituteProfile = () => {
                       {area}
                       <MaterialIcon
                         name="close"
-                        className="text-xs cursor-pointer hover:text-white"
+                        className="text-xs cursor-pointer hover:text-slate-900 dark:text-white"
                         onClick={() => removeFocus(index)}
                       />
                     </span>
                   ))}
                   <input
-                    className="!bg-transparent !border-none !p-0 focus:ring-0 text-xs w-32 text-white outline-none placeholder:text-slate-500 ml-2"
+                    className="!bg-transparent !border-none !p-0 focus:ring-0 text-xs w-32 text-slate-900 dark:text-white outline-none placeholder:text-slate-500 ml-2"
                     placeholder="+ Add Focus Area"
                     type="text"
                     value={focusInput}
@@ -607,11 +748,11 @@ const EditInstituteProfile = () => {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-[#1a1a1a]">
+              <div className="pt-4 border-t border-slate-200 dark:border-[#1a1a1a]">
                 <label className={labelClass}>
                   Sustainability / Platform Goals
                 </label>
-                <div className="flex flex-wrap gap-2 p-3 bg-black/40 border border-[#1a1a1a] rounded-xl">
+                <div className="flex flex-wrap gap-2 p-3 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-[#1a1a1a] rounded-xl">
                   {platforms.map((goal, index) => (
                     <span
                       key={index}
@@ -620,13 +761,13 @@ const EditInstituteProfile = () => {
                       {goal}
                       <MaterialIcon
                         name="close"
-                        className="text-xs cursor-pointer hover:text-white"
+                        className="text-xs cursor-pointer hover:text-slate-900 dark:text-white"
                         onClick={() => removePlatform(index)}
                       />
                     </span>
                   ))}
                   <input
-                    className="!bg-transparent !border-none !p-0 focus:ring-0 text-xs w-32 text-white outline-none placeholder:text-slate-500 ml-2"
+                    className="!bg-transparent !border-none !p-0 focus:ring-0 text-xs w-32 text-slate-900 dark:text-white outline-none placeholder:text-slate-500 ml-2"
                     placeholder="+ Add Goal"
                     type="text"
                     value={platformInput}
@@ -639,14 +780,14 @@ const EditInstituteProfile = () => {
             </div>
           </div>
 
-          <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl">
-            <div className="px-8 py-6 border-b border-[#1a1a1a]">
+          <div className="bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl">
+            <div className="px-8 py-6 border-b border-slate-200 dark:border-[#1a1a1a]">
               <div className="flex items-center gap-3">
                 <MaterialIcon
                   name="admin_panel_settings"
                   className="text-[#0df287]"
                 />
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                   Administrator Information
                 </h2>
               </div>
@@ -679,14 +820,14 @@ const EditInstituteProfile = () => {
             </div>
           </div>
 
-          <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl">
-            <div className="px-8 py-6 border-b border-[#1a1a1a] flex justify-between items-center">
+          <div className="bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl">
+            <div className="px-8 py-6 border-b border-slate-200 dark:border-[#1a1a1a] flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <MaterialIcon
                   name="contact_support"
                   className="text-[#0df287]"
                 />
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                   Contact & Social
                 </h2>
               </div>
@@ -697,7 +838,7 @@ const EditInstituteProfile = () => {
                 <label className={labelClass}>Institute Email</label>
                 <div className="relative">
                   <input
-                    className={`${inputClass} pl-12 bg-black/60 cursor-not-allowed`}
+                    className={`${inputClass} pl-12 bg-slate-100 dark:bg-black/60 cursor-not-allowed`}
                     placeholder="institute@email.com"
                     type="email"
                     value={profileData.email}
@@ -806,10 +947,10 @@ const EditInstituteProfile = () => {
             </div>
           </div>
 
-          <div className="mt-8 pt-8 border-t border-[#1a1a1a] flex items-center justify-end gap-4">
+          <div className="mt-8 pt-8 border-t border-slate-200 dark:border-[#1a1a1a] flex items-center justify-end gap-4">
             <button
               onClick={() => navigate("/dashboard/institute-profile")}
-              className="px-8 py-3 text-slate-400 hover:text-white transition-colors font-bold text-sm"
+              className="px-8 py-3 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-white transition-colors font-bold text-sm"
               disabled={saving || uploading}
             >
               Discard Changes

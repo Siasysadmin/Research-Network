@@ -1,405 +1,134 @@
-import React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import approved1 from "../../assets/images/approved1.png";
-import approved2 from "../../assets/images/approved2.png";
-import approved3 from "../../assets/images/approved3.png";
-import API_CONFIG from "../../config/api.config";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import globeImg from "../../assets/images/globe1.png"; // Dark mode globe
+import globeLightImg from "../../assets/images/globe.png"; // Light mode globe
+import {
+  ArrowRight,
+  Users,
+  BookOpen,
+  Leaf,
+  LayoutDashboard,
+} from "lucide-react";
 
-const ApplicationApproved = () => {
-  const location = useLocation();
+const ResearcherHero = ({ user_type }) => {
   const navigate = useNavigate();
-  const userType = location.state?.userType || localStorage.getItem("user_type") || "individual";
+  const [isDark, setIsDark] = useState(false);
 
- const handleCompleteProfile = () => {
-  
-// ✅ finalType ko yahan define karein ya seedha userType use karein
-  const storedType = localStorage.getItem("user_type"); 
-  const finalType = userType || storedType;
+  useEffect(() => {
+    const checkDarkMode = () => {
+      const htmlClass = document.documentElement.classList;
+      setIsDark(htmlClass.contains("dark"));
+    };
+    checkDarkMode();
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
 
-  console.log("Navigating for Type:", finalType);
-  if (finalType === "institute") {
+ const userType = user_type || localStorage.getItem("user_type") || "individual";
+
+// Debugging ke liye yahan console lagayein
+useEffect(() => {
+  console.log("Current User Type Detected:", userType);
+}, [userType]);
+
+const handleCompleteProfile = () => {
+  // Local storage se "user" object nikal kar check karna
+  const userData = JSON.parse(localStorage.getItem("user") || "{}");
+  const actualType = user_type || userData.user_type || "individual";
+
+  if (actualType === "institute") {   
     navigate("/organization-onboarding/1");
   } else {
-    navigate("/profile-individual-flow/1", { replace: true });
+    navigate("/profile-individual-flow/1");
   }
 };
-  const [applicationStatus, setApplicationStatus] = React.useState(null);
-  const [loadingStatus, setLoadingStatus] = React.useState(true);
 
-  React.useEffect(() => {
-    if (userType !== "institute") return;
-
-    const fetchUserStatus = async () => {
-      try {
-        const token = localStorage.getItem("token");
-
-        const user = JSON.parse(localStorage.getItem("user"));
-        const userId = user?.id;
-
-        const response = await fetch(
-          `${API_CONFIG.BASE_URL}/user/get-user/${userId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
-
-        const data = await response.json();
-
-        // 👇 assuming API returns { status: 1 } or { status: 2 }
-        setApplicationStatus(data.status);
-      } catch (error) {
-        console.error("Error fetching status:", error);
-      } finally {
-        setLoadingStatus(false);
-      }
-    };
-
-    fetchUserStatus();
-  }, [userType]);
   return (
-    <div className="bg-black text-white min-h-screen">
-      {/* BACKGROUND CIRCLES */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-30">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border border-[#00ff88]/10 rounded-full"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-[#00ff88]/5 rounded-full"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] border border-[#00ff88]/20 rounded-full"></div>
-      </div>
-
-      {/* MAIN CONTENT */}
-      <div className="relative z-10 pt-24 px-6 md:px-12 lg:px-40 py-12 max-w-[1400px] mx-auto">
-        {/* STATUS BANNER - ONLY FOR INSTITUTE */}
-        {userType === "institute" && (
-          <div className="relative overflow-hidden flex flex-col gap-3 p-8 md:p-12 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm min-h-[300px] justify-center mb-12">
-            {/* Network Pattern */}
-            <div
-              className="absolute inset-0 opacity-40 pointer-events-none"
-              style={{
-                backgroundImage:
-                  "radial-gradient(circle at 2px 2px, rgba(0, 255, 136, 0.15) 1px, transparent 0)",
-                backgroundSize: "24px 24px",
-              }}
-            ></div>
-
-            <div className="relative z-10">
-              <div className="flex items-center gap-3">
-                {/* <div
-                  className="w-3 h-3 rounded-full bg-[#00ff88]"
-                  style={{
-                    boxShadow: "0 0 0 0 rgba(0, 255, 136, 0.7)",
-                    animation: "pulse 2s infinite",
-                  }}
-                ></div> */}
-                {/* <p className="text-[#00ff88] text-xs md:text-sm font-bold tracking-widest uppercase">
-                  APPLICATION STATUS:
-                  <span
-                    className={`px-2 py-0.5 rounded ml-1 font-black ${
-                      applicationStatus === 2
-                        ? "bg-[#00ff88] text-black"
-                        : "bg-orange-500 text-black"
-                    }`}
-                  >
-                    {loadingStatus
-                      ? "LOADING..."
-                      : applicationStatus === 2
-                        ? "APPROVED"
-                        : "PENDING"}
-                  </span>
-                </p> */}
-              </div>
-
-              <div className="flex items-center gap-3 mt-4">
-                <span
-                  className="material-symbols-outlined text-[#00ff88] text-2xl md:text-4xl font-bold"
-                  style={{
-                    filter: "drop-shadow(0 0 10px rgba(0, 255, 136, 0.6))",
-                  }}
-                >
-                  check_circle
-                </span>
-                <h1 className="text-white text-3xl md:text-5xl font-black leading-tight tracking-tight">
-                  Welcome, esteemed researcher!
-                </h1>
-              </div>
-
-              <p className="text-white/60 text-sm md:text-base max-w-xl mt-4 leading-relaxed">
-                Your network access is confirmed. Start your journey toward
-                pioneering sustainable breakthroughs today.
-              </p>
-
-              <div className="mt-8 flex flex-col sm:flex-row gap-4">
-                {/* Complete Profile Button */}
-                <button
-                  onClick={handleCompleteProfile}
-                  className="bg-[#00ff88] text-black font-bold py-4 px-8 rounded-lg hover:bg-[#00ff88]/90 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#00ff88]/20 flex items-center justify-center gap-2 text-sm md:text-base"
-                >
-                  Complete Your Profile
-                  <span className="material-symbols-outlined">
-                    chevron_right
-                  </span>
-                </button>
-
-                {/* Dashboard Button */}
-                <button
-                  onClick={() => navigate("/dashboard")}
-                  className="border border-[#00ff88] text-[#00ff88] font-bold py-4 px-8 rounded-lg hover:bg-[#00ff88]/10 transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 text-sm md:text-base"
-                >
-                  Go to Dashboard
-                  <span className="material-symbols-outlined">
-                    {" "}
-                    chevron_right
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* WELCOME BANNER - ONLY FOR INDIVIDUAL */}
-        {userType === "individual" && (
-          <div className="relative overflow-hidden flex flex-col gap-3 p-8 md:p-12 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm min-h-[200px] justify-center mb-12">
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mt-4">
-                <span
-                  className="material-symbols-outlined text-[#00ff88] text-2xl md:text-4xl font-bold"
-                  style={{
-                    filter: "drop-shadow(0 0 10px rgba(0, 255, 136, 0.6))",
-                  }}
-                >
-                  check_circle
-                </span>
-                <h1 className="text-white text-3xl md:text-5xl font-black leading-tight tracking-tight">
-                  Welcome, esteemed researcher!
-                </h1>
-              </div>
-
-              <p className="text-white/60 text-sm md:text-base max-w-xl mt-4 leading-relaxed">
-                Your network access is confirmed. Start your journey toward
-                pioneering sustainable breakthroughs today.
-              </p>
-
-              <div className="mt-8 flex flex-col sm:flex-row gap-4">
-                {/* Complete Profile Button */}
-                <button
-                  onClick={handleCompleteProfile}
-                  className="bg-[#00ff88] text-black font-bold py-4 px-8 rounded-lg hover:bg-[#00ff88]/90 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#00ff88]/20 flex items-center justify-center gap-2 text-sm md:text-base"
-                >
-                  Complete Your Profile
-                  <span className="material-symbols-outlined">
-                    chevron_right
-                  </span>
-                </button>
-
-                {/* Dashboard Button */}
-                <button
-                  onClick={() => navigate("/dashboard")}
-                  className="border border-[#00ff88] text-[#00ff88] font-bold py-4 px-8 rounded-lg hover:bg-[#00ff88]/10 transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 text-sm md:text-base"
-                >
-                  Go to Dashboard
-                  <span className="material-symbols-outlined">
-                    {" "}
-                    chevron_right
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* REST OF THE UI */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* LEFT COLUMN */}
-          <div className="lg:col-span-3 space-y-8 md:space-y-12">
-            {/* DAILY SUSTAINABILITY FACT */}
-            <section>
-              <h2 className="text-white text-xl font-bold mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#00ff88]">
-                  eco
-                </span>
-                Daily Sustainability Fact
-              </h2>
-
-              <div className="relative group overflow-hidden rounded-xl border border-white/10 bg-white/5 min-h-[350px] md:h-80 flex flex-col justify-end">
-                <div
-                  className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                  style={{
-                    backgroundImage: `url(${approved1})`,
-                  }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
-                </div>
-
-                <div className="relative p-6 md:p-8">
-                  <span className="bg-[#00ff88]/20 text-[#00ff88] px-3 py-1 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-wider mb-4 inline-block backdrop-blur-md">
-                    Carbon Sink Fact
-                  </span>
-                  <h3 className="text-xl md:text-2xl font-bold mb-2">
-                    Did you know?
-                  </h3>
-                  <p className="text-white/80 text-base md:text-lg leading-relaxed mb-6 max-w-xl">
-                    Restoring seagrass can sequester carbon{" "}
-                    <span className="text-[#00ff88] font-bold">
-                      35 times faster
-                    </span>{" "}
-                    than tropical rainforests.
-                  </p>
-                  <button className="flex items-center gap-2 text-[#00ff88] font-bold text-sm hover:translate-x-1 transition-transform">
-                    Read full study{" "}
-                    <span className="material-symbols-outlined text-sm">
-                      arrow_forward
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            {/* RESEARCH SPOTLIGHT */}
-            <section>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-white text-xl font-bold flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#00ff88]">
-                    science
-                  </span>
-                  Research Spotlight
-                </h2>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4">
-                {/* RESEARCH CARD 1 */}
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:border-[#00ff88]/50 transition-colors cursor-pointer group">
-                  <div
-                    className="h-40 sm:h-32 rounded-lg bg-center bg-cover mb-4"
-                    style={{
-                      backgroundImage: `url(${approved2})`,
-                    }}
-                  ></div>
-                  <h4 className="font-bold text-lg mb-1 group-hover:text-[#00ff88] transition-colors">
-                    Carbon Capture in Basalt
-                  </h4>
-                  <p className="text-white/50 text-xs line-clamp-2">
-                    Exploring mineralization techniques in Iceland to turn
-                    atmospheric CO2 into solid stone.
-                  </p>
-                </div>
-
-                {/* RESEARCH CARD 2 */}
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:border-[#00ff88]/50 transition-colors cursor-pointer group">
-                  <div
-                    className="h-40 sm:h-32 rounded-lg bg-center bg-cover mb-4"
-                    style={{
-                      backgroundImage: `url(${approved3})`,
-                    }}
-                  ></div>
-                  <h4 className="font-bold text-lg mb-1 group-hover:text-[#00ff88] transition-colors">
-                    Perovskite Cells breakthrough
-                  </h4>
-                  <p className="text-white/50 text-xs line-clamp-2">
-                    New findings in solar efficiency reaching 30% through tandem
-                    cell layering technology.
-                  </p>
-                </div>
-
-                {/* RESEARCH CARD 3 */}
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:border-[#00ff88]/50 transition-colors cursor-pointer group">
-                  <div
-                    className="h-40 sm:h-32 rounded-lg bg-center bg-cover mb-4"
-                    style={{
-                      backgroundImage: `url(${approved1})`,
-                    }}
-                  ></div>
-                  <h4 className="font-bold text-lg mb-1 group-hover:text-[#00ff88] transition-colors">
-                    Ocean Plastics Remediation
-                  </h4>
-                  <p className="text-white/50 text-xs line-clamp-2">
-                    Bio-engineered enzymes capable of breaking down stubborn PET
-                    plastics.
-                  </p>
-                </div>
-
-                {/* RESEARCH CARD 4 */}
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:border-[#00ff88]/50 transition-colors cursor-pointer group">
-                  <div
-                    className="h-40 sm:h-32 rounded-lg bg-center bg-cover mb-4"
-                    style={{
-                      backgroundImage: `url(${approved2})`,
-                    }}
-                  ></div>
-                  <h4 className="font-bold text-lg mb-1 group-hover:text-[#00ff88] transition-colors">
-                    Vertical-Axis Wind Turbines
-                  </h4>
-                  <p className="text-white/50 text-xs line-clamp-2">
-                    Reimagining urban wind capture with compact, low-noise
-                    vertical rotation systems.
-                  </p>
-                </div>
-              </div>
-            </section>
+    <div className="min-h-screen flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-x-hidden bg-[#f8faf9] text-slate-900 dark:bg-[#050807] dark:text-white transition-colors duration-500">
+      
+      <div className="relative w-full max-w-5xl rounded-2xl sm:rounded-3xl md:rounded-[32px] px-4 sm:px-6 md:px-10 lg:px-16 py-6 sm:py-8 md:py-12 lg:py-16 flex flex-col lg:flex-row items-center gap-6 sm:gap-8 md:gap-10 overflow-hidden shadow-2xl bg-white border border-gray-100 dark:bg-[#0a0f0d] dark:border-white/5">
+        
+        {/* Left Side: Content */}
+        <div className="flex-1 z-10 text-left w-full">
+          <div className="flex items-center gap-1.5 sm:gap-2 mb-3 sm:mb-4">
+            <span className="text-[#22c55e] dark:text-[#4ade80] text-[8px] sm:text-[9px] md:text-[10px] font-bold tracking-[0.2em] uppercase">
+              Welcome to GSIF
+            </span>
+            <Leaf className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#22c55e] dark:text-[#4ade80]" />
           </div>
 
-          {/* RIGHT SIDEBAR */}
-          <aside className="lg:col-span-1 space-y-8">
-            {/* CHALLENGE HUB */}
-            <section>
-              <h2 className="text-white text-xl font-bold mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#00ff88]">
-                  psychology
-                </span>
-                Challenge Hub
-              </h2>
-              <div className="p-6 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="material-symbols-outlined text-[#00ff88] text-3xl">
-                    quiz
-                  </span>
-                  <div>
-                    <h3 className="font-bold text-lg">Test Your Expertise</h3>
-                    <p className="text-white/50 text-xs">Sustainability quiz</p>
-                  </div>
-                </div>
-                <button className="w-full py-3 px-4 bg-[#00ff88] text-black font-bold rounded-lg">
-                  Start Quiz
-                </button>
-              </div>
-            </section>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-3 sm:mb-4 text-slate-900 dark:text-white leading-[1.1]">
+            Welcome back, <br />
+            <span className="text-[#22c55e]">Researcher!</span>
+          </h1>
 
-            {/* HELP CENTER */}
-            <section>
-              <h2 className="text-white text-xl font-bold mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#00ff88]">
-                  help_center
-                </span>
-                Help Center
-              </h2>
-              <div className="p-6 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm text-center">
-                <div className="size-16 rounded-full bg-[#00ff88]/10 flex items-center justify-center mx-auto mb-4">
-                  <span className="material-symbols-outlined text-[#00ff88] text-3xl">
-                    live_help
-                  </span>
-                </div>
-                <h3 className="text-white font-bold mb-2">Need Guidance?</h3>
-                <button className="w-full py-3 px-4 bg-[#00ff88] text-black font-bold rounded-lg">
-                  Help Center
-                </button>
-              </div>
-            </section>
-          </aside>
+          <p className="text-xs sm:text-sm md:text-base lg:text-lg max-w-sm mb-6 sm:mb-7 md:mb-8 leading-relaxed text-gray-600 dark:text-gray-400">
+            Your network access is confirmed. You're now part of a global
+            community driving sustainable innovation.
+          </p>
+
+          <div className="h-[1px] w-10 sm:w-12 bg-gray-200 dark:bg-[#1a2e1a] mb-6 sm:mb-7 md:mb-8"></div>
+
+          {/* Features Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 md:gap-6 mb-8 sm:mb-9 md:mb-10">
+            <Feature icon={<Users />} title="Connect" sub="with experts" />
+            <Feature icon={<BookOpen />} title="Discover" sub="latest research" isMiddle />
+            <Feature icon={<Leaf />} title="Create" sub="sustainability" isMiddle />
+          </div>
+
+          {/* Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <button onClick={handleCompleteProfile} className="bg-[#22c55e] hover:bg-[#1db954] text-black text-xs sm:text-sm font-bold px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-green-500/20 active:scale-95 w-full sm:w-auto">
+              Complete Profile <ArrowRight className="w-4 h-4" />
+            </button>
+            <button onClick={() => navigate("/dashboard")} className="border border-gray-200 dark:border-white/10 text-slate-600 dark:text-[#22c55e] hover:bg-gray-50 dark:hover:bg-white/5 text-xs sm:text-sm font-semibold px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 w-full sm:w-auto">
+              <LayoutDashboard className="w-4 h-4" /> Go to Dashboard
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* ANIMATIONS */}
-      <style>{`
-        @keyframes pulse {
-          0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7); }
-          70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(0, 255, 136, 0); }
-          100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); }
-        }
-        .material-symbols-outlined {
-          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-      `}</style>
+        {/* Right Side: Integrated Image Section */}
+        <div className="relative flex-1 flex justify-center items-center w-full mt-6 lg:mt-0">
+          <div className="relative w-full max-w-[320px] sm:max-w-[400px] md:max-w-[480px] lg:max-w-[680px] aspect-square flex items-center justify-center">
+            
+            {/* Image with subtle shadow to blend in Light Mode */}
+            <img
+              src={isDark ? globeImg : globeLightImg}
+              alt="globe visual"
+              className="w-full h-full object-contain transition-all duration-700 hover:scale-105 z-10"
+              style={{
+                maskImage: 'radial-gradient(circle, black 70%, transparent 100%)',
+                WebkitMaskImage: 'radial-gradient(circle, black 70%, transparent 100%)',
+                filter: isDark ? 'none' : 'drop-shadow(0 10px 20px rgba(0,0,0,0.03))'
+              }}
+            />
+
+            {/* Glowing backgrounds - Adjusted for Light Mode */}
+            <div className="absolute w-[120%] h-[120%] bg-green-500/[0.03] dark:bg-green-500/[0.06] blur-[60px] md:blur-[110px] rounded-full -z-10 animate-pulse"></div>
+            
+            {/* Extra subtle shadow base for light mode */}
+            {!isDark && (
+              <div className="absolute bottom-[10%] w-[60%] h-[10%] bg-black/[0.02] blur-2xl rounded-full -z-10"></div>
+            )}
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 };
 
-export default ApplicationApproved;
+const Feature = ({ icon, title, sub, isMiddle }) => (
+  <div className={`flex items-center gap-3 ${isMiddle ? 'sm:pl-4 sm:border-l border-gray-100 dark:border-white/5' : ''}`}>
+    <div className="bg-[#f0fdf4] dark:bg-white/5 p-2 rounded-lg text-[#22c55e]">
+      {React.cloneElement(icon, { size: 16 })}
+    </div>
+    <div className="flex flex-col">
+      <span className="text-slate-900 dark:text-white font-bold text-xs sm:text-sm">{title}</span>
+      <span className="text-gray-500 text-[9px] sm:text-[10px] leading-tight">{sub}</span>
+    </div>
+  </div>
+);
+
+export default ResearcherHero;

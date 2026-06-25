@@ -70,36 +70,67 @@ const Step6 = ({ progress, onBack }) => {
       const descriptions = step4Array.map(exp => exp.description || "");
 
       // Final Data mapping
-      const finalData = {
+  //     const finalData = {
 
-        name: registeredUser.name || "", 
-        email: registeredUser.email,
-     country: registeredUser.country,
-  state: registeredUser.state,
-  city: registeredUser.city,
-  pincode: registeredUser.pincode,
+  //       name: registeredUser.name || "", 
+  //       email: registeredUser.email,
+  //    country: registeredUser.country,
+  // state: registeredUser.state,
+  // city: registeredUser.city,
+  // pincode: registeredUser.pincode,
 
-        describes: step1.describes || "",
-        developement_goals: step2.selectedGoals || [],
-        current_research: step3.research || "",
+  //       describes: step1.describes || "",
+  //       developement_goals: step2.selectedGoals || [],
+  //       current_research: step3.research || "",
         
-        // Step 4 updated fields (mapping to your required format)
-        job_role: jobRoles,
-        company: companies,
-        duration: durations,
-        description: descriptions,
+  //       // Step 4 updated fields (mapping to your required format)
+  //       job_role: jobRoles,
+  //       company: companies,
+  //       duration: durations,
+  //       description: descriptions,
         
       
-        interest: step5.selectedGoals || [],
-        custom_interests: step5.customGoals?.map((g) => g.title) || [],
-        linkedin: formData.linkedin || "",
-        research_gate: formData.research_gate || "",
-        orc_id: formData.orc_id || "",
-        personal_website: formData.personal_website || "",
+  //       interest: step5.selectedGoals || [],
+  //       custom_interests: step5.customGoals?.map((g) => g.title) || [],
+  //       linkedin: formData.linkedin || "",
+  //       research_gate: formData.research_gate || "",
+  //       orc_id: formData.orc_id || "",
+  //       personal_website: formData.personal_website || "",
+  //     };
 
-        
-       
-      };
+
+
+  const finalData = {
+    name: registeredUser.name || "",
+    email: registeredUser.email || "",
+    country: registeredUser.country || "",
+    state: registeredUser.state || "",
+    city: registeredUser.city || "",
+    pincode: registeredUser.pincode || "",
+
+    describes: step1.describes || "",
+    developement_goals: step2.selectedGoals || [],
+    current_research: step3.research || "",
+
+    job_role: jobRoles,
+    company: companies,
+    duration: durations,
+    description: descriptions,
+
+    interest: step5.selectedGoals || [],
+    custom_interests: step5.customGoals?.map((g) => g.title) || [],
+
+    linkedin: formData.linkedin || "",
+    research_gate: formData.research_gate || "",
+    orc_id: formData.orc_id || "",
+    personal_website: formData.personal_website || "",
+
+    date_of_birth: "",
+    short_bio: "",
+  };
+
+
+
 
       let response = await fetch(
         `${API_CONFIG.BASE_URL}/profile/profile-individual`,
@@ -130,22 +161,21 @@ const Step6 = ({ progress, onBack }) => {
       setLoading(false);
     }
   };
+
   const handleSkipAndContinue = () => {
-    // Save current data
-    localStorage.setItem("step6", JSON.stringify(formData));
-    
-    // Set flags
-    localStorage.setItem("profileCompleted", "true");
-    localStorage.setItem("showCompletion", "true");
-    
-    // ✅ FIXED: Navigate WITHOUT clearing data
-    navigate("/complet", { replace: true });
+    handleSubmit();
   };
+
+
 
   // Rest of your JSX remains exactly the same...
   return (
-    <div className="bg-[#0f231a] min-h-screen font-display flex flex-col items-center justify-center">
-      <div className="relative flex min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+<div className="
+min-h-screen font-display flex flex-col items-center justify-center transition-colors duration-300
+
+bg-white text-slate-900
+dark:bg-[#0f231a] dark:text-white
+">      <div className="relative flex min-h-screen w-full flex-col group/design-root overflow-x-hidden">
         <div className="layout-container flex h-full grow flex-col justify-center items-center py-12 md:py-25">
           <main className="flex w-full justify-center px-5">
             <div className="layout-content-container flex flex-col max-w-[640px] flex-1">
@@ -153,7 +183,7 @@ const Step6 = ({ progress, onBack }) => {
               <div className="flex flex-col gap-2 p-4 mb-4">
                 <div className="flex justify-between items-center">
                   <div className="flex flex-col gap-2">
-                    <p className="text-white text-[13px] uppercase tracking-[0.2em] font-semibold">
+                    <p className="text-slate-700 dark:text-white text-[13px] uppercase tracking-[0.2em] font-semibold">
                       STEP 6 OF 6
                     </p>
                     <div className="rounded-full bg-white/10 h-1 overflow-hidden w-28">
@@ -165,7 +195,12 @@ const Step6 = ({ progress, onBack }) => {
                   </div>
                   <button
                     onClick={handleSkipAndContinue}
-                    className="flex items-center gap-1 px-0 py-0 border-none bg-transparent hover:text-white text-white/60 text-xs font-semibold tracking-wider transition-all"
+                    className="
+flex items-center gap-1 text-xs font-semibold tracking-wider transition-all
+
+text-gray-500 hover:text-black
+dark:text-white/60 dark:hover:text-white
+"
                   >
                     Skip
                     <span className="material-symbols-outlined text-sm">
@@ -177,11 +212,17 @@ const Step6 = ({ progress, onBack }) => {
 
               {/* Header */}
               <div className="text-center mb-10">
-                <h1 className="text-white tracking-tight text-3xl md:text-4xl font-bold leading-tight px-4 pb-3">
-                  Link your professional profiles
+<h1 className="
+text-3xl md:text-4xl font-bold leading-tight
+
+text-slate-900
+dark:text-white
+">                  Link your professional profiles
                 </h1>
-                <p className="text-gray-400 text-base font-normal leading-normal px-4">
-                  Help other sustainability researchers find your work across
+<p className="
+text-gray-500
+dark:text-gray-400
+">                  Help other sustainability researchers find your work across
                   the web. These are optional but recommended.
                 </p>
               </div>
@@ -189,7 +230,7 @@ const Step6 = ({ progress, onBack }) => {
               <div className="flex flex-col gap-5 px-4">
                 {/* LinkedIn */}
                 <div className="flex flex-col gap-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-white/80 ml-1">
+                  <label className="text-[11px] font-bold uppercase tracking-widest text-slate-700 dark:text-white/80 ml-1">
               LinkedIn 
             </label>
                   <div className="flex w-full items-stretch rounded-lg group">
@@ -197,16 +238,23 @@ const Step6 = ({ progress, onBack }) => {
                       name="linkedin"
                       value={formData.linkedin}
                       onChange={handleChange}
-                      className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white outline-none ring-0 border border-[#2f6a4e] bg-[#183527] focus:border-[#06f988] focus:ring-0 focus:ring-[#06f988] h-14 placeholder:text-[#8eccaf]/50 p-[15px] rounded-r-none border-r-0 pr-2 text-base font-normal leading-normal transition-all"
-                      placeholder="linkedin.com/in/username"
+className="
+flex w-full h-14 px-4 text-base rounded-lg outline-none transition-all
+
+bg-gray-50 border border-gray-300 text-slate-900
+placeholder:text-gray-400
+focus:border-[#00ff88] focus:ring-2 focus:ring-[#00ff88]/20
+
+dark:bg-[#183527] dark:border-[#2f6a4e] dark:text-white
+dark:placeholder:text-[#8eccaf]/50
+"                     placeholder="linkedin.com/in/username"
                     />
-                    <div className="text-[#8eccaf] group-focus-within:text-[#06f988] group-focus-within:border-[#06f988] flex border border-[#2f6a4e] bg-[#183527] items-center justify-center px-4 rounded-r-lg border-l-0 transition-all"></div>
                   </div>
                 </div>
 
                 {/* ResearchGate */}
                 <div className="flex flex-col gap-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-white/80 ml-1">
+                  <label className="text-[11px] font-bold uppercase tracking-widest text-slate-700 dark:text-white/80 ml-1">
               ResearchGate 
             </label>
                   <div className="flex w-full items-stretch rounded-lg group">
@@ -214,16 +262,23 @@ const Step6 = ({ progress, onBack }) => {
                       name="research_gate"
                       value={formData.research_gate}
                       onChange={handleChange}
-                      className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white outline-none ring-0 border border-[#2f6a4e] bg-[#183527] focus:border-[#06f988] focus:ring-0 focus:ring-[#06f988] h-14 placeholder:text-[#8eccaf]/50 p-[15px] rounded-r-none border-r-0 pr-2 text-base font-normal leading-normal transition-all"
-                      placeholder="researchgate.net/profile/name"
+className="
+flex w-full h-14 px-4 text-base rounded-lg outline-none transition-all
+
+bg-gray-50 border border-gray-300 text-slate-900
+placeholder:text-gray-400
+focus:border-[#00ff88] focus:ring-2 focus:ring-[#00ff88]/20
+
+dark:bg-[#183527] dark:border-[#2f6a4e] dark:text-white
+dark:placeholder:text-[#8eccaf]/50
+"                      placeholder="researchgate.net/profile/name"
                     />
-                    <div className="text-[#8eccaf] group-focus-within:text-[#06f988] group-focus-within:border-[#06f988] flex border border-[#2f6a4e] bg-[#183527] items-center justify-center px-4 rounded-r-lg border-l-0 transition-all"></div>
                   </div>
                 </div>
 
                 {/* ORCID */}
                 <div className="flex flex-col gap-2">
-                 <label className="text-[11px] font-bold uppercase tracking-widest text-white/80 ml-1">
+                 <label className="text-[11px] font-bold uppercase tracking-widest text-slate-700 dark:text-white/80 ml-1">
               ORCID 
             </label>
                   <div className="flex w-full items-stretch rounded-lg group">
@@ -231,16 +286,23 @@ const Step6 = ({ progress, onBack }) => {
                       name="orc_id"
                       value={formData.orc_id}
                       onChange={handleChange}
-                      className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white outline-none ring-0 border border-[#2f6a4e] bg-[#183527] focus:border-[#06f988] focus:ring-0 focus:ring-[#06f988] h-14 placeholder:text-[#8eccaf]/50 p-[15px] rounded-r-none border-r-0 pr-2 text-base font-normal leading-normal transition-all"
-                      placeholder="0000-0000-0000-0000"
+className="
+flex w-full h-14 px-4 text-base rounded-lg outline-none transition-all
+
+bg-gray-50 border border-gray-300 text-slate-900
+placeholder:text-gray-400
+focus:border-[#00ff88] focus:ring-2 focus:ring-[#00ff88]/20
+
+dark:bg-[#183527] dark:border-[#2f6a4e] dark:text-white
+dark:placeholder:text-[#8eccaf]/50
+"                      placeholder="0000-0000-0000-0000"
                     />
-                    <div className="text-[#8eccaf] group-focus-within:text-[#06f988] group-focus-within:border-[#06f988] flex border border-[#2f6a4e] bg-[#183527] items-center justify-center px-4 rounded-r-lg border-l-0 transition-all"></div>
                   </div>
                 </div>
 
                 {/* Personal Website */}
                 <div className="flex flex-col gap-2">
-                 <label className="text-[11px] font-bold uppercase tracking-widest text-white/80 ml-1">
+                 <label className="text-[11px] font-bold uppercase tracking-widest text-slate-700 dark:text-white/80 ml-1">
               Personal Website 
             </label>
                   <div className="flex w-full items-stretch rounded-lg group">
@@ -248,15 +310,23 @@ const Step6 = ({ progress, onBack }) => {
                       name="personal_website"
                       value={formData.personal_website}
                       onChange={handleChange}
-                      className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white outline-none ring-0 border border-[#2f6a4e] bg-[#183527] focus:border-[#06f988] focus:ring-0 focus:ring-[#06f988] h-14 placeholder:text-[#8eccaf]/50 p-[15px] rounded-r-none border-r-0 pr-2 text-base font-normal leading-normal transition-all"
-                      placeholder="https://yourwebsite.com"
+className="
+flex w-full h-14 px-4 text-base rounded-lg outline-none transition-all
+
+bg-gray-50 border border-gray-300 text-slate-900
+placeholder:text-gray-400
+focus:border-[#00ff88] focus:ring-2 focus:ring-[#00ff88]/20
+
+dark:bg-[#183527] dark:border-[#2f6a4e] dark:text-white
+dark:placeholder:text-[#8eccaf]/50
+"                      placeholder="https://yourwebsite.com"
                     />
-                    <div className="text-[#8eccaf] group-focus-within:text-[#06f988] group-focus-within:border-[#06f988] flex border border-[#2f6a4e] bg-[#183527] items-center justify-center px-4 rounded-r-lg border-l-0 transition-all"></div>
                   </div>
                 </div>
 
                 {/* BUTTONS */}
-                <div className="flex items-center justify-between gap-3 p-4 mt-8 border-t border-[#214a37]">
+                <div className="flex items-center justify-between gap-3 p-4 mt-8 border-t border-gray-200
+dark:border-[#214a37]">
                   <button
                     onClick={onBack}
                     disabled={loading}

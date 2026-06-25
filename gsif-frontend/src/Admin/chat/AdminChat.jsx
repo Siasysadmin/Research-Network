@@ -50,6 +50,49 @@ const Chats = () => {
   const chatsRef = useRef([]);
   const currentUserIdRef = useRef("");
 
+  // Pop-up ko kholne aur band karne ke liye state
+const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+const [selectedPostIdForPopup, setSelectedPostIdForPopup] = useState(null);
+
+// State for post loader and detailed object
+const [loadingPostData, setLoadingPostData] = useState(false);
+const [popupPostData, setPopupPostData] = useState(null);
+// 💡 Read More / Show Less toggle karne ke liye state
+const [isExpanded, setIsExpanded] = useState(false);
+
+
+const messagesContainerRef = useRef(null);
+const shouldAutoScrollRef = useRef(true);
+const prevMessageCountRef = useRef(0);
+
+
+const fetchSinglePostDetails = async (postId) => {
+  if (!postId) return;
+  setLoadingPostData(true);
+  setPopupPostData(null); 
+  
+  try {
+    const token = getAuthToken();
+    const response = await fetch(`${API_CONFIG.BASE_URL}/post/get-posts-id/${postId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    
+    const result = await response.json();
+    if (result.status && result.data) {
+      setPopupPostData(result.data);
+    }
+  } catch (error) {
+    console.error("Error fetching shared post:", error);
+  } finally {
+    setLoadingPostData(false);
+  }
+};
+
+
   const getAuthToken = () =>
     localStorage.getItem("token") || localStorage.getItem("authToken");
 
@@ -70,6 +113,77 @@ const Chats = () => {
   };
 
   const [currentUserId] = useState(() => getCurrentUserId());
+
+
+const activeChatData = chats.find((c) => String(c.id) === String(activeChatId));
+
+
+
+
+
+
+useEffect(() => {
+  const container = messagesContainerRef.current;
+
+  if (!container) return;
+
+  const handleScroll = () => {
+    const isNearBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight < 120;
+
+    shouldAutoScrollRef.current = isNearBottom;
+  };
+
+  container.addEventListener("scroll", handleScroll);
+
+  return () => {
+    container.removeEventListener("scroll", handleScroll);
+  };
+}, []);
+
+
+
+
+
+
+
+useEffect(() => {
+  if (!activeChatData?.messages) return;
+
+  const currentMessageCount = activeChatData.messages.length;
+
+  // first open par niche scroll
+  if (prevMessageCountRef.current === 0) {
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: "auto",
+      });
+    }, 100);
+  }
+
+  // sirf new message aaye aur user niche ho tabhi scroll
+  else if (
+    currentMessageCount > prevMessageCountRef.current &&
+    shouldAutoScrollRef.current
+  ) {
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: "smooth",
+      });
+    }, 100);
+  }
+
+  prevMessageCountRef.current = currentMessageCount;
+}, [activeChatData?.messages]);
+
+
+
+useEffect(() => {
+  prevMessageCountRef.current = 0;
+}, [activeChatId]);
+
+
+
 
   useEffect(() => {
     try {
@@ -287,16 +401,26 @@ const Chats = () => {
                 : chat.avatars[0],
             }));
             const latestMsg = msgs[msgs.length - 1];
+            
+            // 💡 FIXED: Chat open karne par sidebar ka text clean rakhne ke liye check
+            let cleanLastMsgText = chat.lastMsg;
+            if (latestMsg) {
+              const rawMessageText = latestMsg.text || "";
+              const isSharedPost = String(rawMessageText).toUpperCase().includes("POST_SHARE_ID:");
+              const cleanText = isSharedPost ? "Shared a post 📝" : (rawMessageText || "Sent an attachment");
+              
+              cleanLastMsgText = latestMsg.isMine ? `You: ${cleanText}` : cleanText;
+            }
+
             const unreadCount = result.data.filter(
               (m) => String(m.sender_id) !== uid && String(m.receiver_id) === uid && String(m.is_seen) === "0",
             ).length;
+            
             return {
               ...chat,
               messages: msgs,
               messagesLoaded: true,
-              lastMsg: latestMsg
-                ? latestMsg.isMine ? `You: ${latestMsg.text || "Sent an attachment"}` : latestMsg.text || "Sent an attachment"
-                : chat.lastMsg,
+              lastMsg: cleanLastMsgText, // Ab yahan filter kiya hua saaf text jayega
               time: latestMsg?.time || chat.time,
               timestamp: latestMsg?.timestamp || chat.timestamp,
               unreadCount: activeChatIdRef.current === chatId ? 0 : unreadCount,
@@ -362,12 +486,19 @@ const Chats = () => {
         const unreadCount = msgs.filter(
           (m) => String(m.sender_id) !== uid && String(m.receiver_id) === uid && String(m.is_seen) === "0",
         ).length;
+        // 💡 FIXED: Sidebar text cleaning filter for shared posts under active monitoring
         const latestMsg = msgs[msgs.length - 1];
-        const lastMsgText = latestMsg
-          ? String(latestMsg.sender_id) === uid
-            ? `You: ${latestMsg.message || "Sent an attachment"}`
-            : latestMsg.message || "Sent an attachment"
-          : null;
+        let lastMsgText = null;
+
+        if (latestMsg) {
+          const rawMessageText = latestMsg.message || "";
+          const isSharedPost = String(rawMessageText).toUpperCase().includes("POST_SHARE_ID:");
+          const cleanText = isSharedPost ? "Shared a post 📝" : (rawMessageText || "Sent an attachment");
+
+          lastMsgText = String(latestMsg.sender_id) === uid
+            ? `You: ${cleanText}`
+            : cleanText;
+        }
         const lastTimestamp = latestMsg ? new Date(latestMsg.created_at).getTime() : 0;
         if (chat.unreadCount !== unreadCount || chat.timestamp !== lastTimestamp) {
           hasUpdates = true;
@@ -455,11 +586,15 @@ const Chats = () => {
     setChats((prevChats) => {
       const updated = prevChats.map((chat) => {
         if (String(chat.id) !== String(activeChatId)) return chat;
-        return {
-          ...chat,
-          messages: [...(chat.messages || []), newMsg],
-          lastMsg: `You: ${textToSend || "Sent an attachment"}`,
-          time: newMsg.time,
+        //  Isse replace kijiye:
+const isSharedPostMsg = String(textToSend).toUpperCase().includes("POST_SHARE_ID:");
+const dynamicSidebarText = isSharedPostMsg ? "Shared a post 📝" : (textToSend || "Sent an attachment");
+
+return {
+  ...chat,
+  messages: [...(chat.messages || []), newMsg],
+  lastMsg: `You: ${dynamicSidebarText}`,
+  time: newMsg.time,
           timestamp: newMsg.timestamp,
           unreadCount: 0,
         };
@@ -555,27 +690,195 @@ const Chats = () => {
     : chats
   ).filter((chat) => chat.isGroup || !blockedUserIds.includes(String(chat.id)));
 
-  const activeChatData = chats.find((c) => String(c.id) === String(activeChatId));
+  
 
   return (
     <Layout activeNav={activeNav} setActiveNav={setActiveNav}>
+    
+{/* 👇 CHAT ME POST DIKHANE VALA LIVE MODAL POP-UP (UPDATED WIDTH & DUAL MODE) */}
+{isPostModalOpen && (
+  <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fadeIn">
+    {/* Width badhakar max-w-2xl kar di hai aur light/dark mode dono ke liye colors set hain */}
+    <div className="bg-white dark:bg-[#121214] border border-gray-200 dark:border-white/10 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl relative text-left transition-colors duration-200">
+      
+      {/* Modal Header */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/5">
+        <div className="flex items-center gap-2 text-[#00ff85]">
+          <span className="material-symbols-outlined text-lg">description</span>
+          <h3 className="font-bold text-sm tracking-wide uppercase text-gray-900 dark:text-white">Shared Post Details</h3>
+        </div>
+        <button 
+          onClick={() => {
+            setIsPostModalOpen(false);
+            setSelectedPostIdForPopup(null);
+            setPopupPostData(null);
+            setIsExpanded(false); // Reset expand state on close
+          }}
+          className="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-all flex items-center justify-center"
+        >
+          <span className="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+
+      {/* Modal Body */}
+      <div className="p-6 flex flex-col gap-4 max-h-[75vh] overflow-y-auto custom-scrollbar">
+        
+
+        {loadingPostData ? (
+          /* API loading State */
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-[#00ff85]"></div>
+            <span className="text-xs text-gray-500 dark:text-slate-500 font-mono">FETCHING POST DATA...</span>
+          </div>
+        ) : popupPostData ? (
+          /* Actual Data Loaded State */
+          <div className="flex flex-col gap-4">
+            
+            {/* 1. AUTHOR NAME / TITLE (Pele Name Aaye) */}
+            <div>
+              <span className="text-[10px] uppercase font-mono text-gray-400 dark:text-slate-500 block mb-0.5">Posted By</span>
+              <h4 className="text-gray-900 dark:text-white font-extrabold text-lg tracking-tight">
+                {popupPostData.institute_name || popupPostData.name || "No Name Available"}
+              </h4>
+            </div>
+
+            {/* 2. POST TEXT / CONTENT WITH DYNAMIC INLINE LINE CLAMP */}
+<div className="bg-gray-50 dark:bg-black/20 p-4 rounded-xl border border-gray-200 dark:border-white/5">
+  <span className="text-[10px] uppercase font-mono text-gray-400 dark:text-slate-500 block mb-1.5">Description</span>
+  
+  {popupPostData.post_text ? (
+    <div>
+      {/* 💡 FIX: Yahan humne Tailwind class ki jagah inline style (-webkit-line-clamp) use kiya hai, 
+          jo image hone par 3 lines aur image na hone par direct 10 lines strict apply karega */}
+      <p 
+        className="text-gray-800 dark:text-slate-300 text-sm leading-relaxed whitespace-pre-wrap break-words"
+       style={
+  !isExpanded 
+    ? {
+        display: "-webkit-box",
+        WebkitBoxOrient: "vertical",
+        // 💡 Video ya image dono me se kuch bhi hone par 3 lines dikhayega, varna 11 lines
+        WebkitLineClamp: (popupPostData.image && popupPostData.image.trim() !== "") || (popupPostData.video && popupPostData.video.trim() !== "") ? 3 : 11,
+        overflow: "hidden"
+      }
+    : {}
+}
+      >
+        {popupPostData.post_text}
+      </p>
+      
+      {/* Dynamic Read More / Show Less Button logic */}
+      {((popupPostData.image && popupPostData.image.trim() !== "" && popupPostData.post_text.length > 150) || 
+        ((!popupPostData.image || popupPostData.image.trim() === "") && popupPostData.post_text.length > 400)) && (
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="mt-2 text-xs font-bold text-[#00ff85] hover:underline flex items-center gap-0.5"
+        >
+          {isExpanded ? (
+            <>Show Less <span className="material-symbols-outlined text-xs">expand_less</span></>
+          ) : (
+            <>Read More <span className="material-symbols-outlined text-xs">expand_more</span></>
+          )}
+        </button>
+      )}
+    </div>
+  ) : (
+    <p className="text-gray-400 dark:text-slate-500 text-xs italic">No text description provided for this post.</p>
+  )}
+</div>
+
+           {/* 3. 💡 FIXED: POST MEDIA CONTAINER (Handles both Images and Videos dynamically) */}
+{((popupPostData.image && popupPostData.image.trim() !== "") || (popupPostData.video && popupPostData.video.trim() !== "")) && (
+  <div className="w-full border border-gray-200 dark:border-white/5 rounded-xl overflow-hidden bg-gray-100 dark:bg-black/40">
+    <span className="text-[10px] uppercase font-mono text-gray-400 dark:text-slate-500 block p-3 pb-0">
+      Attached Media
+    </span>
+    <div className="p-3">
+      {(() => {
+        // Find if a video key exists or if the image path points to a video file
+        const mediaPath = popupPostData.video || popupPostData.image || "";
+        const cleanPath = mediaPath.replace(/^\//, "");
+        const fullMediaUrl = `${API_CONFIG.BASE_URL}/${cleanPath}`;
+        
+        // Dynamic detection based on file extensions
+        const isVideo = 
+          popupPostData.video || 
+          /\.(mp4|webm|ogg|mov|mkv)($|\?)/i.test(cleanPath);
+
+        if (isVideo) {
+          return (
+            <video 
+              src={fullMediaUrl} 
+              controls
+              playsInline
+              preload="metadata"
+              className="w-full max-h-80 object-contain rounded-lg bg-black/10 dark:bg-[#1a1a1a] outline-none shadow-sm"
+            >
+              Your browser does not support the video tag.
+            </video>
+          );
+        } else {
+          return (
+            <img 
+              src={fullMediaUrl} 
+              alt="Shared Content" 
+              className="w-full max-h-80 object-contain rounded-lg bg-gray-50 dark:bg-[#1a1a1a]"
+              onError={(e) => {
+                // If rendering fails entirely, hide container safely
+                e.target.parentNode.parentNode.style.display = 'none';
+              }}
+            />
+          );
+        }
+      })()}
+    </div>
+  </div>
+)}
+
+          </div>
+        ) : (
+          /* Error or Empty State */
+          <div className="text-center py-6 text-xs text-gray-500 dark:text-slate-500 font-mono">
+            FAILED TO LOAD POST CONTENT.
+          </div>
+        )}
+      </div>
+
+      {/* Modal Footer */}
+      <div className="p-3 border-t border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-black/20 flex justify-end">
+        <button
+          onClick={() => {
+            setIsPostModalOpen(false);
+            setSelectedPostIdForPopup(null);
+            setPopupPostData(null);
+            setIsExpanded(false);
+          }}
+          className="px-6 py-2 bg-[#00ff85] text-[#003919] font-bold text-xs rounded-lg hover:bg-[#00e676] hover:scale-[1.03] transition-all duration-200 shadow-md hover:shadow-[0_0_15px_rgba(0,255,133,0.45)] active:scale-95"
+        >
+          Close Preview
+        </button>
+      </div>
+
+    </div>
+  </div>
+)}
       {/* ✅ FIX: h-[calc(100vh-80px)] hataya, ab flex-1 h-full use ho raha hai */}
-      <div className="flex-1 h-full overflow-hidden flex flex-col font-inter bg-[#0d0f0e] w-full">
-        <div className="flex flex-1 p-3 lg:p-4 gap-4 lg:gap-6 h-full min-h-0 max-w-[1800px] mx-auto w-full">
+      <div className="flex-1 h-full overflow-hidden flex flex-col font-inter bg-gray-50 dark:bg-[#0d0f0e] w-full">
+        <div className="flex flex-1 p-3 lg:p-4 gap-4 lg:gap-6 h-full min-h-0 max-w-[1800px] mx-auto w-full bg-gray-50 dark:bg-[#0d0f0e]">
 
           {/* LEFT SIDEBAR */}
-          <div className="hidden md:flex w-[340px] lg:w-[350px] flex-col bg-[#1a1c1b] rounded-2xl border border-[#3b4b3d]/30 shrink-0 shadow-lg min-h-0 h-full">
-            <div className="p-4 lg:p-5 flex items-center justify-between border-b border-[#3b4b3d]/20 relative shrink-0">
-              <h2 className="text-xl lg:text-2xl font-extrabold text-white tracking-tight">
+          <div className={`${activeChatId ? "hidden md:flex" : "flex"} w-full md:w-[340px] lg:w-[350px] flex-col bg-white dark:bg-[#1a1c1b] rounded-2xl border border-gray-200 dark:border-[#3b4b3d]/30 shrink-0 shadow-lg min-h-0 h-full`}>
+            <div className="p-4 lg:p-5 flex items-center justify-between border-b border-gray-200 dark:border-[#3b4b3d]/20 relative shrink-0">
+              <h2 className="text-xl lg:text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
                 Active Feeds
               </h2>
               <div className="relative flex items-center" ref={addMenuRef}>
                 {showAddMenu && (
                   <div
                     onClick={() => navigate("/admin/CreateGroup")}
-                    className="absolute right-full top-0 mr-3 w-48 bg-[#1a1c1b] border border-[#3b4b3d]/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeIn"
+                    className="absolute right-full top-0 mr-3 w-48 bg-white dark:bg-[#1a1c1b] border border-gray-200 dark:border-[#3b4b3d]/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeIn"
                   >
-                    <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-[#3b4b3d]/20 hover:text-white transition-all text-sm font-bold">
+                    <button className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-[#3b4b3d]/20 hover:text-black dark:hover:text-white transition-all text-sm font-bold">
                       <MaterialIcon name="group_add" className="text-[18px]" /> NEW GROUP
                     </button>
                   </div>
@@ -590,19 +893,19 @@ const Chats = () => {
             </div>
 
             <div className="px-3 pt-3 pb-2 shrink-0">
-              <div className="flex items-center bg-[#121413] border border-[#3b4b3d]/40 rounded-full px-4 py-2">
+              <div className="flex items-center bg-gray-100 dark:bg-[#121413] border border-gray-200 dark:border-[#3b4b3d]/40 rounded-full px-4 py-2">
                 <MaterialIcon name="search" className="text-slate-500 text-[18px] mr-2 shrink-0" />
                 <input
                   ref={searchInputRef}
                   type="text"
-                  className="w-full bg-transparent text-sm text-white outline-none focus:ring-0 focus:border-transparent"
+                  className="w-full bg-transparent text-sm text-gray-900 dark:text-white outline-none focus:ring-0 focus:border-transparent"
                   placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{ outline: "none", boxShadow: "none", border: "none" }}
                 />
                 {searchQuery && (
-                  <button onClick={() => setSearchQuery("")} className="text-slate-500 hover:text-white transition-colors ml-1 shrink-0">
+                  <button onClick={() => setSearchQuery("")} className="text-slate-500 hover:text-black dark:hover:text-white transition-colors ml-1 shrink-0">
                     <MaterialIcon name="close" className="text-[16px]" />
                   </button>
                 )}
@@ -625,14 +928,14 @@ const Chats = () => {
                     onClick={() => handleChatClick(chat.id)}
                     className={`group cursor-pointer p-3 lg:p-3.5 rounded-xl transition-all relative ${
                       String(activeChatId) === String(chat.id)
-                        ? "bg-[#121413] border-l-4 border-l-[#00ff85] border-y border-r border-[#3b4b3d]/20 shadow-sm"
-                        : "border border-transparent hover:bg-[#121413]/50"
+                        ? "bg-green-50 dark:bg-[#121413] border-l-4 border-l-[#00ff85] border-y border-r border-green-200 dark:border-[#3b4b3d]/20 shadow-sm"
+                        : "border border-transparent hover:bg-gray-100 dark:hover:bg-[#121413]/50"
                     }`}
                   >
                     <div className="flex gap-3 lg:gap-4 items-center">
                       <div className="flex items-center shrink-0 relative">
                         <img
-                          className="w-8 h-8 lg:w-10 lg:h-10 rounded-full object-cover"
+                          className="w-8 h-8 lg:w-10 lg:h-10 rounded-full object-cover border border-gray-200 dark:border-transparent"
                           src={chat.avatars[0]}
                           alt={chat.name}
                           onError={(e) => { e.target.src = defaultAvatar; }}
@@ -645,7 +948,10 @@ const Chats = () => {
                       </div>
                       <div className="flex-1 min-w-0 flex justify-between items-start">
                         <div className="min-w-0 pr-2 flex-1">
-                          <h4 className={`text-sm font-bold truncate flex items-center gap-1.5 ${String(activeChatId) === String(chat.id) ? "text-[#00ff85]" : "text-white group-hover:text-[#e2e3e0]"}`}>
+                          <h4 className={`text-sm font-bold truncate flex items-center gap-1.5 ${String(activeChatId) === String(chat.id)
+  ? "text-[#00ff85]"
+  : "text-gray-900 dark:text-white group-hover:text-black dark:group-hover:text-[#e2e3e0]"
+}`}>
                             <span className="truncate">{chat.name}</span>
                             {chat.isYou && (
                               <span className="shrink-0 text-[9px] font-mono font-normal px-1.5 py-0.5 rounded-full bg-[#00ff85]/10 text-[#00ff85] border border-[#00ff85]/30 normal-case tracking-normal">
@@ -653,7 +959,10 @@ const Chats = () => {
                               </span>
                             )}
                           </h4>
-                          <p className={`text-[11px] lg:text-xs truncate mt-1 ${String(activeChatId) === String(chat.id) ? "text-[#e2e3e0]" : "text-slate-500"}`}>
+                          <p className={`text-[11px] lg:text-xs truncate mt-1 ${String(activeChatId) === String(chat.id)
+  ? "text-gray-700 dark:text-[#e2e3e0]"
+  : "text-slate-500"
+}`}>
                             {chat.lastMsg}
                           </p>
                         </div>
@@ -676,7 +985,7 @@ const Chats = () => {
           </div>
 
           {/* RIGHT CHAT WINDOW */}
-          <div className="flex-1 flex flex-col bg-transparent rounded-2xl overflow-hidden min-w-0 relative h-full">
+          <div className={`${activeChatId ? "flex" : "hidden md:flex"} flex-1 flex-col bg-white dark:bg-[#0d0f0e] rounded-2xl overflow-hidden min-w-0 relative h-full`}>
             {activeChatData ? (
               showProfile ? (
                 activeChatData.isGroup ? (
@@ -688,12 +997,24 @@ const Chats = () => {
                 <>
                   <div
                     onClick={() => setShowProfile(true)}
-                    className="h-14 lg:h-16 border-b border-[#3b4b3d]/30 px-4 lg:px-6 flex items-center justify-between shrink-0 bg-[#0d0f0e] cursor-pointer hover:bg-white/5 transition-all"
+                    className="h-14 lg:h-16 border-b border-gray-200 dark:border-[#3b4b3d]/30 px-4 lg:px-6 flex items-center justify-between shrink-0 bg-white dark:bg-[#0d0f0e] cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
                   >
                     <div className="flex items-center gap-3 min-w-0">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveChatId(null);
+                        }}
+                        className="md:hidden w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-all"
+                      >
+                        <MaterialIcon
+                          name="arrow_back"
+                          className="text-gray-700 dark:text-white"
+                        />
+                      </button>
                       <div className="relative">
                         <img
-                          className="w-8 h-8 lg:w-10 lg:h-10 rounded-full border-2 border-[#1a1c1b] z-10 object-cover"
+                          className="w-8 h-8 lg:w-10 lg:h-10 rounded-full border-2 border-white dark:border-[#1a1c1b] z-10 object-cover"
                           src={activeChatData.avatars[0]}
                           alt={activeChatData.name}
                           onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(activeChatData.name)}&background=1a1c1b&color=00ff85`; }}
@@ -705,7 +1026,7 @@ const Chats = () => {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <h3 className="text-base lg:text-lg font-bold text-white truncate">{activeChatData.name}</h3>
+                        <h3 className="text-base lg:text-lg font-bold text-gray-900 dark:text-white truncate">{activeChatData.name}</h3>
                         <p className="text-[11px] text-slate-500 font-mono mt-0.5">{activeChatData.type}</p>
                       </div>
                     </div>
@@ -713,7 +1034,7 @@ const Chats = () => {
                     <div className="flex items-center gap-1 lg:gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
                       <div className="relative flex items-center justify-center h-full" ref={groupMenuRef}>
                         {showGroupMenu && (
-                          <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 bg-[#1a1c1b] border border-[#3b4b3d]/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeIn">
+                          <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 bg-white dark:bg-[#1a1c1b] border border-gray-200 dark:border-[#3b4b3d]/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeIn">
                             <button
                               onClick={activeChatData.isGroup ? handleGroupClearChat : handleClearChat}
                               className="flex items-center gap-3 px-5 py-3 text-[#ffb4ab] hover:bg-[#93000a]/20 transition-all text-sm font-bold uppercase tracking-wider whitespace-nowrap"
@@ -724,7 +1045,10 @@ const Chats = () => {
                         )}
                         <button
                           onClick={() => setShowGroupMenu(!showGroupMenu)}
-                          className={`w-9 h-9 flex items-center justify-center rounded-full transition-colors ${showGroupMenu ? "bg-[#3b4b3d]/30 text-white" : "hover:bg-[#3b4b3d]/20 text-slate-300"}`}
+                          className={`w-9 h-9 flex items-center justify-center rounded-full transition-colors ${showGroupMenu
+  ? "bg-green-100 dark:bg-[#3b4b3d]/30 text-gray-900 dark:text-white"
+  : "hover:bg-gray-100 dark:hover:bg-[#3b4b3d]/20 text-slate-500 dark:text-slate-300"
+}`}
                         >
                           <MaterialIcon name="more_vert" className="text-lg lg:text-xl" />
                         </button>
@@ -748,65 +1072,113 @@ const Chats = () => {
                     />
                   ) : (
                     <>
-                      <div className="flex-1 overflow-y-auto p-4 lg:p-5 space-y-3 lg:space-y-4 hide-scrollbar bg-[#121413]/30 min-h-0">
-                        {activeChatData.messages?.length === 0 ? (
-                          <div className="flex items-center justify-center h-full text-slate-500 font-mono text-sm uppercase italic opacity-40">
-                            SAY HI TO START MESSAGING
-                          </div>
-                        ) : (
-                          <>
-                            {activeChatData.messages.map((msg) => (
-                              <div
-                                key={msg.id}
-                                className={`flex ${msg.isMine ? "flex-row-reverse" : ""} items-start gap-3 max-w-[85%] ${msg.isMine ? "ml-auto" : ""}`}
-                              >
-                                <div className={`space-y-1 ${msg.isMine ? "text-right" : ""} min-w-0`}>
-                                  <div className={`flex items-baseline gap-2 ${msg.isMine ? "justify-end" : ""}`}>
-                                    <span className={`text-[11px] font-bold uppercase tracking-wider ${msg.isMine ? "text-[#00ff85]" : "text-white"}`}>
-                                      {msg.sender}
-                                    </span>
-                                    <span className="text-[9px] font-mono text-slate-500">{msg.time}</span>
-                                  </div>
-                                  <div className={`px-4 py-2.5 lg:py-3 rounded-2xl text-sm leading-relaxed inline-block max-w-full text-left ${
-                                    msg.isMine
-                                      ? "bg-[#0d0f0e] text-white border border-[#00ff85]/30 rounded-tr-none"
-                                      : "bg-[#1e201f] text-[#e2e3e0] border border-white/5 rounded-tl-none"
-                                  }`}>
-                                    {msg.localFile && (
-                                      msg.localFile.type === "image" || msg.localFile.type?.includes("image") ? (
-                                        <img src={msg.localFile.url} alt="attachment preview" className="max-w-full sm:max-w-[250px] rounded-lg mb-2 object-cover border border-white/10" />
-                                      ) : (
-                                        <video src={msg.localFile.url} controls className="max-w-full sm:max-w-[250px] rounded-lg mb-2 bg-black border border-white/10" />
-                                      )
-                                    )}
-                                    {msg.file && msg.file.path && (
-                                      (() => {
-                                        const cleanBaseUrl = API_CONFIG.BASE_URL.replace(/\/$/, "");
-                                        const cleanPath = msg.file.path.replace(/^\//, "");
-                                        const safeUrl = msg.file.path.startsWith("http") ? msg.file.path : `${cleanBaseUrl}/${cleanPath}`;
-                                        const isImg = msg.file.type === "image" || msg.file.path.match(/\.(jpeg|jpg|gif|png|webp|bmp)$/i);
-                                        const isVid = msg.file.type === "video" || msg.file.path.match(/\.(mp4|webm|ogg|mov)$/i);
-                                        if (isImg) return <img src={safeUrl} alt="attachment" className="max-w-full sm:max-w-[250px] rounded-lg mb-2 object-cover border border-white/10" />;
-                                        else if (isVid) return <video src={safeUrl} controls className="max-w-full sm:max-w-[250px] rounded-lg mb-2 bg-black border border-white/10" />;
-                                        else return <a href={safeUrl} target="_blank" rel="noreferrer" className="text-[#00ff85] underline text-xs mb-2 block font-bold">📂 View Attachment</a>;
-                                      })()
-                                    )}
-                                    {msg.text && <p className="whitespace-pre-wrap break-words">{msg.text}</p>}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                            <div ref={messagesEndRef} />
-                          </>
-                        )}
-                      </div>
+   {/* 👇 CHAT MESSAGES WINDOW CONTAINER (CRASH PROOF VERSION) */}
+<div
+  ref={messagesContainerRef}
+  className="flex-1 overflow-y-auto p-4 lg:p-5 space-y-3 lg:space-y-4 hide-scrollbar bg-gray-50 dark:bg-[#121413]/30 min-h-0"
+>
+  {/* 👇 Sabse pehle strict check lagayein ki data sahi se aa raha hai ya nahi */}
+  {!activeChatData || !activeChatData.messages || activeChatData.messages.length === 0 ? (
+    <div className="flex items-center justify-center h-full text-slate-500 font-mono text-sm uppercase italic opacity-40">
+      SAY HI TO START MESSAGING
+    </div>
+  ) : (
+    <>
+      {/* Safe Map loop chalayein */}
+      {activeChatData.messages.map((msg) => {
+        if (!msg) return null; // Breakage protection
+        return (
+          <div
+            key={msg.id || Math.random().toString()}
+            className={`flex ${msg.isMine ? "flex-row-reverse" : ""} items-start gap-2 sm:gap-3 max-w-[92%] sm:max-w-[85%] ${msg.isMine ? "ml-auto" : ""}`}
+          >
+            <div className={`space-y-1 ${msg.isMine ? "text-right" : ""} min-w-0`}>
+              <div className={`flex items-baseline gap-2 ${msg.isMine ? "justify-end" : ""}`}>
+                <span className={`text-[11px] font-bold uppercase tracking-wider ${msg.isMine ? "text-[#00ff85]" : "text-gray-900 dark:text-white"}`}>
+                  {msg.sender || "User"}
+                </span>
+                <span className="text-[9px] font-mono text-slate-500">{msg.time || ""}</span>
+              </div>
+              
+              <div className={`px-3 sm:px-4 py-2.5 lg:py-3 rounded-2xl text-sm leading-relaxed inline-block max-w-full text-left ${
+                msg.isMine
+                  ? "bg-green-50 dark:bg-[#0d0f0e] text-gray-900 dark:text-white border border-[#00ff85]/30 rounded-tr-none"
+                  : "bg-white dark:bg-[#1e201f] text-gray-800 dark:text-[#e2e3e0] border border-gray-200 dark:border-white/5 rounded-tl-none"
+              }`}>
+                
+                {/* Local attachments previews */}
+                {msg.localFile && (
+                  msg.localFile.type === "image" || msg.localFile.type?.includes("image") ? (
+                    <img src={msg.localFile.url} alt="attachment preview" className="max-w-full sm:max-w-[250px] rounded-lg mb-2 object-cover border border-white/10" />
+                  ) : (
+                    <video src={msg.localFile.url} controls className="max-w-full sm:max-w-[250px] rounded-lg mb-2 bg-black border border-white/10" />
+                  )
+                )}
 
-                      <div className="px-4 lg:px-6 pb-4 pt-3 bg-[#0d0f0e] shrink-0">
+                {/* Database attachments views */}
+                {msg.file && msg.file.path && (
+                  (() => {
+                    const cleanBaseUrl = (API_CONFIG?.BASE_URL || "").replace(/\/$/, "");
+                    const cleanPath = msg.file.path.replace(/^\//, "");
+                    const safeUrl = msg.file.path.startsWith("http") ? msg.file.path : `${cleanBaseUrl}/${cleanPath}`;
+                    const isImg = msg.file.type === "image" || msg.file.path.match(/\.(jpeg|jpg|gif|png|webp|bmp)$/i);
+                    const isVid = msg.file.type === "video" || msg.file.path.match(/\.(mp4|webm|ogg|mov)$/i);
+                    if (isImg) return <img src={safeUrl} alt="attachment" className="max-w-full sm:max-w-[250px] rounded-lg mb-2 object-cover border border-white/10" />;
+                    else if (isVid) return <video src={safeUrl} controls className="max-w-full sm:max-w-[250px] rounded-lg mb-2 bg-black border border-white/10" />;
+                    else return <a href={safeUrl} target="_blank" rel="noreferrer" className="text-[#00ff85] underline text-xs mb-2 block font-bold">📂 View Attachment</a>;
+                  })()
+                )}
+
+                {/* Shared Post condition check or Normal message logic */}
+                {msg.text && String(msg.text).includes("POST_SHARE_ID:") ? (
+                  (() => {
+                    const extractedId = String(msg.text).split("POST_SHARE_ID:")[1] || "53";
+                    return (
+                      <div className="p-3 bg-green-50 dark:bg-[#0d0f0e] border border-[#00ff85]/30 rounded-xl min-w-[220px] max-w-xs flex flex-col gap-2 my-1 shadow-md text-left animate-fadeIn">
+                        <div className="flex items-center gap-2 border-b border-green-200 dark:border-white/10 pb-1.5">
+                          <span className="material-symbols-outlined text-emerald-500 dark:text-emerald-400 text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
+                            share
+                          </span>
+                          <span className="text-[11px] font-mono tracking-wider text-[#00ff85] uppercase font-bold">Shared Post</span>
+                        </div>
+                        <div className="text-xs text-gray-700 dark:text-slate-300">
+  View shared post.
+</div>
+                        <button 
+                          onClick={() => {
+                            if (typeof setSelectedPostIdForPopup === "function") setSelectedPostIdForPopup(extractedId); 
+                            if (typeof setIsPostModalOpen === "function") setIsPostModalOpen(true);
+                            if (typeof fetchSinglePostDetails === "function") fetchSinglePostDetails(extractedId);
+                          }}
+                          className="w-full mt-1 py-1.5 px-3 bg-[#00ff85] hover:bg-[#00e676] hover:scale-[1.02] text-[#003919] font-bold text-xs rounded-lg transition-all duration-200 flex items-center justify-center gap-1 shadow-lg active:scale-95"
+                        >
+                          <span className="material-symbols-outlined text-xs">visibility</span>
+                          View Post
+                        </button>
+                      </div>
+                    );
+                  })()
+                ) : (
+                  msg.text && <p className="whitespace-pre-wrap break-words">{msg.text}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+      
+      {/* 💡 TARGET LOWER ANCHOR (Yahan safe execution check laga diya hai) */}
+      <div ref={messagesEndRef} className="h-1 w-full clear-both" />
+    </>
+  )}
+</div>
+
+                      <div className="px-4 lg:px-6 pb-4 pt-3 bg-white dark:bg-[#0d0f0e] shrink-0">
                         {selectedFile && (
                           <div className="w-full flex mb-2 pl-4">
-                            <div className="bg-[#1a1c1b] border border-[#3b4b3d] rounded-lg px-3 py-1.5 flex items-center gap-2 shadow-lg">
+                            <div className="bg-white dark:bg-[#1a1c1b] border border-gray-200 dark:border-[#3b4b3d] rounded-lg px-3 py-1.5 flex items-center gap-2 shadow-lg">
                               <MaterialIcon name={selectedFile.type === "image" ? "image" : "videocam"} className="text-[#00ff85] text-[16px]" />
-                              <span className="text-[11px] text-white truncate max-w-[120px] sm:max-w-[200px]">{selectedFile.file.name}</span>
+                              <span className="text-[11px] text-gray-900 dark:text-white truncate max-w-[120px] sm:max-w-[200px]">{selectedFile.file.name}</span>
                               <button onClick={() => setSelectedFile(null)} className="text-slate-400 hover:text-red-400 ml-1 flex items-center">
                                 <MaterialIcon name="close" className="text-[14px]" />
                               </button>
@@ -815,20 +1187,20 @@ const Chats = () => {
                         )}
 
                         <div className="flex items-center gap-3 lg:gap-4">
-                          <div className="flex-1 flex items-center bg-[#0d0f0e] border border-[#3b4b3d]/50 rounded-[24px] px-4 py-2">
+                          <div className="flex-1 flex items-center bg-gray-100 dark:bg-[#0d0f0e] border border-gray-300 dark:border-[#3b4b3d]/50 rounded-[24px] px-4 py-2">
                             <div className="relative self-end mb-1 flex items-center mr-2" ref={attachMenuRef}>
                               {showAttachMenu && (
-                                <div className="absolute bottom-full left-0 mb-4 w-40 bg-[#1a1c1b] border border-[#3b4b3d]/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeIn">
+                                <div className="absolute bottom-full left-0 mb-4 w-40 bg-white dark:bg-[#1a1c1b] border border-gray-200 dark:border-[#3b4b3d]/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeIn">
                                   <button
                                     onClick={() => { setShowAttachMenu(false); imageAttachRef.current?.click(); }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-[#3b4b3d]/20 hover:text-white transition-all text-sm font-bold"
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-[#3b4b3d]/20 hover:text-black dark:hover:text-white transition-all text-sm font-bold"
                                   >
                                     <MaterialIcon name="image" className="text-[18px]" /> Images
                                   </button>
-                                  <div className="h-px w-full bg-[#3b4b3d]/30"></div>
+                                  <div className="h-px w-full bg-gray-200 dark:bg-[#3b4b3d]/30"></div>
                                   <button
                                     onClick={() => { setShowAttachMenu(false); videoAttachRef.current?.click(); }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-[#3b4b3d]/20 hover:text-white transition-all text-sm font-bold"
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-[#3b4b3d]/20 hover:text-black dark:hover:text-white transition-all text-sm font-bold"
                                   >
                                     <MaterialIcon name="videocam" className="text-[18px]" /> Videos
                                   </button>
@@ -844,7 +1216,7 @@ const Chats = () => {
                             <textarea
                               ref={messageInputRef}
                               rows="1"
-                              className="flex-1 bg-transparent text-sm text-white outline-none focus:ring-0 placeholder:text-[#3b4b3d] font-inter resize-none py-1.5 max-h-[120px] overflow-y-auto custom-scrollbar"
+                              className="flex-1 bg-transparent text-sm text-gray-900 dark:text-white outline-none focus:ring-0 placeholder:text-gray-400 dark:placeholder:text-[#3b4b3d] font-inter resize-none py-1.5 max-h-[120px] overflow-y-auto custom-scrollbar"
                               placeholder="Type a message..."
                               value={messageText}
                               onChange={(e) => {

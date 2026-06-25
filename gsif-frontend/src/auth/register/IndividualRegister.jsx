@@ -1,16 +1,17 @@
 // ============================================
-// INDIVIDUAL REGISTRATION - CORRECTED LAYOUT
+// INDIVIDUAL REGISTRATION - WITH OTP VERIFY FLOW
 // ============================================
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
-
+import { useTheme } from "../../context/ThemeContext";
 import API_CONFIG from "../../config/api.config";
 
 const IndividualRegister = () => {
   const navigate = useNavigate();
+  const { isDark } = useTheme();
   const [formData, setFormData] = useState(() => {
     const savedData = localStorage.getItem("formData");
     return savedData
@@ -31,6 +32,13 @@ const IndividualRegister = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+
+  // ── OTP flow states ──
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [registeredUserData, setRegisteredUserData] = useState(null);
 
   // Handle input changes
   const handleChange = (e) => {
@@ -88,7 +96,52 @@ const IndividualRegister = () => {
     return Object.keys(errors).length === 0;
   };
 
-  // API CALL
+  //sync Common User Api start vijay
+  const syncCommonUserApi = async (userId) => {
+    try {
+      const commonUserPayload = {
+        name: formData.fullName,
+        email: formData.email,
+        mobile: "",
+        address: "",
+        country: formData.country,
+        state: formData.state,
+        city: formData.city,
+        pincode: formData.pincode,
+        age: null,
+        category: "Individual",
+        platform: "RESEARCH_NETWORK",
+        platform_user_id: String(userId || formData.email),
+      };
+
+      const commonResponse = await fetch(
+        "https://common-users.onrender.com/api/users/register",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "x-api-key": "beej_bhandar_common_secret_123",
+          },
+          body: JSON.stringify(commonUserPayload),
+        },
+      );
+
+      const commonData = await commonResponse.json();
+
+      if (!commonResponse.ok) {
+        console.error("Common User API Sync Failed:", commonData);
+      }
+
+      return commonData;
+    } catch (error) {
+      console.error("Common User API Error:", error);
+      return null;
+    }
+  };
+  //sync Common User Api end vijay
+
+  // ── REGISTER API → on success, open OTP modal ──
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -130,39 +183,11 @@ const IndividualRegister = () => {
           data.status === "success" ||
           data.message?.toLowerCase().includes("success"))
       ) {
-        toast.success(" Registration successful!");
-        localStorage.removeItem("formData");
-        // ✅ Token
-        if (data.token) {
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("user_type", "individual"); // Use same key name everywhere
-          localStorage.setItem("isLoggedIn", "true");
-        }
-
-        const userData = {
-          id: data?.user_id || "",
-          user_id: data?.user_id || "",
-          name: formData.fullName,
-          email: formData.email,
-          user_type: "individual",
-          country: formData.country,
-          state: formData.state,
-          city: formData.city,
-          pincode: formData.pincode,
-registration_id: data?.registration_id || "",        };
-
-        localStorage.setItem("user", JSON.stringify(userData));
-        localStorage.setItem("user_id", data?.user_id || "");
-        // ✅ ALSO save separately (backup for other components)
-        localStorage.setItem("userEmail", formData.email);
-        localStorage.setItem("user_type", "individual");
-        localStorage.setItem("isLoggedIn", "true");
-
-        setTimeout(() => {
-          navigate("/application-approved", {
-            state: { userType: "individual", email: formData.email },
-          });
-        }, 500);
+        // Store response. No localStorage write yet — OTP pending.
+        setRegisteredUserData(data);
+        setOtp("");
+        setShowOtpModal(true);
+        toast.success("OTP sent to your email");
       } else if (
         data.message?.toLowerCase().includes("email already exists") ||
         data.message?.toLowerCase().includes("already registered")
@@ -180,20 +205,132 @@ registration_id: data?.registration_id || "",        };
     }
   };
 
+  // ── Verify OTP → write localStorage, sync common user, navigate ──
+  const handleVerifyOtp = async () => {
+    if (otp.length !== 6) {
+      toast.error("Enter 6-digit OTP");
+      return;
+    }
+    setOtpLoading(true);
+    try {
+      const res = await fetch(
+        `${API_CONFIG.BASE_URL}/auth/register/verify-otp`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ email: formData.email, otp }),
+        },
+      );
+      const data = await res.json();
+
+      if (
+        res.ok &&
+        (data.status === true ||
+          data.status === "success" ||
+          data.message?.toLowerCase().includes("success") ||
+          data.message?.toLowerCase().includes("verified"))
+      ) {
+        const reg = registeredUserData || {};
+
+        // sync common user — moved here from handleSubmit
+        await syncCommonUserApi(reg?.user_id || reg?.id || reg?.user?.id);
+
+        // token can come from register or verify-otp
+        if (reg.token || data.token) {
+          localStorage.setItem("token", reg.token || data.token);
+        }
+        localStorage.setItem("user_type", "individual");
+        localStorage.setItem("isLoggedIn", "true");
+
+        const userData = {
+          id: reg?.user_id || data?.user_id || "",
+          user_id: reg?.user_id || data?.user_id || "",
+          name: formData.fullName,
+          email: formData.email,
+          user_type: "individual",
+          country: formData.country,
+          state: formData.state,
+          city: formData.city,
+          pincode: formData.pincode,
+          registration_id: reg?.registration_id || data?.registration_id || "",
+        };
+        localStorage.setItem("user", JSON.stringify(userData));
+        localStorage.setItem("user_id", reg?.user_id || data?.user_id || "");
+        localStorage.setItem("userEmail", formData.email);
+
+        localStorage.removeItem("formData");
+
+        toast.success("Verified! Welcome aboard.");
+        setShowOtpModal(false);
+
+        setTimeout(() => {
+          navigate("/application-approved", {
+            state: { userType: "individual", email: formData.email },
+          });
+        }, 400);
+      } else {
+        toast.error(data.message || "Invalid OTP. Try again.");
+      }
+    } catch (err) {
+      toast.error("Network error verifying OTP.");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  // ── Resend OTP ──
+  const handleResendOtp = async () => {
+    setResendLoading(true);
+    try {
+      const res = await fetch(
+        `${API_CONFIG.BASE_URL}/auth/resend-registration-otp`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ email: formData.email }),
+        },
+      );
+      const data = await res.json();
+
+      if (
+        res.ok &&
+        (data.status === true ||
+          data.status === "success" ||
+          data.message?.toLowerCase().includes("success") ||
+          data.message?.toLowerCase().includes("sent"))
+      ) {
+        toast.success("OTP resent to your email");
+        setOtp("");
+      } else {
+        toast.error(data.message || "Failed to resend OTP");
+      }
+    } catch (err) {
+      toast.error("Network error. Try again.");
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
   useEffect(() => {
     localStorage.setItem("formData", JSON.stringify(formData));
   }, [formData]);
 
   // UI Classes
   const inputClass =
-    "w-full bg-slate-800/50 border border-white/10 rounded-lg py-3 pl-11 pr-12 outline-none focus:border-[#00ff88]/50 focus:ring-1 focus:ring-[#00ff88]/30 transition-all text-white placeholder:text-slate-500 text-sm";
+    "w-full bg-[#f1f5f9] dark:bg-slate-950/70 border border-gray-300 dark:border-white/10 rounded-xl py-3.5 pl-12 pr-4 outline-none focus:border-[#00ff88]/50 focus:ring-1 focus:ring-[#00ff88]/30 transition-all text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-600";
   const errorInputClass =
     "border-red-500 focus:border-red-500 focus:ring-red-500/30";
   const errorMessageClass =
     "text-red-500 text-xs mt-1 ml-1 flex items-start gap-1";
 
   return (
-    <div className="bg-black text-white font-sans min-h-screen relative overflow-y-auto">
+    <div className="min-h-screen relative overflow-y-auto bg-white text-slate-900 dark:bg-black dark:text-white font-sans">
       {/* Material Icons */}
       <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0,1"
@@ -202,7 +339,7 @@ registration_id: data?.registration_id || "",        };
 
       {/* Background Pattern */}
       <div
-        className="fixed inset-0 pointer-events-none opacity-50"
+        className="fixed inset-0 pointer-events-none opacity-20 dark:opacity-50"
         style={{
           backgroundImage: `radial-gradient(#ffffff08 1px, transparent 1px)`,
           backgroundSize: "40px 40px",
@@ -211,13 +348,13 @@ registration_id: data?.registration_id || "",        };
 
       <main className="w-full min-h-screen flex flex-col items-center justify-center px-4 py-12 relative z-10">
         <div className="w-full max-w-[480px]">
-          <div className="bg-slate-900/40 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 md:p-10 shadow-[0_0_50px_rgba(0,255,136,0.1)]">
+          <div className="bg-white/70 dark:bg-slate-900/40  backdrop-blur-2xl border border-slate-200 dark:border-white/10 rounded-2xl p-6 md:p-10 shadow-[0_0_50px_rgba(0,255,136,0.1)]">
             {/* Header */}
             <div className="text-center mb-8">
               <h1 className="text-2xl lg:text-3xl font-black tracking-tight mb-2">
                 Create Your Account
               </h1>
-              <p className="text-slate-400 text-xs">
+              <p className="text-slate-600 dark:text-slate-300 text-sm">
                 Start your journey as individual researcher
               </p>
             </div>
@@ -226,7 +363,7 @@ registration_id: data?.registration_id || "",        };
             <form onSubmit={handleSubmit} noValidate>
               {/* Full Name Field */}
               <div className="space-y-1.5 mb-4">
-                <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-wider">
                   Full Name <span className="text-red-500">*</span>
                 </label>
                 <div className="relative group">
@@ -238,7 +375,7 @@ registration_id: data?.registration_id || "",        };
                     value={formData.fullName}
                     onChange={handleChange}
                     className={`${inputClass} ${fieldErrors.fullName ? errorInputClass : ""}`}
-                    placeholder="John Doe"
+                    placeholder="Enter the full name"
                     type="text"
                     disabled={isLoading}
                   />
@@ -255,7 +392,7 @@ registration_id: data?.registration_id || "",        };
 
               {/* Email Field */}
               <div className="space-y-1.5 mb-4">
-                <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-wider">
                   Email ID <span className="text-red-500">*</span>
                 </label>
                 <div className="relative group">
@@ -267,7 +404,7 @@ registration_id: data?.registration_id || "",        };
                     value={formData.email}
                     onChange={handleChange}
                     className={`${inputClass} ${fieldErrors.email ? errorInputClass : ""}`}
-                    placeholder="researcher@domain.com"
+                    placeholder="Enter email"
                     type="email"
                     disabled={isLoading}
                   />
@@ -301,7 +438,7 @@ registration_id: data?.registration_id || "",        };
               <div className="grid grid-cols-2 gap-3 mb-3">
                 {/* Country */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-wider">
                     Country <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
@@ -313,7 +450,7 @@ registration_id: data?.registration_id || "",        };
                       value={formData.country}
                       onChange={handleChange}
                       className={`${inputClass} pl-11 ${fieldErrors.country ? errorInputClass : ""}`}
-                      placeholder="India"
+                      placeholder="Country"
                       type="text"
                       disabled={isLoading}
                     />
@@ -330,7 +467,7 @@ registration_id: data?.registration_id || "",        };
 
                 {/* State */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-wider">
                     State <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
@@ -342,7 +479,7 @@ registration_id: data?.registration_id || "",        };
                       value={formData.state}
                       onChange={handleChange}
                       className={`${inputClass} pl-11 ${fieldErrors.state ? errorInputClass : ""}`}
-                      placeholder="Madhya Pradesh"
+                      placeholder="State"
                       type="text"
                       disabled={isLoading}
                     />
@@ -362,7 +499,7 @@ registration_id: data?.registration_id || "",        };
               <div className="grid grid-cols-2 gap-3 mb-4">
                 {/* City */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-wider">
                     City <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
@@ -374,7 +511,7 @@ registration_id: data?.registration_id || "",        };
                       value={formData.city}
                       onChange={handleChange}
                       className={`${inputClass} pl-11 ${fieldErrors.city ? errorInputClass : ""}`}
-                      placeholder="Indore"
+                      placeholder="City"
                       type="text"
                       disabled={isLoading}
                     />
@@ -391,8 +528,8 @@ registration_id: data?.registration_id || "",        };
 
                 {/* Pincode */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
-                    Pincode <span className="text-red-500">*</span>
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-wider">
+                    Pincode / Zipcode <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
                     <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-lg group-focus-within:text-[#00ff88]">
@@ -403,7 +540,7 @@ registration_id: data?.registration_id || "",        };
                       value={formData.pincode}
                       onChange={handleChange}
                       className={`${inputClass} pl-11 ${fieldErrors.pincode ? errorInputClass : ""}`}
-                      placeholder="452001"
+                      placeholder="Pincode / ZIP"
                       type="text"
                       maxLength={6}
                       disabled={isLoading}
@@ -422,7 +559,7 @@ registration_id: data?.registration_id || "",        };
 
               {/* Password Field */}
               <div className="space-y-1.5 mb-4">
-                <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-wider">
                   Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative group">
@@ -441,7 +578,7 @@ registration_id: data?.registration_id || "",        };
                   <button
                     type="button"
                     onClick={togglePassword}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
                   >
                     <span className="material-symbols-outlined text-lg">
                       {showPassword ? "visibility" : "visibility_off"}
@@ -461,7 +598,7 @@ registration_id: data?.registration_id || "",        };
 
               {/* Confirm Password Field */}
               <div className="space-y-1.5 mb-4">
-                <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-wider">
                   Confirm Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative group">
@@ -480,7 +617,7 @@ registration_id: data?.registration_id || "",        };
                   <button
                     type="button"
                     onClick={toggleConfirmPassword}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
                   >
                     <span className="material-symbols-outlined text-lg">
                       {showConfirmPassword ? "visibility" : "visibility_off"}
@@ -506,9 +643,12 @@ registration_id: data?.registration_id || "",        };
                     type="checkbox"
                     checked={formData.agreeTerms}
                     onChange={handleChange}
-                    className={`w-4 h-4 mt-0.5 rounded border-white/10 bg-white/5 text-[#00ff88] 
-                                               focus:ring-[#00ff88]/30 focus:ring-2 
-                                               ${fieldErrors.agreeTerms ? "border-red-500" : ""}`}
+                    className={`w-4 h-4 mt-0.5 rounded 
+border border-slate-300 dark:border-white/10 
+bg-white dark:bg-white/5 
+text-[#00ff88] 
+focus:ring-[#00ff88]/30 focus:ring-2 
+${fieldErrors.agreeTerms ? "border-red-500" : ""}`}
                     disabled={isLoading}
                   />
                   <label
@@ -518,14 +658,14 @@ registration_id: data?.registration_id || "",        };
                     I agree to{" "}
                     <Link
                       to="/terms"
-                      className="text-[#00ff88] text-sm underline decoration-slate-700 underline-offset-2"
+                      className="text-[#00ff88] text-sm underline decoration-slate-00 "
                     >
                       Terms
                     </Link>{" "}
                     &{" "}
                     <Link
                       to="/privacy"
-                      className="text-[#00ff88] text-sm underline decoration-slate-700 underline-offset-1"
+                      className="text-[#00ff88] text-sm underline decoration-slate-00 "
                     >
                       Privacy
                     </Link>
@@ -566,7 +706,7 @@ registration_id: data?.registration_id || "",        };
             </form>
 
             {/* Login Link */}
-            <div className="mt-8 text-center text-slate-400 text-sm">
+            <div className="mt-8 text-center text-slate-600 dark:text-slate-400 text-sm">
               Already have an account?{" "}
               <button
                 onClick={() => navigate("/login")}
@@ -578,6 +718,101 @@ registration_id: data?.registration_id || "",        };
           </div>
         </div>
       </main>
+
+      {/* ══════════ OTP VERIFICATION MODAL ══════════ */}
+      {showOtpModal && (
+  <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div className="w-full max-w-[420px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl p-6 md:p-8">
+      <div className="text-center mb-6">
+        <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-[#00ff88]/10 flex items-center justify-center">
+          <span className="material-symbols-outlined text-[#00ff88] text-2xl">
+            mail_lock
+          </span>
+        </div>
+
+        <h2 className="text-xl font-black text-slate-900 dark:text-white mb-1">
+          Verify Your Email
+        </h2>
+
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          We've sent a 6-digit OTP to
+        </p>
+
+        <p className="text-sm font-bold text-slate-900 dark:text-white break-all">
+          {formData.email}
+        </p>
+      </div>
+
+      <div className="mb-5">
+        <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-wider block mb-1.5">
+          Enter OTP
+        </label>
+
+        <input
+          type="text"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          value={otp}
+          onChange={(e) => {
+            const v = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
+            setOtp(v);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && otp.length === 6 && !otpLoading) {
+              handleVerifyOtp();
+            }
+          }}
+          maxLength={6}
+          disabled={otpLoading}
+          placeholder="- - - - - -"
+          className="w-full text-center text-2xl tracking-[0.6em] font-bold bg-[#f1f5f9] dark:bg-slate-950/70 border border-gray-300 dark:border-white/10 rounded-xl py-3.5 px-4 outline-none focus:border-[#00ff88]/50 focus:ring-1 focus:ring-[#00ff88]/30 transition-all text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-600 disabled:opacity-50"
+        />
+      </div>
+
+      <button
+        type="button"
+        onClick={handleVerifyOtp}
+        disabled={otpLoading || resendLoading || otp.length !== 6}
+        className="w-full bg-[#00ff88] hover:bg-[#00e67a] text-black font-bold py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2 text-sm uppercase active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed mb-3"
+      >
+        {otpLoading ? (
+          <>
+            <span className="inline-block w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+            Verifying...
+          </>
+        ) : (
+          <>
+            Verify OTP
+            <span className="material-symbols-outlined text-lg">
+              check_circle
+            </span>
+          </>
+        )}
+      </button>
+
+      <button
+        type="button"
+        onClick={handleResendOtp}
+        disabled={otpLoading || resendLoading}
+        className="w-full bg-transparent border border-slate-300 dark:border-white/10 hover:border-[#00ff88]/50 text-slate-700 dark:text-slate-300 font-bold py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2 text-sm uppercase active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {resendLoading ? (
+          <>
+            <span className="inline-block w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
+            Resending...
+          </>
+        ) : (
+          <>
+            Resend OTP
+            <span className="material-symbols-outlined text-lg">
+              refresh
+            </span>
+          </>
+        )}
+      </button>
+    </div>
+  </div>
+)}
     </div>
   );
 };

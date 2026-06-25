@@ -43,6 +43,8 @@ const OrgProfileLinks = ({ progress, onBack }) => {
     );
   };
 
+
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -67,26 +69,23 @@ const OrgProfileLinks = ({ progress, onBack }) => {
         organization_name: step1.organization_name || "",
         organization_type: step1.organization_type || "",
 
-        email: user.email || "",
-        contact_no: user.contact || "",
-        address: user.address || "",
-
-        name: user.name || "",
-        professional_role: user.role || "",
-
         country: step2.country || "",
         state: step2.state || "",
         city: step2.city || "",
 
         research_focus: step3.research_focus || [],
-
         platform: step4.platform || [],
 
-        linkedin: links.linkedin,
-        research_gate: links.researchGate,
-        orc_id: links.orcid,
-        personal_website: links.website,
+        linkedin: links.linkedin || "",
+        research_gate: links.researchGate || "",
+        orc_id: links.orcid || "",
+        personal_website: links.website || "",
       };
+
+      localStorage.setItem("latestInstituteProfile", JSON.stringify(finalData));
+      window.dispatchEvent(new Event("profileUpdated"));
+
+      
 
       const apiUrl = `${API_CONFIG.BASE_URL}/profile/profile-institute`;
 
@@ -136,52 +135,98 @@ const OrgProfileLinks = ({ progress, onBack }) => {
     }
   };
 
-  const handleSkip = () => {
-    localStorage.setItem(
-      "orgStep5",
-      JSON.stringify({
-        submitted: false,
-        links: links,
-      }),
-    );
-    navigate("/profileorg");
+  // const handleSkip = () => {
+  //   localStorage.setItem(
+  //     "orgStep5",
+  //     JSON.stringify({
+  //       submitted: false,
+  //       links: links,
+  //     }),
+  //   );
+  //   navigate("/profileorg");
+  // };
+
+  const handleSkip = (e) => {
+    handleSubmit(e);
   };
 
   return (
-    <div className="min-h-screen bg-[#10221a] text-white flex flex-col items-center font-sans">
+    <div
+      className="
+min-h-screen flex flex-col items-center font-sans
+
+bg-white text-slate-900
+dark:bg-[#10221a] dark:text-white
+"
+    >
+      {" "}
       {/* Header with Step Indicator */}
       <header className="w-full max-w-[640px] px-6 pt-16 pb-12 flex justify-between items-center">
         <div className="flex flex-col gap-2.5 w-[100px]">
-          <p className="text-white text-[13px] uppercase tracking-[0.1em] font-semibold">
-            Step 5 of 5
+<p className="
+text-[13px] uppercase tracking-[0.1em] font-semibold
+text-slate-700
+dark:text-white
+">            Step 5 of 5
           </p>
-          <div className="h-1 w-24 bg-white/10 rounded-full overflow-hidden">
-            <div
+<div className="h-1 w-24 rounded-full overflow-hidden
+bg-gray-200
+dark:bg-white/10
+">            <div
               className="h-full bg-[#00ff88] shadow-[0_0_8px_rgba(0,255,136,0.5)] transition-all duration-500"
               style={{ width: `${progress}%` }}
             ></div>
           </div>
         </div>
 
-        <button
+
+
+
+        {/* <button
           onClick={handleSkip}
-          className="text-[15px] font-medium text-white/60 hover:text-white transition-colors flex items-center gap-1"
-        >
+className="
+text-[15px] font-medium transition-colors flex items-center gap-1
+text-gray-500 hover:text-black
+dark:text-white/60 dark:hover:text-white
+"        >
           Skip{" "}
           <span className="material-symbols-outlined text-sm">
             chevron_right
           </span>
-        </button>
-      </header>
+        </button> */}
 
+<button
+  type="button"
+  onClick={handleSkip}
+  className="
+text-[15px] font-medium transition-colors flex items-center gap-1
+text-gray-500 hover:text-black
+dark:text-white/60 dark:hover:text-white
+"
+>
+  Skip{" "}
+  <span className="material-symbols-outlined text-sm">
+    chevron_right
+  </span>
+</button>
+
+
+
+      </header>
       {/* Main Content Area */}
       <main className="w-full max-w-[640px] px-6 flex flex-col gap-10">
         <div className="text-center flex flex-col items-center">
-          <h1 className="text-4xl md:text-[40px] font-bold tracking-tight mb-4 text-white">
-            Link your professional profiles
+<h1 className="
+text-4xl md:text-[40px] font-bold tracking-tight mb-4
+text-slate-900
+dark:text-white
+">            Link your professional profiles
           </h1>
-          <p className="text-white/40 text-lg">
-            Help other sustainability researchers find your work. Linking these
+<p className="
+text-lg
+text-gray-500
+dark:text-white/40
+">            Help other sustainability researchers find your work. Linking these
             accounts helps verify your network credentials.
           </p>
         </div>
@@ -199,8 +244,14 @@ const OrgProfileLinks = ({ progress, onBack }) => {
               name="linkedin"
               value={links.linkedin}
               onChange={handleChange}
-              className="w-full rounded-lg border-2 border-[#31684e] bg-[#1a2e25] py-3.5 px-4 text-[15px] text-white placeholder:text-white/20 focus:border-[#00ff88] focus:ring-2 focus:ring-[#00ff88]/20 outline-none transition-all"
-              placeholder="linkedin.com/in/username"
+className="
+w-full rounded-lg border-2 py-3.5 px-4 text-[15px] transition-all
+
+bg-gray-100 border-gray-300 text-slate-900 placeholder:text-gray-400
+dark:bg-[#1a2e25] dark:border-[#31684e] dark:text-white dark:placeholder:text-white/20
+
+outline-none focus:outline-none focus:ring-0 focus:border-[#00ff88]
+"              placeholder="linkedin.com/in/username"
               type="url"
             />
           </div>
@@ -214,8 +265,14 @@ const OrgProfileLinks = ({ progress, onBack }) => {
               name="researchGate"
               value={links.researchGate}
               onChange={handleChange}
-              className="w-full rounded-lg border-2 border-[#31684e] bg-[#1a2e25] py-3.5 px-4 text-[15px] text-white placeholder:text-white/20 focus:border-[#00ff88] focus:ring-2 focus:ring-[#00ff88]/20 outline-none transition-all"
-              placeholder="researchgate.net/profile/name"
+              className="
+w-full rounded-lg border-2 py-3.5 px-4 text-[15px] transition-all
+
+bg-gray-100 border-gray-300 text-slate-900 placeholder:text-gray-400
+dark:bg-[#1a2e25] dark:border-[#31684e] dark:text-white dark:placeholder:text-white/20
+
+outline-none focus:outline-none focus:ring-0 focus:border-[#00ff88]
+"              placeholder="researchgate.net/profile/name"
               type="url"
             />
           </div>
@@ -229,7 +286,14 @@ const OrgProfileLinks = ({ progress, onBack }) => {
               name="orcid"
               value={links.orcid}
               onChange={handleChange}
-              className="w-full rounded-lg border-2 border-[#31684e] bg-[#1a2e25] py-3.5 px-4 text-[15px] text-white placeholder:text-white/20 focus:border-[#00ff88] focus:ring-2 focus:ring-[#00ff88]/20 outline-none transition-all"
+              className="
+w-full rounded-lg border-2 py-3.5 px-4 text-[15px] transition-all
+
+bg-gray-100 border-gray-300 text-slate-900 placeholder:text-gray-400
+dark:bg-[#1a2e25] dark:border-[#31684e] dark:text-white dark:placeholder:text-white/20
+
+outline-none focus:outline-none focus:ring-0 focus:border-[#00ff88]
+"
               placeholder="0000-0000-0000-0000"
               type="text"
             />
@@ -244,7 +308,14 @@ const OrgProfileLinks = ({ progress, onBack }) => {
               name="website"
               value={links.website}
               onChange={handleChange}
-              className="w-full rounded-lg border-2 border-[#31684e] bg-[#1a2e25] py-3.5 px-4 text-[15px] text-white placeholder:text-white/20 focus:border-[#00ff88] focus:ring-2 focus:ring-[#00ff88]/20 outline-none transition-all"
+              className="
+w-full rounded-lg border-2 py-3.5 px-4 text-[15px] transition-all
+
+bg-gray-100 border-gray-300 text-slate-900 placeholder:text-gray-400
+dark:bg-[#1a2e25] dark:border-[#31684e] dark:text-white dark:placeholder:text-white/20
+
+outline-none focus:outline-none focus:ring-0 focus:border-[#00ff88]
+"
               placeholder="https://yourwebsite.com"
               type="url"
             />
@@ -252,51 +323,58 @@ const OrgProfileLinks = ({ progress, onBack }) => {
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mt-2">
-              <p className="text-red-400 text-sm text-center">{error}</p>
+<div className="
+border rounded-lg p-3 mt-2
+
+bg-red-50 border-red-200
+dark:bg-red-500/10 dark:border-red-500/30
+">             
+  <p className="
+text-sm text-center
+text-red-600
+dark:text-red-400
+">{error}</p>
             </div>
           )}
 
           {/* Action Buttons Section */}
-<div className="flex flex-row items-center justify-between gap-3 mt-10 pt-8 border-t border-[#214a37] w-full">
-  
-  {/* Back Button */}
-  <button
-    type="button"
-    onClick={onBack}
-    className="flex-1 sm:flex-none px-4 sm:px-8 py-3 rounded-lg border-2 border-[#00ff88]/30 text-[#00ff88] font-bold hover:bg-[#00ff88]/5 flex items-center justify-center gap-2 transition-all active:scale-95 text-sm sm:text-base"
-  >
-    <span className="material-symbols-outlined text-lg">
-      arrow_back
-    </span>
-    <span className="hidden xs:inline">Back</span>
-    <span className="xs:hidden">Back</span>
-  </button>
+          <div className="flex flex-row items-center justify-between gap-3 mt-10 pt-8 border-t border-[#214a37] w-full">
+            {/* Back Button */}
+            <button
+              type="button"
+              onClick={onBack}
+              className="flex-1 sm:flex-none px-4 sm:px-8 py-3 rounded-lg border-2 border-[#00ff88]/30 text-[#00ff88] font-bold hover:bg-[#00ff88]/5 flex items-center justify-center gap-2 transition-all active:scale-95 text-sm sm:text-base"
+            >
+              <span className="material-symbols-outlined text-lg">
+                arrow_back
+              </span>
+              <span className="hidden xs:inline">Back</span>
+              <span className="xs:hidden">Back</span>
+            </button>
 
-  {/* Finish Button */}
-  <button
-    type="submit"
-    disabled={loading}
-    className="flex-[2] sm:flex-none px-4 sm:px-10 py-3 rounded-lg bg-[#00ff88] text-[#0b1410] font-bold hover:shadow-[0_0_20px_rgba(0,255,136,0.4)] transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base whitespace-nowrap"
-  >
-    {loading ? (
-      <>
-        <span className="animate-spin rounded-full h-4 w-4 border-2 border-[#0b1410] border-t-transparent"></span>
-        <span>Saving...</span>
-      </>
-    ) : (
-      <>
-        <span className="truncate">Finish Setup</span>
-        <span className="material-symbols-outlined text-xl">
-          arrow_forward
-        </span>
-      </>
-    )}
-  </button>
-</div>
+            {/* Finish Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-[2] sm:flex-none px-4 sm:px-10 py-3 rounded-lg bg-[#00ff88] text-[#0b1410] font-bold hover:shadow-[0_0_20px_rgba(0,255,136,0.4)] transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base whitespace-nowrap"
+            >
+              {loading ? (
+                <>
+                  <span className="animate-spin rounded-full h-4 w-4 border-2 border-[#0b1410] border-t-transparent"></span>
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <span className="truncate">Finish Setup</span>
+                  <span className="material-symbols-outlined text-xl">
+                    arrow_forward
+                  </span>
+                </>
+              )}
+            </button>
+          </div>
         </form>
       </main>
-
       {/* CSS to remove default focus outlines */}
       <style>{`
         input:focus {

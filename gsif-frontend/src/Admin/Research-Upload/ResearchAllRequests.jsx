@@ -92,7 +92,10 @@ const handleViewDetails = (id) => {
   });
 
   // Pagination Logic
-  const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredRequests.length / itemsPerPage)
+  );
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentRequests = filteredRequests.slice(indexOfFirstItem, indexOfLastItem);
@@ -104,23 +107,25 @@ const handleViewDetails = (id) => {
 
   // Handle page change
   const handlePageChange = (pageNumber) => {
+  if (pageNumber >= 1 && pageNumber <= totalPages) {
     setCurrentPage(pageNumber);
-  };
+  }
+};
 
   if (loading)
     return (
-      <div className="text-center p-8 bg-[#13231a] border border-[#1e3a2c] rounded-xl">
+      <div className="text-center p-8 bg-white dark:bg-[#13231a] border border-gray-200 dark:border-[#1e3a2c] rounded-xl">
         <div className="flex justify-center items-center space-x-2">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#00ff88]"></div>
-          <p className="text-gray-400">Loading research data...</p>
+          <p className="text-gray-500 dark:text-gray-400">Loading research data...</p>
         </div>
       </div>
     );
 
   if (error)
     return (
-      <div className="text-center p-8 bg-[#13231a] border border-red-900/30 rounded-xl">
-        <p className="text-red-400">{error}</p>
+      <div className="text-center p-8 bg-white dark:bg-[#13231a] border border-red-200 dark:border-red-900/30 rounded-xl">
+        <p className="text-red-600 dark:text-red-400">{error}</p>
       </div>
     );
 

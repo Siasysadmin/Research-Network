@@ -21,6 +21,7 @@ const IndividualEditProfile = () => {
   const pendingSdgIdsRef = useRef(null);
   // Form states
   const [profileData, setProfileData] = useState({
+    user_id: "",
     name: "",
     describes: "",
     registration_id: "",
@@ -71,87 +72,109 @@ const IndividualEditProfile = () => {
     );
   };
 
- useEffect(() => {
-  const init = async () => {
-    // Dono parallel chalao, dono ka result ek saath lo
-    const [profileResult, sdgResult] = await Promise.all([
-      fetch(`${API_CONFIG.BASE_URL}/profile/get-profile-individual`, {
-        headers: { Authorization: `Bearer ${getAuthToken()}`, "Content-Type": "application/json" }
-      }).then(r => r.json()),
+  useEffect(() => {
+    const init = async () => {
+      // Dono parallel chalao, dono ka result ek saath lo
+      const [profileResult, sdgResult] = await Promise.all([
+        fetch(`${API_CONFIG.BASE_URL}/profile/get-profile-individual`, {
+          headers: {
+            Authorization: `Bearer ${getAuthToken()}`,
+            "Content-Type": "application/json",
+          },
+        }).then((r) => r.json()),
 
-      fetch(`${API_CONFIG.BASE_URL}/research/get-sdg-goals`, {
-        headers: { Authorization: `Bearer ${getAuthToken()}`, "Content-Type": "application/json" }
-      }).then(r => r.json())
-    ]);
+        fetch(`${API_CONFIG.BASE_URL}/research/get-sdg-goals`, {
+          headers: {
+            Authorization: `Bearer ${getAuthToken()}`,
+            "Content-Type": "application/json",
+          },
+        }).then((r) => r.json()),
+      ]);
 
-    // SDG goals set karo
-    let goals = [];
-    if (sdgResult.status && Array.isArray(sdgResult.data)) {
-      goals = sdgResult.data.map(item => ({
-        id: parseInt(item.id),
-        label: item.goals,
-      }));
-      setSdgGoalsList(goals);
-    }
+      // SDG goals set karo
+      let goals = [];
+      if (sdgResult.status && Array.isArray(sdgResult.data)) {
+        goals = sdgResult.data.map((item) => ({
+          id: parseInt(item.id),
+          label: item.goals,
+        }));
+        setSdgGoalsList(goals);
+      }
 
-    // Profile set karo
-    if (profileResult.status && profileResult.data) {
-      const data = profileResult.data;
-      setProfileData({
-        name: data.name || "",
-        describes: data.describes || "",
-        registration_id: data.registration_id || "",
-        email: data.email || "",
-        country: data.country || "",
-        state: data.state || "",
-        city: data.city || "",
-        pincode: data.pincode || "",
-        date_of_birth: data.date_of_birth || "",
-        location: data.location || "",
-        language: data.language || "",
-        short_bio: data.short_bio || "",
-        current_research: data.current_research || "",
-        linkedin: data.linkedin || "",
-        research_gate: data.research_gate || "",
-        orc_id: data.orc_id || "",
-        personal_website: data.personal_website || "",
-        profile_image: data.profile_image || "",
-      });
+      // Profile set karo
+      if (profileResult.status && profileResult.data) {
+        const data = profileResult.data;
+        setProfileData({
+          user_id: data.id || data.user_id || "",   //added by vijay sync Common User Api
+          name: data.name || "",
+          describes: data.describes || "",
+          registration_id: data.registration_id || "",
+          email: data.email || "",
+          country: data.country || "",
+          state: data.state || "",
+          city: data.city || "",
+          pincode: data.pincode || "",
+          date_of_birth: data.date_of_birth || "",
+          location: data.location || "",
+          language: data.language || "",
+          short_bio: data.short_bio || "",
+          current_research: data.current_research || "",
+          linkedin: data.linkedin || "",
+          research_gate: data.research_gate || "",
+          orc_id: data.orc_id || "",
+          personal_website: data.personal_website || "",
+          profile_image: data.profile_image || "",
+        });
 
-      setProfileImage(getFullImageUrl(data.profile_image));
-      setTags(Array.isArray(data.interest) ? data.interest : []);
+        setProfileImage(getFullImageUrl(data.profile_image));
+        setTags(Array.isArray(data.interest) ? data.interest : []);
 
-      // SDG match — dono data available hain ab ek saath
-      const sdgNames = Array.isArray(data.developement_goals) ? data.developement_goals : [];
-      const matchedIds = goals.filter(g => sdgNames.includes(g.label)).map(g => g.id);
-      setSdgGoals(matchedIds);
+        // SDG match — dono data available hain ab ek saath
+        const sdgNames = Array.isArray(data.developement_goals)
+          ? data.developement_goals
+          : [];
+        const matchedIds = goals
+          .filter((g) => sdgNames.includes(g.label))
+          .map((g) => g.id);
+        setSdgGoals(matchedIds);
 
-      // Experiences
-      const jobRoles = Array.isArray(data.job_role) ? data.job_role : [];
-      const companies = Array.isArray(data.company) ? data.company : [];
-      const durations = Array.isArray(data.duration) ? data.duration : [];
-      const descriptions = Array.isArray(data.description) ? data.description : [];
-      const maxLength = Math.max(jobRoles.length, companies.length, durations.length, descriptions.length);
-      const expArray = Array.from({ length: maxLength }, (_, i) => ({
-        role: jobRoles[i] || "",
-        company: companies[i] || "",
-        duration: durations[i] || "",
-        description: descriptions[i] || "",
-      }));
-      setExperiences(expArray.length > 0 ? expArray : [{ role: "", company: "", duration: "", description: "" }]);
-    }
+        // Experiences
+        const jobRoles = Array.isArray(data.job_role) ? data.job_role : [];
+        const companies = Array.isArray(data.company) ? data.company : [];
+        const durations = Array.isArray(data.duration) ? data.duration : [];
+        const descriptions = Array.isArray(data.description)
+          ? data.description
+          : [];
+        const maxLength = Math.max(
+          jobRoles.length,
+          companies.length,
+          durations.length,
+          descriptions.length,
+        );
+        const expArray = Array.from({ length: maxLength }, (_, i) => ({
+          role: jobRoles[i] || "",
+          company: companies[i] || "",
+          duration: durations[i] || "",
+          description: descriptions[i] || "",
+        }));
+        setExperiences(
+          expArray.length > 0
+            ? expArray
+            : [{ role: "", company: "", duration: "", description: "" }],
+        );
+      }
 
-    setLoading(false);
-  };
+      setLoading(false);
+    };
 
-  const savedImage = localStorage.getItem("profile_image");
-  if (savedImage) setProfileImage(getFullImageUrl(savedImage));
+    const savedImage = localStorage.getItem("profile_image");
+    if (savedImage) setProfileImage(getFullImageUrl(savedImage));
 
-  init().catch(() => {
-    setError("Network error. Please try again.");
-    setLoading(false);
-  });
-}, []);
+    init().catch(() => {
+      setError("Network error. Please try again.");
+      setLoading(false);
+    });
+  }, []);
 
   const fetchProfileData = async () => {
     try {
@@ -182,6 +205,7 @@ const IndividualEditProfile = () => {
         const data = result.data;
 
         setProfileData({
+          user_id: data.id || data.user_id || "",   //added by vijay sync Common User Api
           name: data.name || "",
           describes: data.describes || "",
           registration_id: data.registration_id || "",
@@ -207,7 +231,6 @@ const IndividualEditProfile = () => {
 
         // ✅ SDG load from API — multiple formats handle karo
         let sdgIds = [];
-        // ❌ Pehle wala — parseInt se numbers try karta tha
         // ✅ Names ko ref mein store karo (IDs nahi, names hain)
         const rawSdg = data.developement_goals || [];
         const sdgNames = Array.isArray(rawSdg) ? rawSdg : [];
@@ -299,6 +322,204 @@ const IndividualEditProfile = () => {
       console.error("SDG fetch error:", err);
     }
   };
+
+  // sync Common User Api start vijay
+  // const syncCommonUserApi_right = async (userId) => {
+  //   try {
+  //     const localUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+  //     const finalUserId =
+  //       userId ||
+  //       profileData.user_id ||
+  //       localStorage.getItem("user_id") ||
+  //       localUser.user_id ||
+  //       localUser.id;
+
+  //     if (!finalUserId) {
+  //       console.error("Common User Sync Failed: local user id not found");
+  //       return false;
+  //     }
+
+  //     const commonUserPayload = {
+  //       name: profileData.name,
+  //       email: profileData.email,
+  //       mobile: "",
+  //       address: "",
+  //       country: profileData.country,
+  //       state: profileData.state,
+  //       city: profileData.city,
+  //       pincode: profileData.pincode,
+  //       age: null,
+  //       category: "Individual",
+  //       platform: "RESEARCH_NETWORK",
+  //       platform_user_id: String(finalUserId),
+  //     };
+
+  //     const commonResponse = await fetch(
+  //       "https://common-users.onrender.com/api/users/register",
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Accept: "application/json",
+  //           "x-api-key": "beej_bhandar_common_secret_123",
+  //         },
+  //         body: JSON.stringify(commonUserPayload),
+  //       }
+  //     );
+
+  //     const commonText = await commonResponse.text();
+
+  //     let commonData = {};
+  //     try {
+  //       commonData = commonText ? JSON.parse(commonText) : {};
+  //     } catch (err) {
+  //       commonData = { rawResponse: commonText };
+  //     }
+
+  //     if (!commonResponse.ok || commonData.status === false) {
+  //       console.error("Common User API Sync Failed:", commonData);
+  //       return false;
+  //     }
+
+  //     return true;
+  //   } catch (error) {
+  //     console.error("Common User API Error:", error);
+  //     return false;
+  //   }
+  // };
+
+
+
+
+  // sync Common User Api start vijay
+const syncCommonUserApi = async (userId) => {
+  try {
+    const localUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+    const finalUserId =
+      userId ||
+      profileData.user_id ||
+      localStorage.getItem("user_id") ||
+      localUser.user_id ||
+      localUser.id;
+
+    if (!finalUserId) {
+      console.error("Common User Sync Failed: local user id not found");
+      return false;
+    }
+
+    const selectedSdgGoals = sdgGoals.map((id) => {
+      const goal = SDG_GOALS.find((g) => g.id === id);
+      return goal ? goal.label : String(id);
+    });
+
+    const jobRoles = experiences
+      .map((exp) => exp.role)
+      .filter((value) => value && value.trim() !== "");
+
+    const companies = experiences
+      .map((exp) => exp.company)
+      .filter((value) => value && value.trim() !== "");
+
+    const durations = experiences
+      .map((exp) => exp.duration)
+      .filter((value) => value && value.trim() !== "");
+
+    const descriptions = experiences
+      .map((exp) => exp.description)
+      .filter((value) => value && value.trim() !== "");
+
+    const extraData = {
+      describes: profileData.describes,
+      registration_id: profileData.registration_id,
+      date_of_birth: profileData.date_of_birth,
+      location: profileData.location,
+      language: profileData.language,
+      short_bio: profileData.short_bio,
+      current_research: profileData.current_research,
+      linkedin: profileData.linkedin,
+      research_gate: profileData.research_gate,
+      orc_id: profileData.orc_id,
+      personal_website: profileData.personal_website,
+      profile_image: profileData.profile_image,
+
+      interest: tags,
+      job_role: jobRoles,
+      company: companies,
+      duration: durations,
+      description: descriptions,
+      developement_goals: selectedSdgGoals,
+    };
+
+    Object.keys(extraData).forEach((key) => {
+      const value = extraData[key];
+
+      if (
+        value === "" ||
+        value === null ||
+        value === undefined ||
+        (Array.isArray(value) && value.length === 0)
+      ) {
+        delete extraData[key];
+      }
+    });
+
+    const commonUserPayload = {
+      name: profileData.name,
+      email: profileData.email,
+      mobile: "",
+      address: "",
+      country: profileData.country,
+      state: profileData.state,
+      city: profileData.city,
+      pincode: profileData.pincode,
+      age: null,
+      category: "Individual",
+      platform: "RESEARCH_NETWORK",
+      platform_user_id: String(finalUserId),
+      extra_data: extraData,
+    };
+
+    const commonResponse = await fetch(
+      "https://common-users.onrender.com/api/users/register",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "x-api-key": "beej_bhandar_common_secret_123",
+        },
+        body: JSON.stringify(commonUserPayload),
+      }
+    );
+
+    const commonText = await commonResponse.text();
+
+    let commonData = {};
+    try {
+      commonData = commonText ? JSON.parse(commonText) : {};
+    } catch (err) {
+      commonData = { rawResponse: commonText };
+    }
+
+    if (!commonResponse.ok || commonData.status === false) {
+      console.error("Common User API Sync Failed:", commonData);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Common User API Error:", error);
+    return false;
+  }
+};
+
+  
+  // sync Common User Api end vijay
+
+
+
   const handleSaveChanges = async () => {
     try {
       setSaving(true);
@@ -376,6 +597,8 @@ const IndividualEditProfile = () => {
       const result = await response.json();
 
       if (result.status) {
+        await syncCommonUserApi();   //added by vijay sync Common User Api
+
         setSuccessMessage("Profile updated successfully!");
         setTimeout(() => {
           navigate("/dashboard/individual-profile");
@@ -523,8 +746,16 @@ const IndividualEditProfile = () => {
     setExperiences(updated);
   };
 
-  const inputClass =
-    "w-full bg-black/40 border border-[#1a1a1a] rounded-lg px-4 py-3 text-white focus:border-[#0df287] focus:ring-1 focus:ring-[#0df287] outline-none transition-all placeholder:text-slate-600";
+  const inputClass = `
+w-full 
+bg-gray-50 dark:bg-black/40   // ✅ soft off-white
+border border-gray-300 dark:border-[#1a1a1a] 
+rounded-lg px-4 py-3 
+text-slate-800 dark:text-white
+placeholder:text-slate-400 dark:placeholder:text-slate-600
+focus:border-[#0df287] focus:ring-1 focus:ring-[#0df287] 
+outline-none transition-all
+`;
   const labelClass =
     "text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block";
 
@@ -542,8 +773,10 @@ const IndividualEditProfile = () => {
     <DashboardLayout>
       <div className="mx-auto px-4 py-4 pb-24 max-w-7xl">
         <header className="mb-10">
-          <h2 className="text-3xl font-bold text-white">Edit Profile</h2>
-          <p className="text-slate-400 mt-1">
+          <h2 className="text-3xl font-bold text-slate-800 dark:text-white">
+            Edit Profile
+          </h2>
+          <p className="text-slate-600 dark:text-slate-400 mt-1">
             Update your personal and professional information.
           </p>
         </header>
@@ -562,7 +795,15 @@ const IndividualEditProfile = () => {
 
         {/* AVATAR SECTION */}
         <section className="mb-8">
-          <div className="flex flex-col md:flex-row items-center gap-8 bg-[#0a0a0a]/50 p-8 rounded-2xl border border-[#1a1a1a]">
+          <div
+            className="
+flex flex-col md:flex-row items-center gap-8 
+bg-white dark:bg-[#0a0a0a]/50
+p-8 rounded-2xl 
+border border-gray-200 dark:border-[#1a1a1a]
+"
+          >
+            {" "}
             <div className="flex flex-col items-center gap-3">
               <div className="relative group">
                 <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-[#0df287]/30 flex items-center justify-center bg-black">
@@ -585,9 +826,9 @@ const IndividualEditProfile = () => {
                   <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
                     <MaterialIcon
                       name="photo_camera"
-                      className="text-white text-2xl"
+                      className="text-slate-800 dark:text-white text-2xl"
                     />
-                    <span className="text-[10px] text-white font-bold uppercase mt-1">
+                    <span className="text-[10px] text-slate-800 dark:text-white font-bold uppercase mt-1">
                       {uploading ? "Uploading..." : "Upload"}
                     </span>
                     <input
@@ -617,7 +858,6 @@ const IndividualEditProfile = () => {
                 </button>
               )}
             </div>
-
             <div className="flex-1 space-y-4 w-full">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -651,10 +891,10 @@ const IndividualEditProfile = () => {
 
         <div className="flex flex-col gap-6">
           {/* PERSONAL INFORMATION CARD */}
-          <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl">
-            <div className="px-8 py-6 border-b border-[#1a1a1a] flex items-center gap-3">
+          <div className="bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-[#1a1a1a] rounded-2xl  shadow-2xl">
+            <div className="px-8 py-6 border-b border-gray-200 dark:border-[#1a1a1a] flex items-center gap-3">
               <MaterialIcon name="person" className="text-[#0df287]" />
-              <h2 className="text-xl font-bold text-white">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-white">
                 Personal Information
               </h2>
             </div>
@@ -664,13 +904,13 @@ const IndividualEditProfile = () => {
                 <div className="relative">
                   {/* Display box — non-interactive, sirf dikhata hai */}
                   <div
-                    className="w-full bg-black/40 border border-[#1a1a1a] rounded-lg px-4 py-3 text-white outline-none transition-all flex items-center justify-between cursor-default select-none"
+                    className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-[#1a1a1a] rounded-lg px-4 py-3 text-slate-800 dark:text-white outline-none transition-all flex items-center justify-between cursor-default select-none"
                     style={{ minHeight: "48px" }}
                   >
                     <span
                       className={
                         profileData.date_of_birth
-                          ? "text-white"
+                          ? "text-slate-800 dark:text-white"
                           : "text-slate-600"
                       }
                     >
@@ -705,7 +945,13 @@ const IndividualEditProfile = () => {
                     disabled={saving}
                     className="absolute inset-0 opacity-0 pointer-events-none w-full h-full"
                     tabIndex={-1}
-                    style={{ colorScheme: "dark" }}
+                    style={{
+                      colorScheme: document.documentElement.classList.contains(
+                        "dark",
+                      )
+                        ? "dark"
+                        : "light",
+                    }}
                   />
                 </div>
               </div>
@@ -788,10 +1034,10 @@ const IndividualEditProfile = () => {
           </div>
 
           {/* PROFESSIONAL INFORMATION CARD */}
-          <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl">
-            <div className="px-8 py-6 border-b border-[#1a1a1a] flex items-center gap-3">
+          <div className="bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl">
+            <div className="px-8 py-6 border-b border-gray-200 dark:border-[#1a1a1a] flex items-center gap-3">
               <MaterialIcon name="school" className="text-[#0df287]" />
-              <h2 className="text-xl font-bold text-white">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-white">
                 Professional Information
               </h2>
             </div>
@@ -807,12 +1053,14 @@ const IndividualEditProfile = () => {
                     <button
                       type="button"
                       onClick={() => setShowSdgDropdown(!showSdgDropdown)}
-                      className="w-full flex items-center justify-between bg-black/40 border border-[#1a1a1a] rounded-lg px-4 py-3 text-white hover:border-[#0df287] transition-all text-sm"
+                      className="w-full flex items-center justify-between bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-[#1a1a1a] rounded-lg px-4 py-3 text-slate-800 dark:text-white hover:border-[#0df287] transition-all text-sm"
                       disabled={saving}
                     >
                       <span
                         className={
-                          sdgGoals.length > 0 ? "text-white" : "text-slate-600"
+                          sdgGoals.length > 0
+                            ? "text-slate-800 dark:text-white"
+                            : "text-slate-600"
                         }
                       >
                         {SDG_GOALS.length === 0
@@ -821,14 +1069,22 @@ const IndividualEditProfile = () => {
                             ? `${sdgGoals.length} SDG Goal${sdgGoals.length > 1 ? "s" : ""} selected`
                             : "Select SDG Goals..."}
                       </span>
-                      <span className="material-symbols-outlined text-slate-400 text-base">
+                      <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-base">
                         {showSdgDropdown ? "expand_less" : "expand_more"}
                       </span>
                     </button>
 
                     {/* Dropdown List */}
                     {showSdgDropdown && (
-                      <div className="absolute z-50 w-full mt-1 bg-[#0f0f0f] border border-[#1a1a1a] rounded-xl shadow-2xl max-h-72 overflow-y-auto">
+                      <div
+                        className="
+absolute z-50 w-full mt-1 
+bg-white dark:bg-[#0f0f0f] 
+border border-gray-200 dark:border-[#1a1a1a] 
+rounded-xl shadow-2xl max-h-72 overflow-y-auto
+"
+                      >
+                        {" "}
                         {SDG_GOALS.map((goal) => {
                           const isSelected = sdgGoals.includes(goal.id);
                           return (
@@ -848,7 +1104,8 @@ const IndividualEditProfile = () => {
                                 className="w-3 h-3 rounded-sm shrink-0"
                                 style={{ backgroundColor: goal.color }}
                               />
-                              <span className="text-xs text-slate-300 flex-1">
+                              <span className="text-xs text-slate-700 dark:text-slate-300 flex-1">
+                                {" "}
                                 <span className="font-bold text-slate-500 mr-1">
                                   SDG {goal.id}:
                                 </span>
@@ -860,11 +1117,11 @@ const IndividualEditProfile = () => {
                                   backgroundColor: isSelected
                                     ? goal.color
                                     : "transparent",
-                                  borderColor: isSelected ? goal.color : "#333",
+                                  borderColor: isSelected ? goal.color : "#ccc",
                                 }}
                               >
                                 {isSelected && (
-                                  <span className="material-symbols-outlined text-white text-xs leading-none">
+                                  <span className="material-symbols-outlined text-[12px] leading-none text-black dark:text-white">
                                     check
                                   </span>
                                 )}
@@ -887,18 +1144,21 @@ const IndividualEditProfile = () => {
                             key={id}
                             className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold"
                             style={{
-                              backgroundColor: goal.color + "22",
-                              border: `1px solid ${goal.color}55`,
+                              backgroundColor: goal.color + "15",
+                              border: `1px solid ${goal.color}40`,
+                              color: goal.color,
                             }}
                           >
                             <span
                               className="w-2 h-2 rounded-sm"
                               style={{ backgroundColor: goal.color }}
                             />
-                            <span style={{ color: goal.color }}>
+                            <span className="text-slate-400 dark:text-slate-300">
                               SDG {goal.id}:
                             </span>
-                            <span className="text-slate-300">{goal.label}</span>
+                            <span className="text-slate-700 dark:text-slate-300">
+                              {goal.label}
+                            </span>
                             <button
                               type="button"
                               onClick={() =>
@@ -923,7 +1183,7 @@ const IndividualEditProfile = () => {
                   <label className={labelClass}>
                     Collaboration Interests (Tags)
                   </label>
-                  <div className="flex flex-wrap gap-2 p-3 bg-black/40 border border-[#1a1a1a] rounded-lg min-h-[48px]">
+                  <div className="flex flex-wrap gap-2 p-3 bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-[#1a1a1a] rounded-lg min-h-[48px]">
                     {tags.map((tag, index) => (
                       <span
                         key={index}
@@ -944,7 +1204,7 @@ const IndividualEditProfile = () => {
                       value={tagInput}
                       onChange={(e) => setTagInput(e.target.value)}
                       onKeyDown={handleAddTag}
-                      className="bg-transparent border-none p-0 text-xs text-white focus:ring-0 w-24 outline-none"
+                      className="bg-transparent border-none p-0 text-xs text-slate-800 dark:text-white focus:ring-0 w-24 outline-none"
                       placeholder="+ Add tag"
                       type="text"
                       disabled={saving}
@@ -975,7 +1235,7 @@ const IndividualEditProfile = () => {
                   {experiences.map((exp, index) => (
                     <div
                       key={index}
-                      className="p-6 bg-black/20 rounded-2xl border border-[#1a1a1a] space-y-6 relative group"
+                      className="p-6 bg-gray-100 dark:bg-black/20 rounded-2xl border border-gray-200 dark:border-[#1a1a1a] space-y-6 relative group"
                     >
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="space-y-1">
@@ -1083,10 +1343,12 @@ const IndividualEditProfile = () => {
           </div>
 
           {/* CONTACT & SOCIAL CARD */}
-          <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl">
-            <div className="px-8 py-6 border-b border-[#1a1a1a] flex items-center gap-3">
+          <div className="bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl">
+            <div className="px-8 py-6 border-b border-gray-200 dark:border-[#1a1a1a] flex items-center gap-3">
               <MaterialIcon name="contact_support" className="text-[#0df287]" />
-              <h2 className="text-xl font-bold text-white">Contact & Social</h2>
+              <h2 className="text-xl font-bold text-slate-800 dark:text-white">
+                Contact & Social
+              </h2>
             </div>
             <div className="p-8 space-y-4 max-w-2xl">
               <div className="space-y-2">
@@ -1184,10 +1446,10 @@ const IndividualEditProfile = () => {
           </div>
 
           {/* ACTION BUTTONS */}
-          <div className="mt-8 pt-8 border-t border-[#1a1a1a] flex items-center justify-end gap-4">
+          <div className="mt-8 pt-8 border-t border-gray-200 dark:border-[#1a1a1a] flex items-center justify-end gap-4">
             <button
               onClick={() => navigate("/dashboard/individual-profile")}
-              className="px-8 py-3 text-slate-400 hover:text-white transition-colors font-bold text-sm"
+              className="px-8 py-3 text-slate-400 hover:text-slate-800 dark:text-slate-800 dark:text-white transition-colors font-bold text-sm"
               disabled={saving || uploading}
             >
               Discard Changes

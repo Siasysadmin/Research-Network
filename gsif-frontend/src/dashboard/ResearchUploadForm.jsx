@@ -30,7 +30,7 @@ const TypeOfImpact = ({ formData, setFormData, errors }) => {
 
   return (
     <div className="space-y-4 mt-6">
-      <label className="block text-sm font-medium text-slate-300">
+      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
         Type of Impact
       </label>
       <div className="flex flex-wrap gap-6">
@@ -41,9 +41,9 @@ const TypeOfImpact = ({ formData, setFormData, errors }) => {
             value="environmental"
             checked={formData.impactTypes.includes("environmental")}
             onChange={() => handleImpactChange("environmental")}
-            className="w-4 h-4 rounded text-[#32ff99] bg-white/5 border-white/10 focus:ring-[#32ff99]"
+            className="w-4 h-4 rounded text-[#32ff99] bg-[#f8fafc] border-gray-300 focus:ring-[#32ff99] dark:bg-white/5 dark:border-white/10"
           />
-          <span className="text-sm text-slate-400 group-hover:text-white transition-colors">
+          <span className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
             Environmental
           </span>
         </label>
@@ -55,9 +55,9 @@ const TypeOfImpact = ({ formData, setFormData, errors }) => {
             value="social"
             checked={formData.impactTypes.includes("social")}
             onChange={() => handleImpactChange("social")}
-            className="w-4 h-4 rounded text-[#32ff99] bg-white/5 border-white/10 focus:ring-[#32ff99]"
+            className="w-4 h-4 rounded text-[#32ff99] bg-[#f8fafc] border-gray-300 focus:ring-[#32ff99] dark:bg-white/5 dark:border-white/10"
           />
-          <span className="text-sm text-slate-400 group-hover:text-white transition-colors">
+          <span className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
             Social
           </span>
         </label>
@@ -69,9 +69,9 @@ const TypeOfImpact = ({ formData, setFormData, errors }) => {
             value="economic"
             checked={formData.impactTypes.includes("economic")}
             onChange={() => handleImpactChange("economic")}
-            className="w-4 h-4 rounded text-[#32ff99] bg-white/5 border-white/10 focus:ring-[#32ff99]"
+            className="w-4 h-4 rounded text-[#32ff99] bg-[#f8fafc] border-gray-300 focus:ring-[#32ff99] dark:bg-white/5 dark:border-white/10"
           />
-          <span className="text-sm text-slate-400 group-hover:text-white transition-colors">
+          <span className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
             Economic
           </span>
         </label>
@@ -87,9 +87,9 @@ const TypeOfImpact = ({ formData, setFormData, errors }) => {
 const ReviewStatusModal = ({ researchId, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-[#141414] border border-white/10 rounded-2xl max-w-md w-full shadow-2xl">
+      <div className="bg-white border border-gray-200 rounded-2xl max-w-md w-full shadow-2xl shadow-slate-200/70 dark:bg-[#141414] dark:border-white/10 dark:shadow-2xl">
         {/* Header */}
-        <div className="p-6 border-b border-white/10 bg-[#32ff99]/5">
+        <div className="p-6 border-b border-gray-200 bg-[#32ff99]/5 dark:border-white/10">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-[#32ff99]/20 rounded-full flex items-center justify-center">
               <span className="material-symbols-outlined text-[#32ff99] text-2xl">
@@ -97,8 +97,9 @@ const ReviewStatusModal = ({ researchId, onClose }) => {
               </span>
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">Under Review</h3>
-<p className="text-xs text-slate-400">Research ID: {researchId}</p>            </div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Under Review</h3>
+{/* <p className="text-xs text-slate-600 dark:text-slate-400">Research ID: {researchId}</p>      */}
+       </div>
           </div>
         </div>
 
@@ -106,19 +107,19 @@ const ReviewStatusModal = ({ researchId, onClose }) => {
         <div className="p-6 space-y-6">
           {/* Main Message */}
           <div className="space-y-4">
-            <p className="text-sm text-slate-300 leading-relaxed">
+            <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
               Your research profile is currently under review by our board members.
             </p>
 
             {/* Board Members Review Info */}
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+            <div className="bg-[#f8fafc] border border-gray-200 rounded-xl p-4 space-y-3 shadow-sm dark:bg-white/5 dark:border-white/10 dark:shadow-none">
               <div className="flex items-start gap-3">
                 <span className="material-symbols-outlined text-[#32ff99] text-lg flex-shrink-0 mt-0.5">
                   groups
                 </span>
                 <div>
-                  <p className="text-sm font-medium text-white">Board Review</p>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-sm font-medium text-slate-900 dark:text-white">Board Review</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
                     5 board members will evaluate your research
                   </p>
                 </div>
@@ -126,14 +127,14 @@ const ReviewStatusModal = ({ researchId, onClose }) => {
             </div>
 
             {/* Approval Requirement */}
-            <div className="bg-white/5 border border-[#32ff99]/20 rounded-xl p-4 space-y-3">
+            <div className="bg-[#f8fafc] border border-[#32ff99]/20 rounded-xl p-4 space-y-3 shadow-sm dark:bg-white/5 dark:shadow-none">
               <div className="flex items-start gap-3">
                 <span className="material-symbols-outlined text-[#32ff99] text-lg flex-shrink-0 mt-0.5">
                   check_circle
                 </span>
                 <div>
-                  <p className="text-sm font-medium text-white">Approval Requirement</p>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-sm font-medium text-slate-900 dark:text-white">Approval Requirement</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
                     Your research will be made public only after 3 or more board members approve it
                   </p>
                 </div>
@@ -141,14 +142,14 @@ const ReviewStatusModal = ({ researchId, onClose }) => {
             </div>
 
             {/* Rejection Policy */}
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+            <div className="bg-[#f8fafc] border border-gray-200 rounded-xl p-4 space-y-3 shadow-sm dark:bg-white/5 dark:border-white/10 dark:shadow-none">
               <div className="flex items-start gap-3">
                 <span className="material-symbols-outlined text-amber-500 text-lg flex-shrink-0 mt-0.5">
                   info
                 </span>
                 <div>
-                  <p className="text-sm font-medium text-white">If Rejected</p>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-sm font-medium text-slate-900 dark:text-white">If Rejected</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
                     You will have 2 chances to reupload and resubmit the same research for approval
                   </p>
                 </div>
@@ -158,14 +159,14 @@ const ReviewStatusModal = ({ researchId, onClose }) => {
 
           {/* Timeline Info */}
           <div className="bg-[#32ff99]/10 border border-[#32ff99]/20 rounded-xl p-3">
-            <p className="text-xs text-slate-300 text-center">
+            <p className="text-xs text-slate-700 dark:text-slate-300 text-center">
               You will be notified once the review is complete
             </p>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-white/10 flex gap-3">
+        <div className="p-6 border-t border-gray-200 dark:border-white/10 flex gap-3">
           <button
             onClick={onClose}
             className="flex-1 bg-[#32ff99] hover:bg-[#32ff99]/90 text-black px-4 py-2.5 rounded-lg font-semibold text-sm transition-all"
@@ -272,7 +273,6 @@ const ResearchUploadForm = () => {
         }
 
         const apiUrl = `${API_CONFIG.BASE_URL}/research/get-sdg-goals`;
-        console.log("Fetching from URL:", apiUrl);
 
         const response = await fetch(apiUrl, {
           method: "GET",
@@ -632,7 +632,6 @@ const ResearchUploadForm = () => {
       );
 
       const result = await response.json();
-      console.log("Full Server Response:", result);
 
       if (result.status) {
         setUploadStatus({
@@ -647,7 +646,6 @@ const ResearchUploadForm = () => {
         throw new Error(result.message || "Server rejected the data.");
       }
     } catch (err) {
-      console.error("Upload Error:", err);
       setUploadStatus({
         loading: false,
         success: false,
@@ -765,9 +763,9 @@ useEffect(() => {
         )}
 
         <div className="space-y-8">
-          <div className="bg-[#141414] rounded-2xl border border-white/5 overflow-hidden">
-            <div className="p-6 border-b border-white/5 bg-white/5">
-              <h2 className="text-xl font-bold flex items-center gap-2">
+          <div className="bg-white dark:bg-[#141414] rounded-2xl border border-gray-200 dark:border-white/5 overflow-hidden shadow-sm">
+            <div className="p-6 border-b border-gray-200 dark:border-white/5 bg-[#f8fafc] dark:bg-white/5">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#32ff99]">
                   description
                 </span>
@@ -780,7 +778,7 @@ useEffect(() => {
               <div className="space-y-1">
                 <label
                   htmlFor="title"
-                  className="block mb-2 text-sm font-medium text-slate-300"
+                  className="block mb-2 text-sm font-medium text-slate-700 dark:text-slate-300"
                 >
                   Research Title
                   <RequiredStar />
@@ -792,7 +790,7 @@ useEffect(() => {
                   value={formData.title}
                   onChange={handleInputChange}
                   placeholder="Enter full research paper title"
-                  className={`w-full px-4 py-2.5 bg-white/5 border text-white rounded-lg focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none ${errors.title ? "border-red-500" : "border-white/10"}`}
+                  className={`w-full px-4 py-2.5 bg-[#f8fafc] dark:bg-[#1a1c1b] border text-slate-900 dark:text-white rounded-lg shadow-sm dark:shadow-none focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none ${errors.title ? "border-red-500" : "border-gray-300 dark:border-white/10"}`}
                 />
                 <ErrorMsg field="title" />
               </div>
@@ -802,7 +800,7 @@ useEffect(() => {
                 <div className="space-y-1">
                   <label
                     htmlFor="type"
-                    className="block mb-2 text-sm font-medium text-slate-300"
+                    className="block mb-2 text-sm font-medium text-slate-700 dark:text-slate-300"
                   >
                     Type of Research
                     <RequiredStar />
@@ -813,67 +811,35 @@ useEffect(() => {
                       name="type"
                       value={formData.type}
                       onChange={handleInputChange}
-                      className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none appearance-none cursor-pointer ${errors.type ? "border-red-500" : ""}`}
-                      style={{
-                        backgroundColor: "#1E1E1E",
-                        borderColor: errors.type
-                          ? "#ef4444"
-                          : "rgba(255,255,255,0.1)",
-                        color: "#FFFFFF",
-                      }}
+                      className={`w-full px-4 py-2.5 bg-[#f8fafc] dark:bg-[#1a1c1b] border rounded-lg text-slate-900 dark:text-white shadow-sm dark:shadow-none focus:ring-2 focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none appearance-none cursor-pointer ${errors.type ? "border-red-500" : "border-gray-300 dark:border-white/10"}`}
                     >
-                      <option
-                        value=""
-                        disabled
-                        style={{ backgroundColor: "#1E1E1E", color: "#94A3B8" }}
-                      >
+                      <option value="" disabled>
                         Select type
                       </option>
-                      <option
-                        value="Field Study"
-                        style={{ backgroundColor: "#1E1E1E", color: "#FFFFFF" }}
-                      >
+                      <option value="Field Study">
                         Field Study
                       </option>
-                      <option
-                        value="Survey"
-                        style={{ backgroundColor: "#1E1E1E", color: "#FFFFFF" }}
-                      >
+                      <option value="Survey">
                         Survey
                       </option>
-                      <option
-                        value="Laboratory"
-                        style={{ backgroundColor: "#1E1E1E", color: "#FFFFFF" }}
-                      >
+                      <option value="Laboratory">
                         Laboratory
                       </option>
-                      <option
-                        value="Review Paper"
-                        style={{ backgroundColor: "#1E1E1E", color: "#FFFFFF" }}
-                      >
+                      <option value="Review Paper">
                         Review Paper
                       </option>
-                      <option
-                        value="Policy Paper"
-                        style={{ backgroundColor: "#1E1E1E", color: "#FFFFFF" }}
-                      >
+                      <option value="Policy Paper">
                         Policy Paper
                       </option>
-                      <option
-                        value="White Paper"
-                        style={{ backgroundColor: "#1E1E1E", color: "#FFFFFF" }}
-                      >
+                      <option value="White Paper">
                         White Paper
                       </option>
-                      <option
-                        value="Case Study"
-                        style={{ backgroundColor: "#1E1E1E", color: "#FFFFFF" }}
-                      >
+                      <option value="Case Study">
                         Case Study
                       </option>
                     </select>
                     <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                      <span className="material-symbols-outlined text-slate-400">
+                      <span className="material-symbols-outlined text-slate-600 dark:text-slate-400">
                         expand_more
                       </span>
                     </div>
@@ -884,7 +850,7 @@ useEffect(() => {
                 <div className="space-y-1">
                   <label
                     htmlFor="language"
-                    className="block mb-2 text-sm font-medium text-slate-300"
+                    className="block mb-2 text-sm font-medium text-slate-700 dark:text-slate-300"
                   >
                     Language of Research
                     <RequiredStar />
@@ -903,7 +869,7 @@ useEffect(() => {
                           }))
                         }
                         placeholder="Enter language"
-                        className="w-full px-4 py-2.5 bg-white/5 border text-white rounded-lg border-white/10 focus:ring-[#32ff99] focus:border-[#32ff99] outline-none"
+                        className="w-full px-4 py-2.5 bg-[#f8fafc] dark:bg-[#1a1c1b] border text-slate-900 dark:text-white rounded-lg border-gray-300 dark:border-white/10 shadow-sm dark:shadow-none focus:ring-[#32ff99] focus:border-[#32ff99] outline-none"
                       />
                     ) : (
                       <select
@@ -911,14 +877,7 @@ useEffect(() => {
                         name="language"
                         value={formData.language}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#32ff99] focus:border-[#32ff99] outline-none appearance-none cursor-pointer"
-                        style={{
-                          backgroundColor: "#1E1E1E",
-                          borderColor: errors.language
-                            ? "#ef4444"
-                            : "rgba(255,255,255,0.1)",
-                          color: "#FFFFFF",
-                        }}
+                        className={`w-full px-4 py-2.5 bg-[#f8fafc] dark:bg-[#1a1c1b] border rounded-lg text-slate-900 dark:text-white shadow-sm dark:shadow-none focus:ring-2 focus:ring-[#32ff99] focus:border-[#32ff99] outline-none appearance-none cursor-pointer ${errors.language ? "border-red-500" : "border-gray-300 dark:border-white/10"}`}
                       >
                         <option value="" disabled>
                           Select language
@@ -942,12 +901,12 @@ useEffect(() => {
                 <div className="flex justify-between items-end">
                   <label
                     htmlFor="abstract"
-                    className="block mb-2 text-sm font-medium text-slate-300"
+                    className="block mb-2 text-sm font-medium text-slate-700 dark:text-slate-300"
                   >
                     Abstract
                     <RequiredStar />
                   </label>
-                  <span className="text-[10px] text-slate-500 font-bold mb-2 uppercase tracking-wide">
+                  <span className="text-[10px] text-slate-500 dark:text-slate-500 font-bold mb-2 uppercase tracking-wide">
                     300–500 words limit
                   </span>
                 </div>
@@ -958,10 +917,10 @@ useEffect(() => {
                   onChange={handleInputChange}
                   placeholder="Provide a concise summary of your research..."
                   rows="6"
-                  className={`w-full px-4 py-2.5 bg-white/5 border text-white rounded-lg focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none ${errors.abstract ? "border-red-500" : "border-white/10"}`}
+                  className={`w-full px-4 py-2.5 bg-[#f8fafc] dark:bg-[#1a1c1b] border text-slate-900 dark:text-white rounded-lg shadow-sm dark:shadow-none focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none ${errors.abstract ? "border-red-500" : "border-gray-300 dark:border-white/10"}`}
                 />
                 <div className="flex justify-end mt-1">
-                  <span className="text-[10px] bg-white/5 px-2 py-1 rounded text-slate-400 border border-white/5 font-mono">
+                  <span className="text-[10px] bg-white px-2 py-1 rounded text-slate-600 dark:text-slate-400 border border-gray-200 dark:border-white/5 font-mono shadow-sm dark:bg-white/5 dark:shadow-none">
                     {wordCount} / 500 words
                   </span>
                 </div>
@@ -973,14 +932,14 @@ useEffect(() => {
                 <div className="md:col-span-2 space-y-1">
                   <label
                     htmlFor="keywords"
-                    className="block mb-2 text-sm font-medium text-slate-300"
+                    className="block mb-2 text-sm font-medium text-slate-700 dark:text-slate-300"
                   >
                     Keywords
                     <RequiredStar />
                   </label>
                   <div className="relative group">
                     <div
-                      className={`flex flex-wrap gap-2 p-2 bg-white/5 border rounded-lg focus-within:ring-[#32ff99] focus-within:border-[#32ff99] transition-all ${errors.keywords ? "border-red-500" : "border-white/10"}`}
+                      className={`flex flex-wrap gap-2 p-2 bg-white dark:bg-white/5 border rounded-lg shadow-sm dark:shadow-none focus-within:ring-[#32ff99] focus-within:border-[#32ff99] transition-all ${errors.keywords ? "border-red-500" : "border-gray-300 dark:border-white/10"}`}
                     >
                       {formData.keywords.map((keyword, index) => (
                         <span
@@ -991,7 +950,7 @@ useEffect(() => {
                           <button
                             type="button"
                             onClick={() => removeKeyword(keyword)}
-                            className="hover:text-white"
+                            className="hover:text-slate-900 dark:hover:text-white"
                           >
                             <MaterialIcon name="close" className="text-sm" />
                           </button>
@@ -1008,7 +967,7 @@ useEffect(() => {
                             ? "Type and press Enter to add tags"
                             : ""
                         }
-                        className="flex-1 min-w-[120px] bg-transparent border-none focus:ring-0 outline-none text-white placeholder-slate-500"
+                        className="flex-1 min-w-[120px] bg-transparent border-none focus:ring-0 outline-none text-slate-900 dark:text-white placeholder-slate-500"
                       />
                     </div>
                     <div className="absolute right-3 top-2.5">
@@ -1023,7 +982,7 @@ useEffect(() => {
                 <div className="space-y-1">
                   <label
                     htmlFor="year"
-                    className="block mb-2 text-sm font-medium text-slate-300"
+                    className="block mb-2 text-sm font-medium text-slate-700 dark:text-slate-300"
                   >
                     Year of Research
                     <RequiredStar />
@@ -1042,15 +1001,15 @@ useEffect(() => {
   }}
   placeholder="YYYY"
   step="1"
-                    className={`w-full px-4 py-2.5 bg-white/5 border text-white rounded-lg focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none ${errors.year ? "border-red-500" : "border-white/10"}`}
+                    className={`w-full px-4 py-2.5 bg-[#f8fafc] dark:bg-[#1a1c1b] border text-slate-900 dark:text-white rounded-lg shadow-sm dark:shadow-none focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none ${errors.year ? "border-red-500" : "border-gray-300 dark:border-white/10"}`}
                   />
                   <ErrorMsg field="year" />
                 </div>
               </div>
 
               {/* Geographical Relevance */}
-              <div className="space-y-4 pt-4 border-t border-white/5">
-                <label className="block mb-2 text-sm font-medium text-slate-300">
+              <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-white/5">
+                <label className="block mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">
                   Geographical Relevance
                   <RequiredStar />
                 </label>
@@ -1072,12 +1031,12 @@ useEffect(() => {
                     ].map((geo) => (
                       <label
                         key={geo.value}
-                        className={`relative flex items-center justify-center border rounded-xl p-4 cursor-pointer hover:bg-white/5 transition-all group ${
+                        className={`relative flex items-center justify-center border rounded-xl p-4 cursor-pointer hover:bg-[#f8fafc] dark:hover:bg-white/5 transition-all group ${
                           formData.geography === geo.value
                             ? "border-[#32ff99] bg-[#32ff99]/5"
                             : errors.geography
                               ? "border-red-500/50"
-                              : "border-white/10"
+                              : "border-gray-300 dark:border-white/10"
                         }`}
                       >
                         <input
@@ -1090,7 +1049,7 @@ useEffect(() => {
                         />
                         <div className="text-center">
                           <div
-                            className={`text-sm font-semibold ${formData.geography === geo.value ? "text-[#32ff99]" : "text-slate-400 group-hover:text-slate-200"} transition-colors`}
+                            className={`text-sm font-semibold ${formData.geography === geo.value ? "text-[#32ff99]" : "text-slate-700 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200"} transition-colors`}
                           >
                             {geo.label}
                           </div>
@@ -1108,7 +1067,7 @@ useEffect(() => {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* District */}
                         <div>
-                          <label className="block mb-2 text-sm font-medium text-slate-300">
+                          <label className="block mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">
                             Enter District
                             <RequiredStar />
                           </label>
@@ -1125,14 +1084,14 @@ useEffect(() => {
                                 setErrors((prev) => ({ ...prev, district: "" }));
                             }}
                             placeholder="Enter district name"
-                            className={`w-full px-4 py-2.5 bg-white/5 border text-white rounded-lg focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none ${errors.district ? "border-red-500" : "border-white/10"}`}
+                            className={`w-full px-4 py-2.5 bg-[#f8fafc] dark:bg-[#1a1c1b] border text-slate-900 dark:text-white rounded-lg shadow-sm dark:shadow-none focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none ${errors.district ? "border-red-500" : "border-gray-300 dark:border-white/10"}`}
                           />
                           <ErrorMsg field="district" />
                         </div>
 
                         {/* State */}
                         <div>
-                          <label className="block mb-2 text-sm font-medium text-slate-300">
+                          <label className="block mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">
                             Enter State
                             <RequiredStar />
                           </label>
@@ -1149,14 +1108,14 @@ useEffect(() => {
                                 setErrors((prev) => ({ ...prev, state: "" }));
                             }}
                             placeholder="Enter state name"
-                            className={`w-full px-4 py-2.5 bg-white/5 border text-white rounded-lg focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none ${errors.state ? "border-red-500" : "border-white/10"}`}
+                            className={`w-full px-4 py-2.5 bg-[#f8fafc] dark:bg-[#1a1c1b] border text-slate-900 dark:text-white rounded-lg shadow-sm dark:shadow-none focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none ${errors.state ? "border-red-500" : "border-gray-300 dark:border-white/10"}`}
                           />
                           <ErrorMsg field="state" />
                         </div>
 
                         {/* Country */}
                         <div>
-                          <label className="block mb-2 text-sm font-medium text-slate-300">
+                          <label className="block mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">
                             Enter Country
                             <RequiredStar />
                           </label>
@@ -1173,7 +1132,7 @@ useEffect(() => {
                                 setErrors((prev) => ({ ...prev, country: "" }));
                             }}
                             placeholder="Enter country name"
-                            className={`w-full px-4 py-2.5 bg-white/5 border text-white rounded-lg focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none ${errors.country ? "border-red-500" : "border-white/10"}`}
+                            className={`w-full px-4 py-2.5 bg-[#f8fafc] dark:bg-[#1a1c1b] border text-slate-900 dark:text-white rounded-lg shadow-sm dark:shadow-none focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none ${errors.country ? "border-red-500" : "border-gray-300 dark:border-white/10"}`}
                           />
                           <ErrorMsg field="country" />
                         </div>
@@ -1184,7 +1143,7 @@ useEffect(() => {
                       <div>
                         <label
                           htmlFor="state"
-                          className="block mb-2 text-sm font-medium text-slate-300"
+                          className="block mb-2 text-sm font-medium text-slate-700 dark:text-slate-300"
                         >
                           Enter State
                           <RequiredStar />
@@ -1203,7 +1162,7 @@ useEffect(() => {
                               setErrors((prev) => ({ ...prev, state: "" }));
                           }}
                           placeholder="Enter state name"
-                          className={`w-full px-4 py-2.5 bg-white/5 border text-white rounded-lg focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none ${errors.state ? "border-red-500" : "border-white/10"}`}
+                          className={`w-full px-4 py-2.5 bg-[#f8fafc] dark:bg-[#1a1c1b] border text-slate-900 dark:text-white rounded-lg shadow-sm dark:shadow-none focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none ${errors.state ? "border-red-500" : "border-gray-300 dark:border-white/10"}`}
                         />
                         <ErrorMsg field="state" />
                       </div>
@@ -1213,7 +1172,7 @@ useEffect(() => {
                       <div>
                         <label
                           htmlFor="country-readonly"
-                          className="block mb-2 text-sm font-medium text-slate-300"
+                          className="block mb-2 text-sm font-medium text-slate-700 dark:text-slate-300"
                         >
                           Enter Country
                           <RequiredStar />
@@ -1231,7 +1190,7 @@ useEffect(() => {
                               setErrors((prev) => ({ ...prev, state: "" }));
                           }}
                           placeholder="Enter Country name"
-                          className={`w-full px-4 py-2.5 bg-white/5 border text-white rounded-lg focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none ${errors.state ? "border-red-500" : "border-white/10"}`}
+                          className={`w-full px-4 py-2.5 bg-[#f8fafc] dark:bg-[#1a1c1b] border text-slate-900 dark:text-white rounded-lg shadow-sm dark:shadow-none focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none ${errors.state ? "border-red-500" : "border-gray-300 dark:border-white/10"}`}
                         />
                       </div>
                     )}
@@ -1240,7 +1199,7 @@ useEffect(() => {
                       <div>
                         <label
                           htmlFor="country"
-                          className="block mb-2 text-sm font-medium text-slate-300"
+                          className="block mb-2 text-sm font-medium text-slate-700 dark:text-slate-300"
                         >
                           Enter Country
                           <RequiredStar />
@@ -1259,7 +1218,7 @@ useEffect(() => {
                               setErrors((prev) => ({ ...prev, country: "" }));
                           }}
                           placeholder="Enter country name"
-                          className={`w-full px-4 py-2.5 bg-white/5 border text-white rounded-lg focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none ${errors.country ? "border-red-500" : "border-white/10"}`}
+                          className={`w-full px-4 py-2.5 bg-[#f8fafc] dark:bg-[#1a1c1b] border text-slate-900 dark:text-white rounded-lg shadow-sm dark:shadow-none focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none ${errors.country ? "border-red-500" : "border-gray-300 dark:border-white/10"}`}
                         />
                         <ErrorMsg field="country" />
                       </div>
@@ -1269,7 +1228,7 @@ useEffect(() => {
               </div>
 
               {/* Author Details */}
-              <div className="space-y-4 pt-4 border-t border-white/5">
+              <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-white/5">
                 <label className="text-[#32ff99] font-bold tracking-wider uppercase text-xs">
                   Author Details
                 </label>
@@ -1277,7 +1236,7 @@ useEffect(() => {
                   <div className="space-y-1">
                     <label
                       htmlFor="primary-author"
-                      className="block mb-2 text-sm font-medium text-slate-300"
+                      className="block mb-2 text-sm font-medium text-slate-700 dark:text-slate-300"
                     >
                       Primary Author ID
                       <RequiredStar />
@@ -1290,12 +1249,12 @@ useEffect(() => {
   onChange={isIndividualUser ? undefined : handleInputChange}
   readOnly={isIndividualUser}
   placeholder={isIndividualUser ? "" : "Enter ID"}
-  className={`w-full px-4 py-2.5 bg-white/5 border text-white 
+  className={`w-full px-4 py-2.5 bg-[#f8fafc] dark:bg-[#1a1c1b] border text-slate-900 dark:text-white shadow-sm dark:shadow-none 
     rounded-lg transition-all outline-none
     ${isIndividualUser 
-      ? "opacity-60 cursor-not-allowed border-white/5" 
+      ? "opacity-60 cursor-not-allowed border-gray-200 dark:border-white/5" 
       : "focus:ring-[#32ff99] focus:border-[#32ff99]"}
-    ${errors.primaryAuthor ? "border-red-500" : "border-white/10"}`}
+    ${errors.primaryAuthor ? "border-red-500" : "border-gray-300 dark:border-white/10"}`}
 />
 
                     <ErrorMsg field="primaryAuthor" />
@@ -1304,12 +1263,12 @@ useEffect(() => {
                   <div className="md:col-span-2 space-y-1">
                     <label
                       htmlFor="co-authors"
-                      className="block mb-2 text-sm font-medium text-slate-300"
+                      className="block mb-2 text-sm font-medium text-slate-700 dark:text-slate-300"
                     >
                       Co-Author IDs
                     </label>
                     <div className="relative group">
-                      <div className="flex flex-wrap gap-2 p-2 bg-white/5 border border-white/10 rounded-lg focus-within:ring-[#32ff99] focus-within:border-[#32ff99] transition-all">
+                      <div className="flex flex-wrap gap-2 p-2 bg-white dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-lg shadow-sm dark:shadow-none focus-within:ring-[#32ff99] focus-within:border-[#32ff99] transition-all">
                         {formData.coAuthors.map((author, index) => (
                           <span
                             key={index}
@@ -1319,7 +1278,7 @@ useEffect(() => {
                             <button
                               type="button"
                               onClick={() => removeCoAuthor(author)}
-                              className="hover:text-white"
+                              className="hover:text-slate-900 dark:hover:text-white"
                             >
                               <MaterialIcon name="close" className="text-sm" />
                             </button>
@@ -1332,11 +1291,11 @@ useEffect(() => {
                           onChange={(e) => setCoAuthorInput(e.target.value)}
                           onKeyDown={handleCoAuthorKeyDown}
                           placeholder="Enter multiple IDs (press Enter)"
-                          className="flex-1 min-w-[120px] bg-transparent border-none focus:ring-0 outline-none text-white placeholder-slate-500"
+                          className="flex-1 min-w-[120px] bg-transparent border-none focus:ring-0 outline-none text-slate-900 dark:text-white placeholder-slate-500"
                         />
                       </div>
                       <div className="absolute right-3 top-2.5">
-                        <span className="text-[10px] bg-white/10 text-slate-400 px-1.5 py-0.5 rounded font-bold">
+                        <span className="text-[10px] bg-[#f8fafc] dark:bg-white/10 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded font-bold border border-gray-200 dark:border-transparent">
                           {formData.coAuthors.length} added
                         </span>
                       </div>
@@ -1346,7 +1305,7 @@ useEffect(() => {
               </div>
 
               {/* SDG Goals Section */}
-              <div className="space-y-4 pt-6 border-t border-white/5">
+              <div className="space-y-4 pt-6 border-t border-gray-200 dark:border-white/5">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-[#32ff99] text-xl">
                     eco
@@ -1359,7 +1318,7 @@ useEffect(() => {
                 <div className="space-y-2">
                   <label
                     htmlFor="sdg-selection"
-                    className="block text-sm font-medium text-slate-300"
+                    className="block text-sm font-medium text-slate-700 dark:text-slate-300"
                   >
                     Sustainable Development Goals (SDGs)
                     <RequiredStar />
@@ -1369,7 +1328,7 @@ useEffect(() => {
                   </p>
 
                   {loadingSdg ? (
-                    <div className="flex items-center justify-center p-4 bg-white/5 rounded-lg">
+                    <div className="flex items-center justify-center p-4 bg-[#f8fafc] dark:bg-white/5 rounded-lg shadow-sm dark:shadow-none">
                       <div className="flex items-center gap-2">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#32ff99]"></div>
                         <span className="text-[#32ff99] text-sm">
@@ -1385,7 +1344,7 @@ useEffect(() => {
                         </span>
                         <p className="text-red-500 text-sm mb-1">{sdgError}</p>
                         {sdgError.includes("log in") && (
-                          <p className="text-slate-400 text-xs">
+                          <p className="text-slate-600 dark:text-slate-400 text-xs">
                             Please log in to access SDG goals
                           </p>
                         )}
@@ -1422,8 +1381,8 @@ useEffect(() => {
                       {/* Selected Tags Area */}
                       <div
                         id="sdg-selection"
-                        className={`min-h-[42px] bg-white/5 border rounded-lg px-3 py-2 cursor-pointer focus-within:ring-2 focus-within:ring-[#32ff99] focus-within:border-[#32ff99] transition-all ${
-                          errors.sdgGoals ? "border-red-500" : "border-white/10"
+                        className={`min-h-[42px] bg-white dark:bg-white/5 border rounded-lg px-3 py-2 cursor-pointer shadow-sm dark:shadow-none focus-within:ring-2 focus-within:ring-[#32ff99] focus-within:border-[#32ff99] transition-all ${
+                          errors.sdgGoals ? "border-red-500" : "border-gray-300 dark:border-white/10"
                         }`}
                         onClick={() => setShowSdgDropdown(!showSdgDropdown)}
                       >
@@ -1450,7 +1409,7 @@ useEffect(() => {
                                       e.stopPropagation();
                                       handleSdgToggle(goalId);
                                     }}
-                                    className="hover:text-white flex-shrink-0"
+                                    className="hover:text-slate-900 dark:hover:text-white flex-shrink-0"
                                   >
                                     <MaterialIcon
                                       name="close"
@@ -1461,13 +1420,13 @@ useEffect(() => {
                               );
                             })
                           ) : (
-                            <span className="text-slate-400 text-sm py-0.5">
+                            <span className="text-slate-600 dark:text-slate-400 text-sm py-0.5">
                               Click to select SDG goals...
                             </span>
                           )}
                         </div>
                         <div className="absolute right-3 top-2.5">
-                          <span className="material-symbols-outlined text-slate-500 text-lg">
+                          <span className="material-symbols-outlined text-slate-600 dark:text-slate-500 text-lg">
                             {showSdgDropdown ? "expand_less" : "expand_more"}
                           </span>
                         </div>
@@ -1475,27 +1434,27 @@ useEffect(() => {
 
                       {/* Dropdown */}
                       {showSdgDropdown && sdgGoals.length > 0 && (
-                        <div className="absolute z-40 left-0 right-0 mt-1 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-2xl max-h-96 overflow-y-auto custom-scrollbar">
-                          <div className="sticky top-0 bg-[#1a1a1a] px-4 py-2 border-b border-white/10 text-xs text-slate-400 z-10">
+                        <div className="absolute z-40 left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 rounded-lg shadow-2xl shadow-slate-200/70 dark:shadow-2xl max-h-96 overflow-y-auto custom-scrollbar">
+                          <div className="sticky top-0 bg-white dark:bg-[#1a1a1a] px-4 py-2 border-b border-gray-200 dark:border-white/10 text-xs text-slate-600 dark:text-slate-400 z-10">
                             {formData.sdgGoals.length} selected
                           </div>
                           {sdgGoals.map((goal) => (
                             <label
                               key={goal.id}
-                              className="flex items-center gap-2 px-3 py-2 hover:bg-white/5 cursor-pointer transition-colors group"
+                              className="flex items-center gap-2 px-3 py-2 hover:bg-[#f8fafc] dark:hover:bg-white/5 cursor-pointer transition-colors group"
                             >
                               <input
                                 type="checkbox"
                                 checked={formData.sdgGoals.includes(goal.id)}
                                 onChange={() => handleSdgToggle(goal.id)}
-                                className="w-3.5 h-3.5 rounded border-white/20 bg-white/5 text-[#32ff99] focus:ring-[#32ff99] flex-shrink-0"
+                                className="w-3.5 h-3.5 rounded border-gray-300 dark:border-white/20 bg-[#f8fafc] dark:bg-white/5 text-[#32ff99] focus:ring-[#32ff99] flex-shrink-0"
                               />
                               <div className="flex-1 min-w-0">
                                 <span className="text-[10px] font-bold text-[#32ff99]/70 block">
                                   SDG {goal.id}
                                 </span>
                                 <span
-                                  className="text-xs text-slate-300 group-hover:text-white truncate block"
+                                  className="text-xs text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white truncate block"
                                   title={goal.title}
                                 >
                                   {goal.title}
@@ -1519,7 +1478,7 @@ useEffect(() => {
               </div>
 
               {/* Research Methodology */}
-              <div className="space-y-6 pt-6 border-t border-white/5">
+              <div className="space-y-6 pt-6 border-t border-gray-200 dark:border-white/5">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-[#32ff99] text-xl">
                     biotech
@@ -1530,7 +1489,7 @@ useEffect(() => {
                 </div>
 
                 <div className="space-y-3">
-                  <label className="block mb-2 text-sm font-medium text-slate-300">
+                  <label className="block mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">
                     Method Type (Select all that apply)
                     <RequiredStar />
                   </label>
@@ -1545,15 +1504,15 @@ useEffect(() => {
                     ].map((method) => (
                       <label
                         key={method}
-                        className={`flex items-center gap-2 cursor-pointer group p-2.5 rounded-lg border hover:bg-white/5 transition-all ${errors.methodology && !formData.methodology.includes(method) ? "border-red-500/30" : "border-white/5"}`}
+                        className={`flex items-center gap-2 cursor-pointer group p-2.5 rounded-lg border hover:bg-[#f8fafc] dark:hover:bg-white/5 transition-all ${errors.methodology && !formData.methodology.includes(method) ? "border-red-500/30" : "border-gray-200 dark:border-white/5"}`}
                       >
                         <input
                           type="checkbox"
                           checked={formData.methodology.includes(method)}
                           onChange={() => handleMethodologyChange(method)}
-                          className="w-4 h-4 text-[#32ff99] bg-white/5 border-white/20 rounded focus:ring-[#32ff99] cursor-pointer"
+                          className="w-4 h-4 text-[#32ff99] bg-[#f8fafc] dark:bg-white/5 border-gray-300 dark:border-white/20 rounded focus:ring-[#32ff99] cursor-pointer"
                         />
-                        <span className="text-sm text-slate-400 group-hover:text-white transition-colors">
+                        <span className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
                           {method}
                         </span>
                       </label>
@@ -1566,7 +1525,7 @@ useEffect(() => {
                   <div className="space-y-1">
                     <label
                       htmlFor="sample-size"
-                      className="block mb-2 text-sm font-medium text-slate-300"
+                      className="block mb-2 text-sm font-medium text-slate-700 dark:text-slate-300"
                     >
                       Sample Size
                       <RequiredStar />
@@ -1578,7 +1537,7 @@ useEffect(() => {
                       value={formData.simpleSize}
                       onChange={handleInputChange}
                       placeholder="e.g. 500 respondents, 20 sites"
-                      className={`w-full px-4 py-2.5 bg-white/5 border text-white rounded-lg focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none ${errors.simpleSize ? "border-red-500" : "border-white/10"}`}
+                      className={`w-full px-4 py-2.5 bg-[#f8fafc] dark:bg-[#1a1c1b] border text-slate-900 dark:text-white rounded-lg shadow-sm dark:shadow-none focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none ${errors.simpleSize ? "border-red-500" : "border-gray-300 dark:border-white/10"}`}
                     />
                     <ErrorMsg field="simpleSize" />
                   </div>
@@ -1586,7 +1545,7 @@ useEffect(() => {
                   <div className="space-y-1">
                     <label
                       htmlFor="data-type"
-                      className="block mb-2 text-sm font-medium text-slate-300"
+                      className="block mb-2 text-sm font-medium text-slate-700 dark:text-slate-300"
                     >
                       Data Type
                       <RequiredStar />
@@ -1597,55 +1556,23 @@ useEffect(() => {
                         name="dataType"
                         value={formData.dataType}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none appearance-none cursor-pointer"
-                        style={{
-                          backgroundColor: "#1E1E1E",
-                          borderColor: errors.dataType
-                            ? "#ef4444"
-                            : "rgba(255,255,255,0.1)",
-                          color: "#FFFFFF",
-                        }}
+                        className={`w-full px-4 py-2.5 bg-[#f8fafc] dark:bg-[#1a1c1b] border rounded-lg text-slate-900 dark:text-white shadow-sm dark:shadow-none focus:ring-2 focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none appearance-none cursor-pointer ${errors.dataType ? "border-red-500" : "border-gray-300 dark:border-white/10"}`}
                       >
-                        <option
-                          value=""
-                          disabled
-                          style={{
-                            backgroundColor: "#1E1E1E",
-                            color: "#94A3B8",
-                          }}
-                        >
+                        <option value="" disabled>
                           Select data type...
                         </option>
-                        <option
-                          value="Quantitative"
-                          style={{
-                            backgroundColor: "#1E1E1E",
-                            color: "#FFFFFF",
-                          }}
-                        >
+                        <option value="Quantitative">
                           Quantitative
                         </option>
-                        <option
-                          value="Qualitative"
-                          style={{
-                            backgroundColor: "#1E1E1E",
-                            color: "#FFFFFF",
-                          }}
-                        >
+                        <option value="Qualitative">
                           Qualitative
                         </option>
-                        <option
-                          value="Mixed"
-                          style={{
-                            backgroundColor: "#1E1E1E",
-                            color: "#FFFFFF",
-                          }}
-                        >
+                        <option value="Mixed">
                           Mixed
                         </option>
                       </select>
                       <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                        <span className="material-symbols-outlined text-slate-400">
+                        <span className="material-symbols-outlined text-slate-600 dark:text-slate-400">
                           expand_more
                         </span>
                       </div>
@@ -1657,7 +1584,7 @@ useEffect(() => {
                 <div className="space-y-1">
                   <label
                     htmlFor="declaration-methodology"
-                    className="block mb-2 text-sm font-medium text-slate-300"
+                    className="block mb-2 text-sm font-medium text-slate-700 dark:text-slate-300"
                   >
                     Declaration of Study
                     <RequiredStar />
@@ -1669,14 +1596,14 @@ useEffect(() => {
                     onChange={handleInputChange}
                     placeholder="Declare study protocols, ethics compliance, or funding sources..."
                     rows="4"
-                    className={`w-full px-4 py-2.5 bg-white/5 border text-white rounded-lg focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none ${errors.declaration ? "border-red-500" : "border-white/10"}`}
+                    className={`w-full px-4 py-2.5 bg-[#f8fafc] dark:bg-[#1a1c1b] border text-slate-900 dark:text-white rounded-lg shadow-sm dark:shadow-none focus:ring-[#32ff99] focus:border-[#32ff99] transition-all outline-none ${errors.declaration ? "border-red-500" : "border-gray-300 dark:border-white/10"}`}
                   />
                   <ErrorMsg field="declaration" />
                 </div>
               </div>
 
               {/* File Upload */}
-              <div className="space-y-6 pt-6 border-t border-white/5">
+              <div className="space-y-6 pt-6 border-t border-gray-200 dark:border-white/5">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-[#32ff99] text-xl">
                     upload_file
@@ -1687,7 +1614,7 @@ useEffect(() => {
                 </div>
 
                 <div className="space-y-3">
-                  <label className="block mb-2 text-sm font-medium text-slate-300">
+                  <label className="block mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">
                     Full Research Paper (PDF)
                     <RequiredStar />
                   </label>
@@ -1700,7 +1627,7 @@ useEffect(() => {
                       id="file-upload"
                     />
                     <div
-                      className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center gap-4 bg-white/5 transition-all ${errors.file ? "border-red-500/50" : "border-white/10 group-hover:border-[#32ff99]/50"}`}
+                      className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center gap-4 bg-white dark:bg-white/5 shadow-sm dark:shadow-none transition-all ${errors.file ? "border-red-500/50" : "border-gray-300 dark:border-white/10 group-hover:border-[#32ff99]/50"}`}
                     >
                       <div className="w-14 h-14 bg-[#32ff99]/10 rounded-full flex items-center justify-center text-[#32ff99] group-hover:scale-110 transition-transform">
                         <span className="material-symbols-outlined text-3xl">
@@ -1708,7 +1635,7 @@ useEffect(() => {
                         </span>
                       </div>
                       <div className="text-center">
-                        <p className="text-white font-medium">
+                        <p className="text-slate-900 dark:text-white font-medium">
                           Drag & drop your PDF here
                         </p>
                         <p className="text-sm text-slate-500 mt-1">
@@ -1720,7 +1647,7 @@ useEffect(() => {
                           Selected: {formData.file.name}
                         </div>
                       )}
-                      <div className="flex gap-2 text-[10px] text-slate-500 uppercase font-bold tracking-widest bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
+                      <div className="flex gap-2 text-[10px] text-slate-500 uppercase font-bold tracking-widest bg-[#f8fafc] dark:bg-white/5 px-3 py-1.5 rounded-full border border-gray-200 dark:border-white/5 shadow-sm dark:shadow-none">
                         <span>PDF only</span>
                       </div>
                     </div>
@@ -1730,7 +1657,7 @@ useEffect(() => {
               </div>
 
               {/* Declaration Checkbox */}
-              <div className="space-y-4 pt-6 border-t border-white/5">
+              <div className="space-y-4 pt-6 border-t border-gray-200 dark:border-white/5">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-[#32ff99] text-xl">
                     gavel
@@ -1741,7 +1668,7 @@ useEffect(() => {
                 </div>
 
                 <div>
-                  <label className="flex items-start gap-3 p-4 rounded-xl bg-white/5 border border-white/5 cursor-pointer group hover:bg-[#32ff99]/5 transition-colors">
+                  <label className="flex items-start gap-3 p-4 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 cursor-pointer group hover:bg-[#32ff99]/5 transition-colors shadow-sm dark:shadow-none">
                     <input
                       type="checkbox"
                       checked={declaration1}
@@ -1750,9 +1677,9 @@ useEffect(() => {
                         if (errors.declaration1)
                           setErrors((prev) => ({ ...prev, declaration1: "" }));
                       }}
-                      className="mt-1 w-5 h-5 rounded border-white/20 bg-white/5 text-[#32ff99] focus:ring-[#32ff99] cursor-pointer"
+                      className="mt-1 w-5 h-5 rounded border-gray-300 dark:border-white/20 bg-[#f8fafc] dark:bg-white/5 text-[#32ff99] focus:ring-[#32ff99] cursor-pointer"
                     />
-                    <span className="text-sm text-slate-300 group-hover:text-white leading-relaxed">
+                    <span className="text-sm text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white leading-relaxed">
                       By uploading your research on the GSIF Research Network
                       platform, you acknowledge and agree that your submitted
                       research may be viewed by other registered users of the
@@ -1764,7 +1691,7 @@ useEffect(() => {
                 </div>
 
                 <div>
-                  <label className="flex items-start gap-3 p-4 rounded-xl bg-white/5 border border-white/5 cursor-pointer group hover:bg-[#32ff99]/5 transition-colors">
+                  <label className="flex items-start gap-3 p-4 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 cursor-pointer group hover:bg-[#32ff99]/5 transition-colors shadow-sm dark:shadow-none">
                     <input
                       type="checkbox"
                       checked={declaration2}
@@ -1773,9 +1700,9 @@ useEffect(() => {
                         if (errors.declaration2)
                           setErrors((prev) => ({ ...prev, declaration2: "" }));
                       }}
-                      className="mt-1 w-5 h-5 rounded border-white/20 bg-white/5 text-[#32ff99] focus:ring-[#32ff99] cursor-pointer"
+                      className="mt-1 w-5 h-5 rounded border-gray-300 dark:border-white/20 bg-[#f8fafc] dark:bg-white/5 text-[#32ff99] focus:ring-[#32ff99] cursor-pointer"
                     />
-                    <span className="text-sm text-slate-300 group-hover:text-white leading-relaxed">
+                    <span className="text-sm text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white leading-relaxed">
                       You grant GSIF Research Network the right to reference or
                       build upon your uploaded research for academic or
                       development purposes, with proper credit given to you as
@@ -1786,7 +1713,7 @@ useEffect(() => {
               </div>
 
               {/* Form Actions */}
-              <div className="pt-8 border-t border-white/5">
+              <div className="pt-8 border-t border-gray-200 dark:border-white/5">
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col md:flex-row gap-3 justify-end">
                     <button
